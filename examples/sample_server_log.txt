@@ -1,0 +1,56 @@
+[13:45:00] 
+[13:45:00] SA-MP Dedicated Server
+[13:45:00] ----------------------
+[13:45:00] v0.3.7-R2, (C)2005-2015 SA-MP Team
+[13:45:00] 
+[13:45:00] Server Plugins
+[13:45:00] --------------
+[13:45:00]  Loading plugin: crashdetect
+[13:45:00]   Loaded.
+[13:45:00]  Loaded 1 plugins.
+[13:45:01] [debug] Run time error 19: "File or function is not found"
+[13:45:01] [debug]  sscanf
+[13:45:01] [debug]  mysql_connect
+[13:45:01] Script[gamemodes/rp.amx]: Run time error 19: "File or function is not present"
+[13:45:02] Number of vehicle models: 0
+[13:45:30] [join] Alice has joined the server (0:203.0.113.5)
+[13:45:40] [chat] [0]Alice: hello everyone
+[13:45:41] [chat] [0]Alice: Run time error 4: "Array index out of bounds"
+[13:46:01] [debug] Run time error 4: "Array index out of bounds"
+[13:46:01] [debug]  Attempted to read/write array element at index 1000 in array of size 1000
+[13:46:01] [debug] AMX backtrace:
+[13:46:01] [debug] #0 000a1b2c in public OnPlayerUpdate (playerid=0) at gamemodes/rp.pwn:30
+[13:46:01] Script[gamemodes/rp.amx]: Run time error 4: "Array index out of bounds"
+[13:46:02] [chat] [0]Alice: lag again
+[13:46:03] [debug] Run time error 4: "Array index out of bounds"
+[13:46:03] [debug]  Attempted to read/write array element at index 1001 in array of size 1000
+[13:46:03] [debug] AMX backtrace:
+[13:46:03] [debug] #0 000a1b2c in public OnPlayerUpdate (playerid=0) at gamemodes/rp.pwn:30
+[13:46:03] Script[gamemodes/rp.amx]: Run time error 4: "Array index out of bounds"
+[13:46:09] [debug] Run time error 4: "Array index out of bounds"
+[13:46:09] [debug]  Attempted to read/write array element at index 1000 in array of size 1000
+[13:46:09] [debug] AMX backtrace:
+[13:46:09] [debug] #0 000a1c40 in public OnPlayerUpdate (playerid=0) at gamemodes/rp.pwn:31
+[13:46:09] Script[gamemodes/rp.amx]: Run time error 4: "Array index out of bounds"
+[13:47:10] [debug] Run time error 11: "Divide by zero"
+[13:47:10] [debug] AMX backtrace:
+[13:47:10] [debug] #0 000b00a4 in public OnDialogResponse (playerid=3, dialogid=1, response=1, listitem=0, inputtext[]=@0000a2f0 "hunter2-secret") at gamemodes/rp.pwn:39
+[13:47:10] Script[gamemodes/rp.amx]: Run time error 11: "Divide by zero"
+[13:48:00] [part] Alice has left the server (0:1)
+[13:50:12] [debug] Server crashed while executing gamemodes/rp.amx
+[13:50:12] [debug] AMX backtrace:
+[13:50:12] [debug] #0 native SetPlayerName () in samp-server.exe
+[13:50:12] [debug] #1 000f2a10 in public OnPlayerConnect (playerid=3) at gamemodes/rp.pwn:23
+[13:50:12] [debug] Native backtrace:
+[13:50:12] [debug] #0 0046b2e7 in ?? () in samp-server.exe
+[13:50:12] [debug] #1 00401234 in ?? () in plugins/mysql.dll
+[13:50:12] [debug] Registers:
+[13:50:12] [debug] EAX: 00000000 EBX: 00000001 ECX: 00000002 EDX: 00000003
+[13:50:12] [debug] Loaded modules:
+[13:50:12] [debug] 00400000 - 00bb0000 samp-server.exe
+[13:55:00] [debug] Long callback execution detected (hang or performance issue)
+[13:55:00] [debug] AMX backtrace:
+[13:55:00] [debug] #0 00012345 in public OnGameModeInit () at gamemodes/rp.pwn:15
+[14:30:00] [debug] Server received interrupt signal while executing gamemodes/rp.amx
+[14:30:00] [debug] AMX backtrace:
+[14:30:00] [debug] #0 00012345 in public OnGameModeExit () at gamemodes/rp.pwn:46

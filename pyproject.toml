@@ -1,0 +1,92 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "amxtriage"
+dynamic = ["version"]
+description = "Triage tool for SA-MP and open.mp server logs: groups AMX runtime errors, crashes and slow callbacks."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "amxtriage contributors" }]
+keywords = ["samp", "open.mp", "pawn", "amx", "crashdetect", "logs", "triage"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Logging",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "build>=1.2",
+]
+
+[project.scripts]
+amxtriage = "amxtriage.cli:main"
+
+[tool.hatch.version]
+path = "src/amxtriage/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/amxtriage"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src",
+    "tests",
+    "examples",
+    "scripts",
+    "README.md",
+    "HANDOFF.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra -q"
+
+[tool.coverage.run]
+source = ["amxtriage"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "C4", "RUF", "N", "PT", "S", "A", "PIE", "RET"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S603", "S607", "S108"]
+"scripts/**" = ["S311"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src", "tests", "scripts"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
