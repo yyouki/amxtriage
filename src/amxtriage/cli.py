@@ -32,11 +32,14 @@ from amxtriage.render import (
     render_report,
 )
 from amxtriage.source import MAX_CONTEXT_RADIUS, SourceIndex
+from amxtriage.textutil import sanitize
 
 EXIT_OK = 0
 EXIT_NEW_PROBLEMS = 1
 EXIT_ERROR = 2
 EXIT_INTERRUPTED = 130
+
+MESSAGE_LIMIT = 1000
 
 DEFAULT_TOP = 20
 DEFAULT_CONTEXT = 3
@@ -215,7 +218,8 @@ def _run_analyze(args: argparse.Namespace) -> int:
     _write_output(render_report(report, args.format, show_args=args.show_args), args.output)
     if args.save_baseline:
         saved = save_baseline(args.save_baseline, result.aggregator.sorted_groups())
-        print(f"saved baseline with {saved} signature(s) to {args.save_baseline}", file=sys.stderr)
+        target = sanitize(args.save_baseline, MESSAGE_LIMIT)
+        print(f"saved baseline with {saved} signature(s) to {target}", file=sys.stderr)
     if args.fail_on_new and report.matching_groups > 0:
         return EXIT_NEW_PROBLEMS
     return EXIT_OK
@@ -274,7 +278,8 @@ def _run_watch(args: argparse.Namespace) -> int:
     label = display_name(args.log)
     restore_signal = _install_sigterm(stop)
     print(
-        f"watching {label}, checking every {args.poll_interval:g}s; press Ctrl+C to stop",
+        f"watching {sanitize(label, MESSAGE_LIMIT)}, checking every {args.poll_interval:g}s;"
+        " press Ctrl+C to stop",
         file=sys.stderr,
         flush=True,
     )
@@ -341,7 +346,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_watch(args)
         return _run_explain(args)
     except AmxTriageError as error:
-        print(f"error: {error}", file=sys.stderr)
+        print(f"error: {sanitize(str(error), MESSAGE_LIMIT)}", file=sys.stderr)
         return EXIT_ERROR
     except BrokenPipeError:
         _silence_stdout()

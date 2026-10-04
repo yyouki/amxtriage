@@ -166,8 +166,8 @@ def test_line_numbers_restart_for_every_input_file(sample_log, tmp_path):
     assert group.first.line_number == 1
 
 
-def secret_log(tmp_path):
-    log = tmp_path / "server_log.txt"
+def secret_log(tmp_path, name="server_log.txt"):
+    log = tmp_path / name
     lines = [
         '[13:47:10] [debug] Run time error 11: "Divide by zero"',
         "[13:47:10] [debug] AMX backtrace:",
@@ -237,3 +237,47 @@ def test_watch_mode_hides_arguments_by_default(tmp_path):
 def test_watch_mode_shows_arguments_only_with_the_explicit_flag(tmp_path):
     output = watch_output(secret_log(tmp_path), "--show-args")
     assert SECRET in output
+
+
+@posix_only
+@pytest.mark.parametrize("kind", ["binary", "missing", "directory"])
+def test_error_messages_never_echo_control_characters_from_file_names(run_cli, tmp_path, kind):
+    target = tmp_path / f"evil{HOSTILE}"
+    try:
+        if kind == "binary":
+            target.write_bytes(b"\x00\x01binary\n")
+        elif kind == "directory":
+            target.mkdir()
+    except OSError:
+        pytest.skip("this file system rejects control characters in file names")
+    result = run_cli("analyze", str(target))
+    stderr = result.stderr.decode("utf-8", errors="replace")
+    assert result.returncode == 2
+    assert "evil" in stderr
+    assert dangerous(stderr) == []
+
+
+@posix_only
+def test_saved_baseline_message_never_echoes_control_characters(run_cli, sample_log, tmp_path):
+    target = tmp_path / f"base{HOSTILE}.json"
+    try:
+        target.touch()
+    except OSError:
+        pytest.skip("this file system rejects control characters in file names")
+    target.unlink()
+    result = run_cli("analyze", str(sample_log), "--save-baseline", str(target))
+    stderr = result.stderr.decode("utf-8", errors="replace")
+    assert result.returncode == 0
+    assert "saved baseline" in stderr
+    assert dangerous(stderr) == []
+
+
+@posix_only
+def test_watch_banner_never_echoes_control_characters_from_the_file_name(tmp_path):
+    try:
+        log = secret_log(tmp_path, f"evil{HOSTILE}.log")
+    except OSError:
+        pytest.skip("this file system rejects control characters in file names")
+    output = watch_output(log)
+    assert "watching evil" in output
+    assert dangerous(output) == []
