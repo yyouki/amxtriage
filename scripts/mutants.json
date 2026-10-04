@@ -1,0 +1,1171 @@
+[
+ {
+  "id": "T1",
+  "file": "src/amxtriage/textutil.py",
+  "description": "bidi/format chars (Cf) no longer blocked",
+  "edits": [
+   {
+    "old": "\"Cc\", \"Cf\", \"Cs\"",
+    "new": "\"Cc\", \"Cs\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "T2",
+  "file": "src/amxtriage/textutil.py",
+  "description": "control chars (Cc) no longer blocked",
+  "edits": [
+   {
+    "old": "\"Cc\", \"Cf\"",
+    "new": "\"Cf\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "T3",
+  "file": "src/amxtriage/textutil.py",
+  "description": "tabs no longer expanded",
+  "edits": [
+   {
+    "old": ".expandtabs(4)",
+    "new": "",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "T4",
+  "file": "src/amxtriage/textutil.py",
+  "description": "truncation exceeds the limit",
+  "edits": [
+   {
+    "old": "cleaned[: limit - len(ELLIPSIS)] + ELLIPSIS",
+    "new": "cleaned[:limit] + ELLIPSIS",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "T5",
+  "file": "src/amxtriage/textutil.py",
+  "description": "tiny-limit guard (uncommitted fix) disabled",
+  "edits": [
+   {
+    "old": "if limit <= len(ELLIPSIS):",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "T6",
+  "file": "src/amxtriage/textutil.py",
+  "description": "inline_code keeps backticks",
+  "edits": [
+   {
+    "old": ".replace(\"`\", \"'\")",
+    "new": "",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "T7",
+  "file": "src/amxtriage/textutil.py",
+  "description": "basename keeps trailing separator",
+  "edits": [
+   {
+    "old": "path.rstrip(\"\\\\/\")",
+    "new": "path",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R1",
+  "file": "src/amxtriage/reader.py",
+  "description": "overlong line no longer capped in buffer",
+  "edits": [
+   {
+    "old": "del self._partial[self._max :]",
+    "new": "pass",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R2",
+  "file": "src/amxtriage/reader.py",
+  "description": "NUL-byte binary detection disabled",
+  "edits": [
+   {
+    "old": "if b\"\\x00\" in head:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R3",
+  "file": "src/amxtriage/reader.py",
+  "description": "UTF-16 BOM detection disabled",
+  "edits": [
+   {
+    "old": "if head.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R4",
+  "file": "src/amxtriage/reader.py",
+  "description": "UTF-8 BOM no longer stripped",
+  "edits": [
+   {
+    "old": "if data.startswith(codecs.BOM_UTF8):",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R5",
+  "file": "src/amxtriage/reader.py",
+  "description": "gzip detection disabled",
+  "edits": [
+   {
+    "old": "if magic == GZIP_MAGIC:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R6",
+  "file": "src/amxtriage/reader.py",
+  "description": "strict utf-8 decoding",
+  "edits": [
+   {
+    "old": "errors=\"replace\"",
+    "new": "errors=\"strict\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R7",
+  "file": "src/amxtriage/reader.py",
+  "description": "CR no longer stripped",
+  "edits": [
+   {
+    "old": ".rstrip(\"\\r\")",
+    "new": "",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R8",
+  "file": "src/amxtriage/reader.py",
+  "description": "EOF/zlib errors not converted to InputError",
+  "edits": [
+   {
+    "old": "except (OSError, EOFError, zlib.error) as error:",
+    "new": "except OSError as error:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R9",
+  "file": "src/amxtriage/reader.py",
+  "description": "directory check removed",
+  "edits": [
+   {
+    "old": "if target.is_dir():",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R10",
+  "file": "src/amxtriage/reader.py",
+  "description": "fast-path overlong lines not truncated",
+  "edits": [
+   {
+    "old": "if len(piece) > self._max:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P1",
+  "file": "src/amxtriage/parser.py",
+  "description": "adjacency tolerance 2 -> 0",
+  "edits": [
+   {
+    "old": "QUIET_LINE_TOLERANCE = 2",
+    "new": "QUIET_LINE_TOLERANCE = 0",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P2",
+  "file": "src/amxtriage/parser.py",
+  "description": "AMX frame cap removed",
+  "edits": [
+   {
+    "old": "if frame is not None and len(block.frames) < MAX_FRAMES:",
+    "new": "if frame is not None:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P3",
+  "file": "src/amxtriage/parser.py",
+  "description": "Script line merges regardless of code",
+  "edits": [
+   {
+    "old": "and block.code == header.code",
+    "new": "and True",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P4",
+  "file": "src/amxtriage/parser.py",
+  "description": "runtime error matched anywhere in line (chat forging)",
+  "edits": [
+   {
+    "old": "match = _RUNTIME_ERROR.match(body)",
+    "new": "match = _RUNTIME_ERROR.search(body)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P5",
+  "file": "src/amxtriage/parser.py",
+  "description": "crash matched anywhere in line (chat forging)",
+  "edits": [
+   {
+    "old": "crash = _CRASH.fullmatch(text)",
+    "new": "crash = _CRASH.search(text)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P6",
+  "file": "src/amxtriage/parser.py",
+  "description": "long-call matched anywhere in line (chat forging)",
+  "edits": [
+   {
+    "old": "if body.startswith(_LONG_CALL_PREFIX):",
+    "new": "if _LONG_CALL_PREFIX in body:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P7",
+  "file": "src/amxtriage/parser.py",
+  "description": "double-indented detail lines accepted",
+  "edits": [
+   {
+    "old": "if len(body) < 2 or body[0] != \" \" or body[1] == \" \":",
+    "new": "if len(body) < 2 or body[0] != \" \":",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P8",
+  "file": "src/amxtriage/parser.py",
+  "description": "names accepted as details for code 4",
+  "edits": [
+   {
+    "old": "NAME_DETAIL_CODES = frozenset({10, 19})",
+    "new": "NAME_DETAIL_CODES = frozenset({4, 10, 19})",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P9",
+  "file": "src/amxtriage/parser.py",
+  "description": "<unknown file> no longer mapped to None",
+  "edits": [
+   {
+    "old": "if file is not None and file.startswith(\"<unknown\"):",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P10",
+  "file": "src/amxtriage/parser.py",
+  "description": "only one prefix tag allowed",
+  "edits": [
+   {
+    "old": "MAX_TAGS = 3",
+    "new": "MAX_TAGS = 1",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P11",
+  "file": "src/amxtriage/parser.py",
+  "description": "crash lines no longer open a block",
+  "edits": [
+   {
+    "old": "Run time error|Server crashed|Long callback",
+    "new": "Run time error|Long callback",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P12",
+  "file": "src/amxtriage/parser.py",
+  "description": "public keyword ignored",
+  "edits": [
+   {
+    "old": "public = rest.startswith(\"public \")",
+    "new": "public = False",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P13",
+  "file": "src/amxtriage/parser.py",
+  "description": "Script line merge/standalone path disabled",
+  "edits": [
+   {
+    "old": "if header.kind == \"runtime_error\" and header.script is not None:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P14",
+  "file": "src/amxtriage/parser.py",
+  "description": "detail cap removed",
+  "edits": [
+   {
+    "old": "limit = MAX_NAME_DETAILS if block.code in NAME_DETAIL_CODES else MAX_DETAILS",
+    "new": "limit = 10**9",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P15",
+  "file": "src/amxtriage/parser.py",
+  "description": "native frame cap removed",
+  "edits": [
+   {
+    "old": "if native is not None and len(block.native_frames) < MAX_NATIVE_FRAMES:",
+    "new": "if native is not None:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P16",
+  "file": "src/amxtriage/parser.py",
+  "description": "interrupt lines no longer recognised",
+  "edits": [
+   {
+    "old": "interrupt = _INTERRUPT.fullmatch(text)",
+    "new": "interrupt = None",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P17",
+  "file": "src/amxtriage/parser.py",
+  "description": "tag prefix kept in function names",
+  "edits": [
+   {
+    "old": "name = raw.rsplit(\":\", 1)[-1] if \":\" in raw else raw",
+    "new": "name = raw",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "A1",
+  "file": "src/amxtriage/aggregate.py",
+  "description": "signature depends on message wording",
+  "edits": [
+   {
+    "old": "script, extra))",
+    "new": "script, extra, event.message or \"\"))",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "A2",
+  "file": "src/amxtriage/aggregate.py",
+  "description": "line bucket bound removed",
+  "edits": [
+   {
+    "old": "elif len(counts) < MAX_LINE_BUCKETS:",
+    "new": "else:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "A3",
+  "file": "src/amxtriage/aggregate.py",
+  "description": "group limit removed",
+  "edits": [
+   {
+    "old": "if len(self._groups) >= self.max_groups:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "A4",
+  "file": "src/amxtriage/aggregate.py",
+  "description": "interrupts counted as events",
+  "edits": [
+   {
+    "old": "if event.kind == \"interrupt\":",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "A5",
+  "file": "src/amxtriage/aggregate.py",
+  "description": "signature version bumped (breaks baselines)",
+  "edits": [
+   {
+    "old": "SIGNATURE_VERSION = \"v1\"",
+    "new": "SIGNATURE_VERSION = \"v2\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "A6",
+  "file": "src/amxtriage/aggregate.py",
+  "description": "signature keeps full file path",
+  "edits": [
+   {
+    "old": "location = basename(frame.file) if frame.file else \"\"",
+    "new": "location = frame.file or \"\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "A7",
+  "file": "src/amxtriage/aggregate.py",
+  "description": "crash no longer sorted first",
+  "edits": [
+   {
+    "old": "\"crash\": 0,",
+    "new": "\"crash\": 5,",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "A8",
+  "file": "src/amxtriage/aggregate.py",
+  "description": "dropped events not counted",
+  "edits": [
+   {
+    "old": "self.dropped_events += 1",
+    "new": "pass",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V1",
+  "file": "src/amxtriage/render.py",
+  "description": "args leak in text/markdown without flag",
+  "edits": [
+   {
+    "old": "if show_args and frame.args is not None:",
+    "new": "if frame.args is not None:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V2",
+  "file": "src/amxtriage/render.py",
+  "description": "args leak in JSON without flag",
+  "edits": [
+   {
+    "old": "    if show_args:\n        data[\"args\"]",
+    "new": "    if True:\n        data[\"args\"]",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V3",
+  "file": "src/amxtriage/render.py",
+  "description": "backticks not neutralised in fenced blocks",
+  "edits": [
+   {
+    "old": "body = [row.replace(\"`\", \"'\") for row in rows]",
+    "new": "body = list(rows)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V4",
+  "file": "src/amxtriage/render.py",
+  "description": "error message unsanitised in title",
+  "edits": [
+   {
+    "old": "message = sanitize(group.message or \"unknown error\", 200)",
+    "new": "message = group.message or \"unknown error\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V5",
+  "file": "src/amxtriage/render.py",
+  "description": "JSON script field unsanitised",
+  "edits": [
+   {
+    "old": "\"script\": _optional(group.script),",
+    "new": "\"script\": group.script,",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V6",
+  "file": "src/amxtriage/render.py",
+  "description": "JSON function field unsanitised",
+  "edits": [
+   {
+    "old": "\"function\": _optional(group.function, 128),",
+    "new": "\"function\": group.function,",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V7",
+  "file": "src/amxtriage/render.py",
+  "description": "JSON file field unsanitised",
+  "edits": [
+   {
+    "old": "\"file\": _optional(group.file),",
+    "new": "\"file\": group.file,",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V8",
+  "file": "src/amxtriage/render.py",
+  "description": "JSON source path unsanitised",
+  "edits": [
+   {
+    "old": "\"path\": sanitize(snippet.path, 200),",
+    "new": "\"path\": snippet.path,",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V9",
+  "file": "src/amxtriage/render.py",
+  "description": "text script line unsanitised",
+  "edits": [
+   {
+    "old": "lines.append(f\"{PAD}script : {sanitize(group.script, 200)}\")",
+    "new": "lines.append(f\"{PAD}script : {group.script}\")",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V10",
+  "file": "src/amxtriage/render.py",
+  "description": "text frame function unsanitised",
+  "edits": [
+   {
+    "old": "text = f\"#{frame.index} {prefix}{sanitize(frame.function, 128)}\"",
+    "new": "text = f\"#{frame.index} {prefix}{frame.function}\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V11",
+  "file": "src/amxtriage/render.py",
+  "description": "occurrence source unsanitised",
+  "edits": [
+   {
+    "old": "return f\"{sanitize(occurrence.source, 120)}:{occurrence.line_number}{stamp}\"",
+    "new": "return f\"{occurrence.source}:{occurrence.line_number}{stamp}\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V12",
+  "file": "src/amxtriage/render.py",
+  "description": "JSON detail lines unsanitised",
+  "edits": [
+   {
+    "old": "\"details\": [sanitize(detail, 200) for detail in sample.details],",
+    "new": "\"details\": list(sample.details),",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B1",
+  "file": "src/amxtriage/baseline.py",
+  "description": "baseline schema_version not checked",
+  "edits": [
+   {
+    "old": "if version != SCHEMA_VERSION:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B2",
+  "file": "src/amxtriage/baseline.py",
+  "description": "baseline size limit removed",
+  "edits": [
+   {
+    "old": "if size > MAX_BASELINE_BYTES:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B3",
+  "file": "src/amxtriage/baseline.py",
+  "description": "baseline id hex check removed",
+  "edits": [
+   {
+    "old": "or not set(identifier) <= _HEX_DIGITS",
+    "new": "or False",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B4",
+  "file": "src/amxtriage/baseline.py",
+  "description": "baseline id length check removed",
+  "edits": [
+   {
+    "old": "or len(identifier) != SIGNATURE_ID_LENGTH",
+    "new": "or False",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B5",
+  "file": "src/amxtriage/baseline.py",
+  "description": "baseline tool name not checked",
+  "edits": [
+   {
+    "old": "if not isinstance(data, dict) or data.get(\"tool\") != \"amxtriage\":",
+    "new": "if not isinstance(data, dict):",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S1",
+  "file": "src/amxtriage/source.py",
+  "description": "symlink escape check removed",
+  "edits": [
+   {
+    "old": "if not resolved.is_relative_to(self._root) or not resolved.is_file():",
+    "new": "if not resolved.is_file():",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S2",
+  "file": "src/amxtriage/source.py",
+  "description": "symlinked directories followed",
+  "edits": [
+   {
+    "old": "followlinks=False",
+    "new": "followlinks=True",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S3",
+  "file": "src/amxtriage/source.py",
+  "description": "source lines unsanitised",
+  "edits": [
+   {
+    "old": "collected.append(sanitize(text, MAX_SOURCE_LINE_CHARS))",
+    "new": "collected.append(text)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S4",
+  "file": "src/amxtriage/source.py",
+  "description": "ambiguous basename picks first match",
+  "edits": [
+   {
+    "old": "if len(winners) != 1:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S5",
+  "file": "src/amxtriage/source.py",
+  "description": "source size limit removed",
+  "edits": [
+   {
+    "old": "if resolved.stat().st_size > MAX_SOURCE_BYTES:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S6",
+  "file": "src/amxtriage/source.py",
+  "description": ".git/node_modules no longer skipped",
+  "edits": [
+   {
+    "old": "SKIPPED_DIRECTORIES = frozenset({\".git\", \"node_modules\", \"__pycache__\"})",
+    "new": "SKIPPED_DIRECTORIES = frozenset()",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S7",
+  "file": "src/amxtriage/source.py",
+  "description": "directory scan limit removed",
+  "edits": [
+   {
+    "old": "if scanned > MAX_SCANNED_DIRECTORIES:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S8",
+  "file": "src/amxtriage/source.py",
+  "description": "context radius clamp removed",
+  "edits": [
+   {
+    "old": "radius = min(radius, MAX_CONTEXT_RADIUS)",
+    "new": "pass",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S9",
+  "file": "src/amxtriage/source.py",
+  "description": ".. components kept in logged paths",
+  "edits": [
+   {
+    "old": "part not in (\".\", \"..\")",
+    "new": "part != \".\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S10",
+  "file": "src/amxtriage/source.py",
+  "description": "indexed file limit removed",
+  "edits": [
+   {
+    "old": "if indexed > MAX_INDEXED_FILES:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S11",
+  "file": "src/amxtriage/source.py",
+  "description": "absolute path shown instead of relative",
+  "edits": [
+   {
+    "old": "display = \"/\".join(path.relative_to(self._root).parts)",
+    "new": "display = str(path)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F1",
+  "file": "src/amxtriage/follow.py",
+  "description": "rotation no longer detected",
+  "edits": [
+   {
+    "old": "return \"rotated\"",
+    "new": "return \"none\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F2",
+  "file": "src/amxtriage/follow.py",
+  "description": "truncation no longer detected",
+  "edits": [
+   {
+    "old": "return \"truncated\"",
+    "new": "return \"none\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F3",
+  "file": "src/amxtriage/follow.py",
+  "description": "gzip file accepted by watch",
+  "edits": [
+   {
+    "old": "if handle.read(len(GZIP_MAGIC)) == GZIP_MAGIC:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F4",
+  "file": "src/amxtriage/follow.py",
+  "description": "idle marker no longer yielded",
+  "edits": [
+   {
+    "old": "yield None",
+    "new": "pass",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F5",
+  "file": "src/amxtriage/follow.py",
+  "description": "partial line not flushed on rotation/truncation",
+  "edits": [
+   {
+    "old": "yield from self._splitter.finish()",
+    "new": "pass",
+    "count": 2
+   }
+  ]
+ },
+ {
+  "id": "F6",
+  "file": "src/amxtriage/follow.py",
+  "description": "binary check removed in watch",
+  "edits": [
+   {
+    "old": "check_text_like(chunk[:PROBE_BYTES], str(self._path))",
+    "new": "pass",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F7",
+  "file": "src/amxtriage/follow.py",
+  "description": "directory check removed in watch",
+  "edits": [
+   {
+    "old": "if self._path.is_dir():",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C1",
+  "file": "src/amxtriage/cli.py",
+  "description": "--fail-on-new never fails",
+  "edits": [
+   {
+    "old": "return EXIT_NEW_PROBLEMS",
+    "new": "return EXIT_OK",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C2",
+  "file": "src/amxtriage/cli.py",
+  "description": "--fail-on-new without baseline allowed",
+  "edits": [
+   {
+    "old": "parser.error(\"--fail-on-new requires --baseline\")",
+    "new": "pass",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C3",
+  "file": "src/amxtriage/cli.py",
+  "description": "glob matches not sorted",
+  "edits": [
+   {
+    "old": "matches = sorted(glob.glob(path))",
+    "new": "matches = glob.glob(path)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C4",
+  "file": "src/amxtriage/cli.py",
+  "description": "analyze always shows args",
+  "edits": [
+   {
+    "old": "_write_output(render_report(report, args.format, show_args=args.show_args), args.output)",
+    "new": "_write_output(render_report(report, args.format, show_args=True), args.output)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C5",
+  "file": "src/amxtriage/cli.py",
+  "description": "baseline saves only displayed groups",
+  "edits": [
+   {
+    "old": "saved = save_baseline(args.save_baseline, result.aggregator.sorted_groups())",
+    "new": "saved = save_baseline(args.save_baseline, report.groups)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C6",
+  "file": "src/amxtriage/cli.py",
+  "description": "Ctrl+C returns 0",
+  "edits": [
+   {
+    "old": "return EXIT_INTERRUPTED",
+    "new": "return EXIT_OK",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C7",
+  "file": "src/amxtriage/cli.py",
+  "description": "watch announces every repeat",
+  "edits": [
+   {
+    "old": "if group is None or not added.created:",
+    "new": "if group is None:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C8",
+  "file": "src/amxtriage/cli.py",
+  "description": "watch ignores baseline",
+  "edits": [
+   {
+    "old": "if baseline is not None and group.signature_id in baseline:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C9",
+  "file": "src/amxtriage/cli.py",
+  "description": "broken pipe not handled",
+  "edits": [
+   {
+    "old": "except BrokenPipeError:",
+    "new": "except ZeroDivisionError:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C10",
+  "file": "src/amxtriage/cli.py",
+  "description": "--fail-on-new fails even with nothing new",
+  "edits": [
+   {
+    "old": "if args.fail_on_new and report.matching_groups > 0:",
+    "new": "if args.fail_on_new:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C11",
+  "file": "src/amxtriage/cli.py",
+  "description": "tool errors become tracebacks",
+  "edits": [
+   {
+    "old": "except AmxTriageError as error:",
+    "new": "except ZeroDivisionError as error:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C12",
+  "file": "src/amxtriage/cli.py",
+  "description": "watch announcements always show args",
+  "edits": [
+   {
+    "old": "lines = render_group_text(group, show_args=args.show_args, snippet=snippet, new=True)",
+    "new": "lines = render_group_text(group, show_args=True, snippet=snippet, new=True)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C13",
+  "file": "src/amxtriage/cli.py",
+  "description": "watch summary always shows args",
+  "edits": [
+   {
+    "old": "render_report(report, \"text\", show_args=args.show_args)",
+    "new": "render_report(report, \"text\", show_args=True)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "N1",
+  "file": "src/amxtriage/analysis.py",
+  "description": "parser state leaks across files",
+  "edits": [
+   {
+    "old": "        parser = LogParser()\n        splitter = LineSplitter()\n",
+    "new": "        splitter = LineSplitter()\n",
+    "count": 1
+   },
+   {
+    "old": "    sources: list[str] = []\n    lines_read = 0\n",
+    "new": "    sources: list[str] = []\n    parser = LogParser()\n    lines_read = 0\n",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "N2",
+  "file": "src/amxtriage/analysis.py",
+  "description": "baseline filter inverted",
+  "edits": [
+   {
+    "old": "if group.signature_id not in baseline]",
+    "new": "if group.signature_id in baseline]",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "N3",
+  "file": "src/amxtriage/analysis.py",
+  "description": "min-count off by one",
+  "edits": [
+   {
+    "old": "if group.count >= min_count and",
+    "new": "if group.count > min_count and",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "N4",
+  "file": "src/amxtriage/analysis.py",
+  "description": "top shows one extra",
+  "edits": [
+   {
+    "old": "displayed = matching[:top]",
+    "new": "displayed = matching[: top + 1]",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "E1",
+  "file": "src/amxtriage/cli.py",
+  "description": "error messages echo raw file names",
+  "edits": [
+   {
+    "old": "print(f\"error: {sanitize(str(error), MESSAGE_LIMIT)}\", file=sys.stderr)",
+    "new": "print(f\"error: {error}\", file=sys.stderr)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "E2",
+  "file": "src/amxtriage/cli.py",
+  "description": "saved-baseline message echoes raw path",
+  "edits": [
+   {
+    "old": "target = sanitize(args.save_baseline, MESSAGE_LIMIT)",
+    "new": "target = args.save_baseline",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "E3",
+  "file": "src/amxtriage/cli.py",
+  "description": "watch banner echoes raw file name",
+  "edits": [
+   {
+    "old": "f\"watching {sanitize(label, MESSAGE_LIMIT)}, checking every",
+    "new": "f\"watching {label}, checking every",
+    "count": 1
+   }
+  ]
+ }
+]
