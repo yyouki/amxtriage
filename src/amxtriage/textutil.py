@@ -2,6 +2,7 @@ import re
 import unicodedata
 
 DEFAULT_LIMIT = 300
+ELLIPSIS = "..."
 
 _BLOCKED_CATEGORIES = frozenset({"Cc", "Cf", "Cs", "Co", "Cn", "Zl", "Zp"})
 _PATH_SEPARATORS = re.compile(r"[\\/]")
@@ -14,7 +15,9 @@ def sanitize(text: str, limit: int = DEFAULT_LIMIT) -> str:
         "?" if unicodedata.category(char) in _BLOCKED_CATEGORIES else char for char in chunk
     )
     if truncated or len(cleaned) > limit:
-        return cleaned[: max(limit - 3, 0)] + "..."
+        if limit <= len(ELLIPSIS):
+            return cleaned[:limit]
+        return cleaned[: limit - len(ELLIPSIS)] + ELLIPSIS
     return cleaned
 
 
