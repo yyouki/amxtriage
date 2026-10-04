@@ -256,10 +256,14 @@ def test_render_report_dispatches_by_format(sample_log):
 
 
 def test_explain_output_for_known_and_guidance_free_codes():
-    known = render_explain(lookup(4))
+    documented = lookup(4)
+    undocumented = lookup(21)
+    assert documented is not None
+    assert undocumented is not None
+    known = render_explain(documented)
     assert known.startswith("AMX error 4: Array index out of bounds")
     assert "Common causes and checks:" in known
-    bare = render_explain(lookup(21))
+    bare = render_explain(undocumented)
     assert "No extra guidance" in bare
 
 

@@ -41,8 +41,8 @@ class WatchProcess:
             stderr=subprocess.PIPE,
             env=env,
         )
-        self.out = []
-        self.err = []
+        self.out: list[str] = []
+        self.err: list[str] = []
         self._threads = [
             threading.Thread(target=self._pump, args=(self.process.stdout, self.out), daemon=True),
             threading.Thread(target=self._pump, args=(self.process.stderr, self.err), daemon=True),

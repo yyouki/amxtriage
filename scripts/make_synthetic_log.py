@@ -40,7 +40,11 @@ def problem_block(rng: random.Random, stamp: str, weights: Sequence[float]) -> l
         f'[{stamp}] Script[gamemodes/rp.amx]: Run time error {code}: "{message}"',
     ]
     if code == 4:
-        lines.insert(1, f"[{stamp}] [debug]  Attempted to read/write array element at index 1000 in array of size 1000")
+        lines.insert(
+            1,
+            f"[{stamp}] [debug]  Attempted to read/write array element"
+            " at index 1000 in array of size 1000",
+        )
     return lines
 
 
@@ -50,7 +54,8 @@ def crash_block(rng: random.Random, stamp: str) -> list[str]:
         f"[{stamp}] [debug] Server crashed while executing gamemodes/rp.amx",
         f"[{stamp}] [debug] AMX backtrace:",
         f"[{stamp}] [debug] #0 native SetPlayerName () in samp-server.exe",
-        f"[{stamp}] [debug] #1 000f2a10 in public OnPlayerConnect (playerid=3) at gamemodes/rp.pwn:120",
+        f"[{stamp}] [debug] #1 000f2a10 in public OnPlayerConnect (playerid=3)"
+        " at gamemodes/rp.pwn:120",
         f"[{stamp}] [debug] Native backtrace:",
         f"[{stamp}] [debug] #0 0046b2e7 in ?? () in {module}",
         f"[{stamp}] [debug] Registers:",
