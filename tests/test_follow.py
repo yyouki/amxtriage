@@ -163,7 +163,7 @@ def test_compressed_file_is_rejected_with_a_helpful_message(tmp_path):
     log = tmp_path / "rotated.log.gz"
     log.write_bytes(gzip.compress(b"data\n"))
     with pytest.raises(InputError, match="compressed"):
-        list(LogFollower(str(log)).lines())
+        follow(log, [])
 
 
 def test_binary_content_is_rejected_when_it_arrives(tmp_path):
