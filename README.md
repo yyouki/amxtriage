@@ -1,0 +1,393 @@
+# amxtriage
+
+Triage tool for SA-MP and open.mp server logs. It reads the log, finds the problems that
+the [crashdetect](https://github.com/AmyrAhmady/samp-plugin-crashdetect) plugin writes
+(AMX runtime errors, server crashes and long callbacks), groups identical ones, counts them
+and shows where they happen, optionally with the surrounding lines of your `.pwn` source.
+
+- Standard library only. No runtime dependencies. Python 3.10 or newer.
+- Reads plain text, `.gz` files and standard input. Never modifies the log.
+- Does not use the network and does not start other programs.
+- Status: 0.1.0, beta.
+
+## The problem it solves
+
+A busy server log holds thousands of lines, and one bug can repeat hundreds of times:
+the same array overflow on every player update, the same missing native on every start.
+amxtriage collapses those repeats into a short list, ordered by importance: crashes first,
+then runtime errors by how often they happened, then long callbacks. Each entry shows the
+error, the function and source line, the backtrace, when it was first and last seen, and a
+hint about common causes.
+
+```text
+$ amxtriage analyze examples/sample_server_log.txt \
+    --source-dir examples/gamemodes --top 2 --context 1
+amxtriage 0.1.0
+input  : sample_server_log.txt (56 lines)
+result : 5 distinct problems; 7 event(s) seen in total
+
+[1] CRASH while executing gamemodes/rp.amx   x1   id=71cbadfbb2ae
+    where  : OnPlayerConnect  gamemodes/rp.pwn:23
+    seen   : at sample_server_log.txt:40 [13:50:12]
+    trace  :
+      #0 native SetPlayerName  (samp-server.exe)
+      #1 public OnPlayerConnect  gamemodes/rp.pwn:23
+    native :
+      #0 ??  (samp-server.exe)
+      #1 ??  (plugins/mysql.dll)
+    source : rp.pwn
+        22 |     format(name, sizeof name, "Player_%d", playerid);
+      > 23 |     SetPlayerName(playerid, name);
+        24 |     return 1;
+    hint   : The server process crashed natively while running the script shown.
+
+[2] RUNTIME ERROR 4: Array index out of bounds   x3   id=67683d049c59
+    where  : OnPlayerUpdate  gamemodes/rp.pwn:30 (x2), :31 (x1)
+    script : gamemodes/rp.amx
+    seen   : first sample_server_log.txt:19 [13:46:01], last sample_server_log.txt:30 [13:46:09]
+    detail : Attempted to read/write array element at index 1000 in array of size 1000
+    trace  :
+      #0 public OnPlayerUpdate  gamemodes/rp.pwn:30
+    source : rp.pwn
+        29 |     new slot = GetPlayerScoreSlot(playerid);
+      > 30 |     PlayerScores[slot] += 1;
+        31 |     PlayerScores[slot + 1] += 1;
+    hint   : An array was read or written outside its valid index range. (more: amxtriage explain 4)
+
+... 3 more problem(s) not shown (use --top)
+
+notes:
+  - 1 interrupt signal event(s) were ignored.
+```
+
+This is the real output for the synthetic log in `examples/`.
+
+## Installation
+
+From a checkout of this repository:
+
+```bash
+python -m pip install .
+```
+
+Or build a wheel and install that:
+
+```bash
+python -m pip install build
+python -m build
+python -m pip install dist/amxtriage-0.1.0-py3-none-any.whl
+```
+
+Without installing anything:
+
+```bash
+PYTHONPATH=src python -m amxtriage analyze server_log.txt
+```
+
+The command is `amxtriage`, or `python -m amxtriage`.
+
+## What it understands
+
+amxtriage recognises these lines. A timestamp such as `[13:46:01]` and up to three leading
+tags such as `[debug]` are accepted in front of them.
+
+| Log text | Treated as |
+|---|---|
+| `Run time error N: "message"`, followed by `AMX backtrace:` and detail lines | runtime error |
+| `Script[file.amx]: Run time error N: "message"`, printed by the server right after the block above | merged into the same event |
+| `Server crashed while executing X` or `Server crashed due to an unknown error`, with AMX and native backtraces | crash |
+| `Long callback execution detected (hang or performance issue)`, with an AMX backtrace | long callback |
+| `Server received interrupt signal ...` | ignored: a normal stop. It is counted in the report notes |
+
+How events become problems:
+
+- **A problem is identified by its error code, not by the message text.** crashdetect prints
+  code 19 as "File or function is not found" while the server prints "File or function is not
+  present". Both describe the same problem.
+- crashdetect's block and the server's `Script[...]` line are merged into one event when
+  they belong together: same error code, with at most two unrelated lines between them.
+- A signature (`id=` in the report) is built from the kind, the error code, the function and
+  the source file *name* of the top frame (the path is dropped, so a Windows path and a Linux
+  path give the same id). Without a script frame it uses the script name, the first native
+  frame or, for codes 10 and 19, the missing native names. Line numbers, message text,
+  counts and timestamps are not part of it.
+- Only lines that *start* with the expected text count. A player cannot create a problem by
+  typing `Run time error 4: ...` into the chat.
+
+What was and was not checked against real software:
+
+- The crashdetect formats were checked against the plugin source (commit `a537639`) and its
+  test fixtures: header strings, backtrace and frame layout, `<unknown file>`, detail lines
+  and the `[debug]` prefix.
+- The `Script[...]` line is printed by the closed-source SA-MP server. It does not exist in
+  any open-source repository that was checked, so it is the one format assumption that is
+  not verified from source. Please check it against a real `server_log.txt` of your server.
+- open.mp prints its own script errors as `<code> <message>` without the words "Run time
+  error". Those lines are not parsed. crashdetect lines that pass through open.mp's legacy
+  plugin layer are accepted, but this was not tested on a real open.mp server.
+
+## Usage
+
+### analyze
+
+```text
+amxtriage analyze [options] LOG [LOG ...]
+```
+
+`LOG` is a file, a `.gz` file, or `-` for standard input. Give rotated files oldest first.
+A name with a wildcard (`*`, `?`, `[`) that the shell did not expand, as in Windows `cmd`,
+is expanded by amxtriage itself. It is an error if nothing matches.
+
+| Option | Meaning |
+|---|---|
+| `--format text\|markdown\|json` | Report format. Default `text`. |
+| `-o FILE`, `--output FILE` | Write the report to FILE (UTF-8) instead of the terminal. |
+| `--top N` | Show at most N problems. Default 20. |
+| `--min-count N` | Hide problems that happened fewer than N times. |
+| `--kind runtime_error\|crash\|long_call` | Show only this kind. Can be repeated. |
+| `--source-dir DIR` | Folder with your `.pwn`/`.inc` files. Shows the source around each problem. |
+| `--context N` | Source lines above and below. Default 3, 0 turns it off, at most 20. |
+| `--baseline FILE` | Hide problems that are already listed in this baseline. |
+| `--save-baseline FILE` | Write every problem found in this run to FILE. |
+| `--fail-on-new` | Exit with status 1 if problems outside the baseline exist. Needs `--baseline`. |
+| `--show-args` | Include function arguments in backtraces. Read the privacy section first. |
+
+Examples:
+
+```bash
+amxtriage analyze server_log.txt
+amxtriage analyze server_log.1.gz server_log.txt --top 10
+cat server_log.txt | amxtriage analyze -
+amxtriage analyze server_log.txt --kind crash --min-count 2
+amxtriage analyze server_log.txt --format markdown -o report.md
+amxtriage analyze server_log.txt --format json > report.json
+```
+
+`--top`, `--min-count` and `--kind` only change what is shown. A saved baseline always
+contains every problem of the run.
+
+### Source context
+
+With `--source-dir`, amxtriage prints the lines around the failing line.
+
+Logs contain paths from the machine that compiled the script, such as
+`C:\work\gamemodes\rp.pwn`, so they never match your folder exactly. amxtriage therefore
+builds an index of the files under `--source-dir` (extensions `.pwn`, `.inc`, `.p`, `.pawn`)
+and looks the logged path up *by name*: the file name must match, the longest matching path
+ending wins, and if two files tie, no snippet is shown. The path from the log is never opened.
+
+### Baselines
+
+A baseline is the list of problems you already know about. It lets you see only what is new.
+
+```bash
+amxtriage analyze today.log --save-baseline baseline.json
+amxtriage analyze tomorrow.log --baseline baseline.json --fail-on-new
+```
+
+The second command prints only the problems that are not in `baseline.json` and exits with
+status 1 if there are any, so it can gate a deployment or a cron job. It exits 0 when
+nothing is new. A baseline stores, for each problem, the id, kind, error code, function
+name and count. It stores no arguments, file paths or player data.
+
+Signature ids are the first 12 hex digits of a SHA-256 hash of the signature described above,
+with a version prefix (`v1`). A test pins the id of a known problem, so baselines keep
+working between releases. If the scheme ever changes, the prefix must change with it.
+
+### watch
+
+```text
+amxtriage watch [--from-start] [--poll-interval SECONDS] [--source-dir DIR]
+                [--context N] [--show-args] [--baseline FILE] LOG
+```
+
+Follows a growing log, like `tail -f`. Each new problem is printed once, the first time it
+appears. When you press Ctrl+C (or the process gets SIGTERM) it prints a summary and exits 0.
+
+```text
+$ amxtriage watch --from-start examples/sample_server_log.txt
+watching sample_server_log.txt, checking every 1s; press Ctrl+C to stop
+NEW  RUNTIME ERROR 19: File or function is not found   x1   id=a4a81fe6b09b
+    script : gamemodes/rp.amx
+    seen   : at sample_server_log.txt:11 [13:45:01]
+    detail : sscanf
+    detail : mysql_connect
+    hint   : The script calls a native that is not registered, or a function that does not exist. (more: amxtriage explain 19)
+...
+```
+
+The banner goes to standard error, the problems to standard output.
+
+- Only lines written after the start are read, unless `--from-start` is given.
+- `--poll-interval` is between 0.1 and 60 seconds. The default is 1.0.
+- Log rotation (the file is replaced) and truncation (the file shrinks) are followed.
+- Problems listed in `--baseline` are not announced.
+- When the log goes quiet, a problem block that is still open is closed and announced, so the
+  last problem does not wait for another line.
+- `watch` does not read `.gz` files or standard input.
+
+### explain
+
+```text
+$ amxtriage explain 4
+AMX error 4: Array index out of bounds
+
+Common causes and checks:
+  - An array was read or written outside its valid index range.
+  - Check loop limits and any index that comes from a variable such as a player id, vehicle id or dialog listitem.
+  - The detail line under the error shows the bad index and the array size.
+
+These are common causes, not a diagnosis. The backtrace in the log is the evidence.
+```
+
+`amxtriage explain` without a code lists all known codes. The hints are general advice, not
+a diagnosis.
+
+## Output formats
+
+- **text**: readable in a terminal. Default.
+- **markdown**: headings, fenced blocks for backtraces. Paste it into an issue or a chat.
+- **json**: for scripts. `schema_version` is 1. Top-level keys: `schema_version`, `tool`,
+  `summary`, `notes`, `problems`.
+  - `summary`: `sources`, `lines_read`, `truncated_lines`, `events`, `dropped_events`,
+    `ignored_interrupts`, `matching_problems`, `shown_problems`, `omitted_problems`,
+    `known_hidden`, `baseline_used`.
+  - each problem: `id`, `kind`, `code`, `message`, `script`, `function`, `file`, `count`,
+    `lines`, `first`, `last`, `details`, `backtrace`, `native_backtrace`, `causes`, `source`,
+    `new`. Arguments appear in `backtrace` only with `--show-args`.
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | Success. With `--fail-on-new`: nothing new. `watch` also exits 0 on Ctrl+C. |
+| 1 | `--fail-on-new` found problems that are not in the baseline. |
+| 2 | Error: file cannot be read, binary input, bad baseline, bad option. |
+| 130 | `analyze` was interrupted with Ctrl+C. |
+
+## Security and privacy
+
+amxtriage reads logs that can contain text from players. It is built so that this text cannot
+leak secrets or attack your terminal, within the limits listed below. This is a list of
+mitigations and their limits, not a guarantee.
+
+What it does:
+
+- **Function arguments are hidden by default.** crashdetect prints string arguments as they
+  are, so the `inputtext` of a login dialog (a password) can end up in a backtrace.
+  Arguments are shown only with `--show-args`, are never stored in a baseline, and the
+  option's help text warns not to share that output.
+- **Text from logs is sanitised before it is printed.** Control characters (including ESC and
+  the C1 range), bidirectional and other format characters, line and paragraph separators,
+  private-use and unassigned characters are replaced by `?`. This covers text, Markdown and
+  the string values inside JSON, and also file names that appear in messages. Tabs become
+  spaces. Backticks are neutralised in Markdown.
+- **Paths found in a log are never joined to the filesystem.** They are only keys that are
+  looked up in an index built from a real listing of `--source-dir`. A symlink that points
+  outside that folder is rejected, symlinked directories are not followed, and only regular
+  files up to 8 MiB are read.
+- **Memory is bounded.** Lines are cut at 8,192 bytes, input is read in 1 MiB chunks, and
+  there are caps of 5,000 problems, 48 AMX frames and 16 native frames per event, and 64
+  line numbers per problem. Beyond the cap, events are counted and reported in the notes
+  instead of being stored.
+- **Binary input is refused** (a NUL byte in the first 4,096 bytes, or a UTF-16 byte order
+  mark at the start). Invalid UTF-8 is replaced, not fatal. A damaged `.gz` file is a clean error.
+- **No network, no subprocesses, no dynamic code.** The package imports no networking module
+  (a test checks this) and `src/` contains no `subprocess`, `eval` or `pickle`.
+- **Writes only where you tell it to**: `-o FILE` and `--save-baseline FILE`. A baseline is
+  written to a temporary file in the same folder and then moved into place.
+
+Limits you should know:
+
+- A person who can put a newline into text that the server logs can forge a whole log line.
+  The tool cannot tell a forged line from a real one. A forged line can at most add or
+  change a problem in the report.
+- A `.gz` file has no limit on its decompressed size. Memory stays flat, but time grows with
+  the size: measured here, a 1 MiB file that expands to 1 GiB took about 2.6 s, and a 10 KB
+  file with 5 million short lines took about 2 s. For archives you do not trust, run it under
+  `timeout` or `ulimit -t`.
+- Someone with write access to your `--source-dir` could swap a file between the index scan
+  and the read. Every read checks the resolved path again, which leaves a very small window.
+  Do not point `--source-dir` at a folder that untrusted users can write to.
+- `--show-args` output can contain passwords. Do not post it.
+- Reports show error messages, function names and file paths exactly as the log has them, after
+  sanitising. Read a report before you publish it.
+
+## Performance
+
+Measured on one 1-CPU Linux VM with Python 3.12.3. These are measurements, not promises.
+
+| Test | Result |
+|---|---|
+| Start-up (`explain 4`, median of 15) | 81 ms, while an empty Python takes 21 ms |
+| 1,000,000 lines, 55.9 MB (text, JSON, Markdown, `.gz`, stdin) | 1.6 to 1.7 s, about 600,000 lines/s, 25 MB peak memory |
+| 895 MB, 16 million lines | 24 s, 24.7 MB peak memory (the same as for 56 MB) |
+| 300,000 distinct problems (60 times the cap) | 8.4 s, 31.5 MB, 295,000 events reported as not grouped |
+| 1,000,000 events in one problem, 265 MB | 28 s, 24.4 MB (about 35,000 events/s) |
+| A single 200 MB line | 0.18 s, 21 MB |
+| `watch`, announcement delay after a write (24 samples) | 24 to 989 ms with the default 1.0 s poll |
+| `watch`, idle for 10 s | 0.07 s of CPU, which is the start-up cost |
+
+Logs full of errors are slower per line than logs with a few errors, because every error is
+parsed and grouped.
+
+## Limitations
+
+- Tested on Linux with Python 3.10, 3.11, 3.12 and 3.13. Windows and macOS were not tested.
+- Formats: see "What it understands" for the `Script[...]` line and for open.mp.
+- crashdetect's block and the server's `Script[...]` line are merged only when at most two
+  unrelated lines lie between them. In `watch`, a long pause between the two could split them
+  into two events.
+- `watch` cannot see a file that is truncated and grows past its old size between two polls,
+  and it does not follow a rotation into a `.gz` file.
+- The check for binary input looks only at the first 4,096 bytes.
+- Hints from `explain` are general. The backtrace in the log is the evidence.
+
+## Development
+
+```bash
+python -m venv .venv
+. .venv/bin/activate
+python -m pip install -e ".[dev]"
+
+pytest
+ruff check .
+ruff format --check .
+mypy
+python -m build
+```
+
+Layout:
+
+| Path | Purpose |
+|---|---|
+| `src/amxtriage/reader.py` | Streaming line reader: files, gzip, stdin, line cap, binary check |
+| `src/amxtriage/parser.py` | Turns lines into events (runtime error, crash, long call) |
+| `src/amxtriage/aggregate.py` | Signatures and grouping, with caps |
+| `src/amxtriage/analysis.py` | Runs reader, parser and aggregator; builds the report |
+| `src/amxtriage/render.py` | Text, Markdown and JSON output |
+| `src/amxtriage/source.py` | Safe source lookup and snippets |
+| `src/amxtriage/baseline.py` | Saving and loading baselines |
+| `src/amxtriage/follow.py` | Following a live log (rotation, truncation) |
+| `src/amxtriage/textutil.py` | `sanitize()` and helpers |
+| `src/amxtriage/amxerrors.py` | AMX error codes and hints |
+| `src/amxtriage/cli.py` | Commands and options |
+| `tests/` | Test suite |
+| `examples/` | A synthetic log and a small gamemode |
+| `scripts/make_synthetic_log.py` | Writes a large synthetic log for performance tests |
+| `scripts/mutation_check.py` | Breaks the code on purpose and checks that the tests notice |
+
+Notes for contributors:
+
+- A new test file must be added to the module list in `[[tool.mypy.overrides]]` in
+  `pyproject.toml`. If you forget, mypy fails and tells you.
+- `examples/sample_server_log.txt` is synthetic. It is built from the verified formats but is
+  not a real server log.
+- Large synthetic log: `python scripts/make_synthetic_log.py big.log --lines 1000000 --seed 1`.
+- Mutation check: `python scripts/mutation_check.py` (about 10 minutes), or give mutant ids
+  to run a few. `--check` verifies that the catalogue still matches the source.
+- `HANDOFF.md` has the project state, design decisions and open work for the next person.
+
+## License
+
+MIT. See `LICENSE`.
