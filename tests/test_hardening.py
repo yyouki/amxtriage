@@ -281,3 +281,30 @@ def test_watch_banner_never_echoes_control_characters_from_the_file_name(tmp_pat
     output = watch_output(log)
     assert "watching evil" in output
     assert dangerous(output) == []
+
+
+@posix_only
+def test_baseline_reading_stops_at_the_size_limit_for_files_that_report_no_size(tmp_path):
+    fifo = tmp_path / "baseline.fifo"
+    try:
+        os.mkfifo(fifo)
+    except OSError:
+        pytest.skip("this file system cannot hold a named pipe")
+    megabyte = b" " * (1 << 20)
+    written: list[int] = []
+
+    def feed():
+        try:
+            with fifo.open("wb") as handle:
+                for _ in range(64):
+                    handle.write(megabyte)
+                    written.append(len(megabyte))
+        except OSError:
+            return
+
+    writer = threading.Thread(target=feed, daemon=True)
+    writer.start()
+    with pytest.raises(BaselineError, match="larger than"):
+        load_baseline(str(fifo))
+    writer.join(timeout=30)
+    assert sum(written) < 32 * (1 << 20)

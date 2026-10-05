@@ -80,15 +80,16 @@ def _validated_ids(data: object, path: str) -> list[str]:
 def load_baseline(path: str) -> frozenset[str]:
     target = Path(path)
     try:
-        size = target.stat().st_size
+        with target.open("rb") as handle:
+            raw = handle.read(MAX_BASELINE_BYTES + 1)
     except FileNotFoundError as error:
         raise BaselineError(f"baseline file '{path}' does not exist") from error
     except OSError as error:
         raise BaselineError(f"cannot read baseline '{path}': {error.strerror or error}") from error
-    if size > MAX_BASELINE_BYTES:
+    if len(raw) > MAX_BASELINE_BYTES:
         raise BaselineError(f"baseline file '{path}' is larger than {MAX_BASELINE_BYTES} bytes")
     try:
-        data = json.loads(target.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
+        data = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
         raise BaselineError(f"cannot read baseline '{path}': {error}") from error
     return frozenset(_validated_ids(data, path))

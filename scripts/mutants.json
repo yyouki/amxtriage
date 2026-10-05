@@ -665,7 +665,7 @@
   "description": "baseline size limit removed",
   "edits": [
    {
-    "old": "if size > MAX_BASELINE_BYTES:",
+    "old": "if len(raw) > MAX_BASELINE_BYTES:",
     "new": "if False:",
     "count": 1
    }
@@ -1164,6 +1164,18 @@
    {
     "old": "f\"watching {sanitize(label, MESSAGE_LIMIT)}, checking every",
     "new": "f\"watching {label}, checking every",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B6",
+  "file": "src/amxtriage/baseline.py",
+  "description": "baseline read not bounded, size limit bypassed by files without a size",
+  "edits": [
+   {
+    "old": "raw = handle.read(MAX_BASELINE_BYTES + 1)",
+    "new": "raw = handle.read()",
     "count": 1
    }
   ]
