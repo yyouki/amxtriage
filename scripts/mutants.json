@@ -1419,5 +1419,101 @@
     "count": 1
    }
   ]
+ },
+ {
+  "id": "F8",
+  "file": "src/amxtriage/follow.py",
+  "description": "a pending block is flushed on the first quiet poll",
+  "edits": [
+   {
+    "old": "if self._quiet < self._quiet_polls:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F9",
+  "file": "src/amxtriage/follow.py",
+  "description": "new lines no longer restart the quiet count",
+  "edits": [
+   {
+    "old": "        self._quiet = 0\n        return self._parser.feed(line)",
+    "new": "        return self._parser.feed(line)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F10",
+  "file": "src/amxtriage/follow.py",
+  "description": "the old file is not read again before rotation",
+  "edits": [
+   {
+    "old": "            yield from self._drain(handle)\n            yield from self._splitter.finish()\n            handle.close()",
+    "new": "            yield from self._splitter.finish()\n            handle.close()",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F11",
+  "file": "src/amxtriage/follow.py",
+  "description": "a file that vanishes during reopening aborts the watch",
+  "edits": [
+   {
+    "old": "            except FileNotFoundError:\n                return\n",
+    "new": "            except FileNotFoundError:\n                raise\n",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F12",
+  "file": "src/amxtriage/follow.py",
+  "description": "a stop request is not checked while reading",
+  "edits": [
+   {
+    "old": "while not self._should_stop():\n            chunk = handle.read(CHUNK_SIZE)",
+    "new": "while True:\n            chunk = handle.read(CHUNK_SIZE)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F13",
+  "file": "src/amxtriage/follow.py",
+  "description": "sleeping is not cut into short waits",
+  "edits": [
+   {
+    "old": "stop.wait(min(slice_seconds, remaining))",
+    "new": "stop.wait(remaining)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F14",
+  "file": "src/amxtriage/follow.py",
+  "description": "the sleep does not report a stop request",
+  "edits": [
+   {
+    "old": "        return stop.is_set()\n\n    return sleep",
+    "new": "        return False\n\n    return sleep",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "F15",
+  "file": "src/amxtriage/follow.py",
+  "description": "an unreadable replacement file is ignored instead of reported",
+  "edits": [
+   {
+    "old": "            except OSError as error:\n                raise InputError(\n                    f\"cannot open '{self._path}': {error.strerror or error}\"\n                ) from error\n            yield from self._drain(handle)",
+    "new": "            except OSError:\n                return\n            yield from self._drain(handle)",
+    "count": 1
+   }
+  ]
  }
 ]

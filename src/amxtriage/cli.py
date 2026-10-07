@@ -19,10 +19,11 @@ from amxtriage.follow import (
     DEFAULT_POLL_INTERVAL,
     MAX_POLL_INTERVAL,
     MIN_POLL_INTERVAL,
+    FollowParser,
     LogFollower,
+    interruptible_sleep,
 )
 from amxtriage.model import REPORTED_KINDS, Event, EventKind
-from amxtriage.parser import LogParser
 from amxtriage.reader import STDIN_NAME, display_name
 from amxtriage.render import (
     FORMATS,
@@ -270,10 +271,10 @@ def _run_watch(args: argparse.Namespace) -> int:
         args.log,
         from_start=args.from_start,
         poll_interval=args.poll_interval,
-        sleep=stop.wait,
+        sleep=interruptible_sleep(stop),
         should_stop=stop.is_set,
     )
-    parser = LogParser()
+    parser = FollowParser()
     aggregator = Aggregator()
     label = display_name(args.log)
     restore_signal = _install_sigterm(stop)
@@ -285,7 +286,7 @@ def _run_watch(args: argparse.Namespace) -> int:
     )
     try:
         for item in follower.lines():
-            events = parser.flush() if item is None else parser.feed(item)
+            events = parser.idle() if item is None else parser.feed(item)
             for event in events:
                 _announce_new_problem(event, aggregator, label, baseline, source_index, args)
     except KeyboardInterrupt:
@@ -293,7 +294,7 @@ def _run_watch(args: argparse.Namespace) -> int:
     finally:
         restore_signal()
         follower.close()
-    for event in parser.flush():
+    for event in parser.finish():
         _announce_new_problem(event, aggregator, label, baseline, source_index, args)
     result = AnalysisResult([label], parser.line_number, follower.truncated_lines, aggregator)
     report = build_report(

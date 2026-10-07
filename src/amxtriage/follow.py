@@ -1,21 +1,67 @@
 import os
+import threading
 import time
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import BinaryIO, Literal
 
 from amxtriage.errors import InputError
+from amxtriage.model import Event
+from amxtriage.parser import LogParser
 from amxtriage.reader import CHUNK_SIZE, GZIP_MAGIC, PROBE_BYTES, LineSplitter, check_text_like
 
 DEFAULT_POLL_INTERVAL = 1.0
 MIN_POLL_INTERVAL = 0.1
 MAX_POLL_INTERVAL = 60.0
+QUIET_POLLS_BEFORE_FLUSH = 2
+SLEEP_SLICE_SECONDS = 0.25
 
 Replacement = Literal["none", "truncated", "rotated"]
 
 
 def _never_stop() -> bool:
     return False
+
+
+def interruptible_sleep(
+    stop: threading.Event,
+    slice_seconds: float = SLEEP_SLICE_SECONDS,
+    clock: Callable[[], float] = time.monotonic,
+) -> Callable[[float], bool]:
+    def sleep(seconds: float) -> bool:
+        deadline = clock() + seconds
+        while not stop.is_set():
+            remaining = deadline - clock()
+            if remaining <= 0:
+                break
+            stop.wait(min(slice_seconds, remaining))
+        return stop.is_set()
+
+    return sleep
+
+
+class FollowParser:
+    def __init__(self, quiet_polls: int = QUIET_POLLS_BEFORE_FLUSH) -> None:
+        self._parser = LogParser()
+        self._quiet_polls = quiet_polls
+        self._quiet = 0
+
+    @property
+    def line_number(self) -> int:
+        return self._parser.line_number
+
+    def feed(self, line: str) -> list[Event]:
+        self._quiet = 0
+        return self._parser.feed(line)
+
+    def idle(self) -> list[Event]:
+        self._quiet += 1
+        if self._quiet < self._quiet_polls:
+            return []
+        return self._parser.flush()
+
+    def finish(self) -> list[Event]:
+        return self._parser.flush()
 
 
 class LogFollower:
@@ -78,9 +124,11 @@ class LogFollower:
 
     def _open(self) -> BinaryIO:
         try:
-            handle = self._path.open("rb")
+            return self._adopt(self._path.open("rb"))
         except OSError as error:
             raise InputError(f"cannot open '{self._path}': {error.strerror or error}") from error
+
+    def _adopt(self, handle: BinaryIO) -> BinaryIO:
         status = os.fstat(handle.fileno())
         self._identity = (status.st_dev, status.st_ino)
         self._handle = handle
@@ -109,13 +157,22 @@ class LogFollower:
             self._position = 0
             yield from self._drain(handle)
         elif replacement == "rotated":
+            try:
+                fresh = self._path.open("rb")
+            except FileNotFoundError:
+                return
+            except OSError as error:
+                raise InputError(
+                    f"cannot open '{self._path}': {error.strerror or error}"
+                ) from error
+            yield from self._drain(handle)
             yield from self._splitter.finish()
             handle.close()
             self._position = 0
-            yield from self._drain(self._open())
+            yield from self._drain(self._adopt(fresh))
 
     def _drain(self, handle: BinaryIO) -> Iterator[str]:
-        while True:
+        while not self._should_stop():
             chunk = handle.read(CHUNK_SIZE)
             if not chunk:
                 return
