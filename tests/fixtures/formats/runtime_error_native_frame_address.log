@@ -1,0 +1,7 @@
+[12:00:03] [debug] Run time error 4: "Array index out of bounds"
+[12:00:03] [debug] AMX backtrace:
+[12:00:03] [debug] #0 003135ec in public LoadProperty () at gamemodes/example.pwn:310
+[12:00:03] [debug] #1 native CallLocalFunction () [080dfb90] from samp03svr
+[12:00:03] [debug] #2 native Streamer_CallbackHook () [741d9830] from streamer.so
+[12:00:03] [debug] #3 native strcmp () [00474110]
+[12:00:03] [debug] #4 0001bbec in public OnGameModeInit () at gamemodes/example.pwn:12

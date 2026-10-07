@@ -1,0 +1,1332 @@
+{
+  "schema": 1,
+  "fixtures": [
+    {
+      "file": "backtrace_without_header_then_script_line.log",
+      "origin": "synthetic",
+      "status": "limitation",
+      "summary": "A backtrace printed from an OnRuntimeError callback has no Run time error header, so its frames are not attached to the following Script line.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect tests/*/output.txt at tag v4.15: tests/bugs/orte_backtrace/output.txt"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 5,
+          "timestamp": "12:00:45",
+          "code": 1,
+          "message": "Forced exit",
+          "script": "gamemodes/example.amx",
+          "details": [],
+          "frames": [],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "crash_full_block.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Crash block: header, AMX backtrace, native backtrace, registers, stack dump, loaded modules.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/crashdetect.cpp:312 (header), :436, :499 (Registers:), :523 (Stack:), :537 (Loaded modules:), :584 (Native backtrace:)"
+        },
+        {
+          "type": "report",
+          "ref": "https://github.com/pawn-lang/YSI-Includes/issues/551"
+        },
+        {
+          "type": "report",
+          "ref": "https://github.com/IS4Code/YSF/issues/40"
+        }
+      ],
+      "events": [
+        {
+          "kind": "crash",
+          "line_number": 1,
+          "timestamp": "12:00:08",
+          "code": null,
+          "message": null,
+          "script": "example.amx",
+          "details": [],
+          "frames": [
+            [
+              0,
+              "native",
+              "strpack",
+              false,
+              null,
+              null,
+              "samp03svr"
+            ],
+            [
+              1,
+              "amx",
+              "OnGameModeInit",
+              true,
+              "gamemodes/include/fixes.inc",
+              8739,
+              null
+            ]
+          ],
+          "native_frames": [
+            [
+              0,
+              "_Z13GetStackTraceRSt6vectorI10StackFrameSaIS0_EEPv",
+              "plugins/crashdetect.so"
+            ],
+            [
+              1,
+              "_ZN11CrashDetect20PrintNativeBacktraceERSoRKN2os7ContextE",
+              "plugins/crashdetect.so"
+            ],
+            [
+              2,
+              "??",
+              "./samp03svr"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "file": "crash_unknown_error_and_interrupt.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Crash without a script name followed by an interrupt block; native module marker ' from '.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/crashdetect.cpp:315 (unknown error), :331 and :334 (interrupt)"
+        },
+        {
+          "type": "report",
+          "ref": "https://github.com/Zeex/samp-plugin-crashdetect/issues/49"
+        }
+      ],
+      "events": [
+        {
+          "kind": "crash",
+          "line_number": 1,
+          "timestamp": "12:00:09",
+          "code": null,
+          "message": null,
+          "script": null,
+          "details": [],
+          "frames": [],
+          "native_frames": [
+            [
+              0,
+              "_ZN10StackTraceC1EPv",
+              "plugins/crashdetect.so"
+            ],
+            [
+              1,
+              "_ZN11CrashDetect20PrintNativeBacktraceERSoPv",
+              "plugins/crashdetect.so"
+            ],
+            [
+              2,
+              "??",
+              null
+            ]
+          ]
+        },
+        {
+          "kind": "interrupt",
+          "line_number": 9,
+          "timestamp": "12:00:10",
+          "code": null,
+          "message": null,
+          "script": "example.amx",
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnGameModeInit",
+              true,
+              "gamemodes/example.pwn",
+              5,
+              null
+            ]
+          ],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "crashdetect_own_log_file_layout.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Lines without the [debug] tag: crashdetect writing its own log file with a time format taken from logtimeformat.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/log.cpp LogDebugPrint (file branch: '<time> <message>', no [debug] prefix)"
+        },
+        {
+          "type": "report",
+          "ref": "https://www.sa-mp.ro/forums/topic/37069-ask-long-callback/"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:06",
+          "code": 4,
+          "message": "Array index out of bounds",
+          "script": null,
+          "details": [
+            "Attempted to read/write array element at index 2001 in array of size 2000"
+          ],
+          "frames": [
+            [
+              0,
+              "amx",
+              "main",
+              false,
+              "C:\\Server\\gamemodes\\example.pwn",
+              3417,
+              null
+            ]
+          ],
+          "native_frames": []
+        },
+        {
+          "kind": "long_call",
+          "line_number": 5,
+          "timestamp": "12:00:07",
+          "code": null,
+          "message": null,
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnGameModeInit",
+              true,
+              "C:\\Server\\gamemodes\\example.pwn",
+              25,
+              null
+            ]
+          ],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "degenerate_frames.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Frame forms seen in real logs and in crashdetect tests: empty location, no argument list, unknown function, '<N arguments>', tagged functions and arguments, a string argument containing ') in' and '(', automaton states, '<unknown file>'.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/amxstacktrace.cpp (Print, PrintSourceLocation, PrintState)"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect tests/*.pwn '// OUTPUT:' lines at 2bb17d3: tests/args.pwn, tests/ref_args.pwn, tests/states.pwn"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect tests/*/output.txt at tag v4.15: tests/misc/bad_frame/output.txt"
+        },
+        {
+          "type": "report",
+          "ref": "https://forum.open.mp/showthread.php?tid=2047"
+        },
+        {
+          "type": "report",
+          "ref": "https://github.com/pawn-lang/YSI-Includes/issues/485"
+        }
+      ],
+      "events": [
+        {
+          "kind": "long_call",
+          "line_number": 1,
+          "timestamp": "12:00:13",
+          "code": null,
+          "message": null,
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "ExampleCommand",
+              true,
+              null,
+              null,
+              null
+            ],
+            [
+              1,
+              "amx",
+              "CloseCells",
+              true,
+              null,
+              null,
+              null
+            ],
+            [
+              2,
+              "amx",
+              "??",
+              false,
+              "example/core/craft.pwn",
+              141,
+              null
+            ],
+            [
+              3,
+              "amx",
+              "OnPlayerUseItem",
+              true,
+              "C:\\inc\\YSI\\..\\YSI_Coding\\y_cgen.inc",
+              37,
+              null
+            ],
+            [
+              4,
+              "amx",
+              "UnrelocateOpcode",
+              false,
+              "C:\\inc\\opcode.inc",
+              830,
+              null
+            ],
+            [
+              5,
+              "amx",
+              "CodeScanRunFast",
+              false,
+              "C:\\inc\\codescan.inc",
+              866,
+              null
+            ],
+            [
+              6,
+              "amx",
+              "OnDialogResponse",
+              true,
+              "gamemodes/example.pwn",
+              300,
+              null
+            ],
+            [
+              7,
+              "amx",
+              "OnStateChange",
+              true,
+              "gamemodes/example.pwn",
+              55,
+              null
+            ],
+            [
+              8,
+              "amx",
+              "OnLoad",
+              true,
+              null,
+              12,
+              null
+            ],
+            [
+              9,
+              "amx",
+              "f3",
+              false,
+              "gamemodes/example.pwn",
+              45,
+              null
+            ]
+          ],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "false_positives.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Lines that mention header text without being headers: chat, join, part, death, kill, connection, near misses, phrases at line start with invalid scripts. No events may come out of this file.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "open.mp b6de2f2 Server/Source/player_pool.hpp:552 ('[chat] [%.*s]: %s'), :393 and :401 ('[death]', '[kill]'), :1774 ('[connection]'), :1822 ('[%sjoin]'), :1882 ('[%spart]')"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/amxpathfinder.cpp:84 (only '*.amx' files) and src/crashdetect.cpp:111-114 (script name is a file name or '<unknown>')"
+        },
+        {
+          "type": "report",
+          "ref": "https://sampforum.blast.hk/showthread.php?tid=652839"
+        }
+      ],
+      "events": []
+    },
+    {
+      "file": "frame_split_by_newline_in_string_argument.log",
+      "origin": "synthetic",
+      "status": "limitation",
+      "summary": "crashdetect prints each line of its output separately, so a string argument that contains a newline splits one frame into two log lines. The broken frame is dropped and the block continues.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/crashdetect.cpp:66 PrintStream (splits the stream on newlines, one log line each) and src/amxstacktrace.cpp:586-588 (string arguments cut at 80 characters, no escaping)"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:50",
+          "code": 4,
+          "message": "Array index out of bounds",
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              1,
+              "amx",
+              "OnPlayerConnect",
+              true,
+              "gamemodes/example.pwn",
+              30,
+              null
+            ]
+          ],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "load_failure_natives_then_script_line.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Error 19: crashdetect lists unresolved natives, then the server prints the Script line. Authoritative order.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect tests/*/output.txt at tag v4.15: tests/errors/notfound/output.txt"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/crashdetect.cpp PrintRuntimeError (AMX_ERR_NOTFOUND lists natives without an address)"
+        },
+        {
+          "type": "report",
+          "ref": "https://forum.open.mp/showthread.php?tid=1253"
+        },
+        {
+          "type": "report",
+          "ref": "https://github.com/samp-incognito/samp-streamer-plugin/issues/457"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:04",
+          "code": 19,
+          "message": "File or function is not found",
+          "script": "gamemodes/example.amx",
+          "details": [
+            "mysql_connect",
+            "cache_get_row_count"
+          ],
+          "frames": [],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "load_failure_repeated_empty_header.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Two identical empty error 19 headers followed by one Script line describe one failure.",
+      "evidence": [
+        {
+          "type": "report",
+          "ref": "https://pastebin.com/ny1v35ie"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect tests/*/output.txt at tag v4.15: tests/errors/stacklow/output.txt (several crashdetect blocks before one Script line)"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 3,
+          "timestamp": "12:00:40",
+          "code": 19,
+          "message": "File or function is not found",
+          "script": "gamemodes/example.amx",
+          "details": [],
+          "frames": [],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "load_failure_repeated_header_with_details.log",
+      "origin": "synthetic",
+      "status": "characterization",
+      "summary": "Repeated error 19 header where the first block carries native names: kept as two events because the first block has content. Semantics unverified.",
+      "evidence": [
+        {
+          "type": "report",
+          "ref": "https://pastebin.com/ny1v35ie"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:41",
+          "code": 19,
+          "message": "File or function is not found",
+          "script": null,
+          "details": [
+            "first_missing_native"
+          ],
+          "frames": [],
+          "native_frames": []
+        },
+        {
+          "kind": "runtime_error",
+          "line_number": 3,
+          "timestamp": "12:00:41",
+          "code": 19,
+          "message": "File or function is not found",
+          "script": "gamemodes/example.amx",
+          "details": [],
+          "frames": [],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "load_failure_two_scripts.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Two different scripts failing one after the other stay two events, each with its own Script line.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect tests/*/output.txt at tag v4.15: tests/errors/notfound/output.txt"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:42",
+          "code": 19,
+          "message": "File or function is not found",
+          "script": "filterscripts/one.amx",
+          "details": [
+            "native_a"
+          ],
+          "frames": [],
+          "native_frames": []
+        },
+        {
+          "kind": "runtime_error",
+          "line_number": 4,
+          "timestamp": "12:00:43",
+          "code": 19,
+          "message": "File or function is not found",
+          "script": "filterscripts/two.amx",
+          "details": [
+            "native_b"
+          ],
+          "frames": [],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "load_failure_without_crashdetect.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Error 19 on a server without crashdetect: Error lines from the server, then only the Script line.",
+      "evidence": [
+        {
+          "type": "report",
+          "ref": "https://pastebin.com/2HK4p1AR"
+        },
+        {
+          "type": "report",
+          "ref": "https://pastebin.com/ycJbxBFC"
+        },
+        {
+          "type": "report",
+          "ref": "https://github.com/samp-incognito/samp-streamer-plugin/issues/457"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 3,
+          "timestamp": "12:00:05",
+          "code": 19,
+          "message": "File or function is not found",
+          "script": "gamemodes/example.amx",
+          "details": [],
+          "frames": [],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "long_call_followed_by_crash.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "A long callback block directly followed by a crash block must produce two events.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/crashdetect.cpp:642 (long callback), :312 (crash)"
+        },
+        {
+          "type": "report",
+          "ref": "https://github.com/pawn-lang/YSI-Includes/issues/551"
+        }
+      ],
+      "events": [
+        {
+          "kind": "long_call",
+          "line_number": 1,
+          "timestamp": "12:00:12",
+          "code": null,
+          "message": null,
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "UnrelocateOpcode",
+              false,
+              "gamemodes/include/opcode.inc",
+              830,
+              null
+            ],
+            [
+              1,
+              "amx",
+              "OnGameModeInit",
+              true,
+              "gamemodes/include/fixes.inc",
+              8739,
+              null
+            ]
+          ],
+          "native_frames": []
+        },
+        {
+          "kind": "crash",
+          "line_number": 5,
+          "timestamp": "12:00:12",
+          "code": null,
+          "message": null,
+          "script": "example.amx",
+          "details": [],
+          "frames": [
+            [
+              0,
+              "native",
+              "strpack",
+              false,
+              null,
+              null,
+              "samp03svr"
+            ],
+            [
+              1,
+              "amx",
+              "OnGameModeInit",
+              true,
+              "gamemodes/include/fixes.inc",
+              8739,
+              null
+            ]
+          ],
+          "native_frames": [
+            [
+              0,
+              "_Z13GetStackTraceRSt6vectorI10StackFrameSaIS0_EEPv",
+              "plugins/crashdetect.so"
+            ],
+            [
+              4,
+              "??",
+              null
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "file": "nested_errors_then_script_line.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Nested failure: crashdetect reports the inner error (code 7) and then the outer one (code 5); the Script line belongs to the last block.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect tests/*/output.txt at tag v4.15: tests/errors/stacklow/output.txt (ran against the real server: 'from samp03svr|samp-server.exe')"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect tests/*.pwn '// OUTPUT:' lines at 2bb17d3: tests/stacklow.pwn"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:44",
+          "code": 7,
+          "message": "Stack underflow",
+          "script": null,
+          "details": [
+            "Stack pointer (STK) is 0x102D, stack top (STP) is 0x102C"
+          ],
+          "frames": [
+            [
+              0,
+              "amx",
+              "test",
+              true,
+              "gamemodes/example.pwn",
+              17,
+              null
+            ],
+            [
+              1,
+              "native",
+              "CallLocalFunction",
+              false,
+              null,
+              null,
+              "samp03svr"
+            ],
+            [
+              2,
+              "amx",
+              "main",
+              false,
+              "gamemodes/example.pwn",
+              8,
+              null
+            ]
+          ],
+          "native_frames": []
+        },
+        {
+          "kind": "runtime_error",
+          "line_number": 7,
+          "timestamp": "12:00:44",
+          "code": 5,
+          "message": "Invalid memory access",
+          "script": "gamemodes/example.amx",
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "main",
+              false,
+              "gamemodes/example.pwn",
+              9,
+              null
+            ]
+          ],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "noise_tolerance.log",
+      "origin": "synthetic",
+      "status": "characterization",
+      "summary": "Up to two unrelated lines inside a block are tolerated, a third closes it. The tolerance is a heuristic and not verified against real interleaving.",
+      "evidence": [
+        {
+          "type": "design",
+          "ref": "QUIET_LINE_TOLERANCE in src/amxtriage/parser.py"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:20",
+          "code": 4,
+          "message": "Array index out of bounds",
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnTick",
+              true,
+              "gamemodes/example.pwn",
+              1,
+              null
+            ]
+          ],
+          "native_frames": []
+        },
+        {
+          "kind": "runtime_error",
+          "line_number": 6,
+          "timestamp": "12:00:21",
+          "code": 4,
+          "message": "Array index out of bounds",
+          "script": null,
+          "details": [],
+          "frames": [],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "old_system_backtrace_label.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Layout of crashdetect 4.9 and 4.10: 'System backtrace:' label, bracketed native addresses, unnamed AMX frames printed as '??' without parentheses.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) commits d38eb2a (2012-06-24 label became 'System backtrace') and d395422 (2013-02-20 back to 'Native backtrace'); tags v4.9 and v4.10 contain the old label"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect v4.10.1 src/amxstacktrace.cpp AMXStackFrame::AsString (prints '??' without parentheses)"
+        },
+        {
+          "type": "report",
+          "ref": "https://github.com/Zeex/samp-plugin-crashdetect/issues/11"
+        },
+        {
+          "type": "report",
+          "ref": "https://www.scribd.com/document/887480843/server-log"
+        }
+      ],
+      "events": [
+        {
+          "kind": "crash",
+          "line_number": 1,
+          "timestamp": "12:00:46",
+          "code": null,
+          "message": null,
+          "script": "example.amx",
+          "details": [],
+          "frames": [
+            [
+              0,
+              "native",
+              "fwrite",
+              false,
+              null,
+              null,
+              "samp-server.exe"
+            ],
+            [
+              1,
+              "amx",
+              "??",
+              false,
+              null,
+              null,
+              null
+            ],
+            [
+              2,
+              "amx",
+              "SetLogin",
+              true,
+              null,
+              null,
+              "example.amx"
+            ]
+          ],
+          "native_frames": [
+            [
+              0,
+              "??",
+              null
+            ],
+            [
+              1,
+              "AMXDebugInfo::Load",
+              "C:\\samp\\plugins\\crashdetect.DLL"
+            ],
+            [
+              2,
+              "??",
+              "C:\\samp\\samp-server.exe"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "file": "openmp_native_error_lines_unsupported.log",
+      "origin": "synthetic",
+      "status": "unsupported",
+      "summary": "Error lines produced by open.mp itself. They do not use the crashdetect or Script[...] shapes and are not parsed.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "open.mp b6de2f2 Server/Components/Pawn/Manager/Manager.cpp:280 (Function not registered), :291 (Deprecated function), :318 (Could not find), :442 ('%d %s'), :559 ('%s')"
+        },
+        {
+          "type": "source",
+          "ref": "open.mp b6de2f2 Server/Components/Pawn/timers.hpp:163 (SetTimer(Ex) problem)"
+        }
+      ],
+      "events": []
+    },
+    {
+      "file": "runtime_error_current_layout.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Runtime error block as written by crashdetect 4.19.2 and later inside server_log.txt.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/crashdetect.cpp:356 (header), :368 (array detail), :436 (backtrace label), :446-451 (native frame, ' in ')"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/amxstacktrace.cpp AMXStackFramePrinter::Print (frame layout)"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/log.cpp LogDebugPrint ('[debug] ' prefix)"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect tests/*.pwn '// OUTPUT:' lines at 2bb17d3: tests/bounds.pwn"
+        },
+        {
+          "type": "report",
+          "ref": "https://www.sa-mp.ro/forums/topic/29731-problema-consola/"
+        },
+        {
+          "type": "report",
+          "ref": "https://forum.open.mp/showthread.php?tid=2028"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:01",
+          "code": 4,
+          "message": "Array index out of bounds",
+          "script": null,
+          "details": [
+            "Attempted to read/write array element at index 12 in array of size 10"
+          ],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnPlayerConnect",
+              true,
+              "gamemodes/example.pwn",
+              42,
+              null
+            ],
+            [
+              1,
+              "native",
+              "CallLocalFunction",
+              false,
+              null,
+              null,
+              "samp03svr"
+            ],
+            [
+              2,
+              "amx",
+              "OnPlayerConnect",
+              true,
+              "gamemodes/include/hooks.inc",
+              10,
+              null
+            ]
+          ],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "runtime_error_native_frame_address.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Native call frames written by crashdetect 4.11.2 and earlier: bracketed address, module optional.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect v4.11 plugin/crashdetect.cpp:117 Printf(\"#%d native %s () [%08x]%s\"); absent from v4.12"
+        },
+        {
+          "type": "report",
+          "ref": "https://www.sa-mp.ro/forums/topic/33559-run-time-error-4-array-index-out-of-bounds/"
+        },
+        {
+          "type": "report",
+          "ref": "https://www.scribd.com/document/887480843/server-log"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:03",
+          "code": 4,
+          "message": "Array index out of bounds",
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "LoadProperty",
+              true,
+              "gamemodes/example.pwn",
+              310,
+              null
+            ],
+            [
+              1,
+              "native",
+              "CallLocalFunction",
+              false,
+              null,
+              null,
+              "samp03svr"
+            ],
+            [
+              2,
+              "native",
+              "Streamer_CallbackHook",
+              false,
+              null,
+              null,
+              "streamer.so"
+            ],
+            [
+              3,
+              "native",
+              "strcmp",
+              false,
+              null,
+              null,
+              null
+            ],
+            [
+              4,
+              "amx",
+              "OnGameModeInit",
+              true,
+              "gamemodes/example.pwn",
+              12,
+              null
+            ]
+          ],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "runtime_error_older_layout.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Layout of crashdetect 4.12 to 4.15: older array wording, ' from ' module marker, frames without debug info.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) commit 3ba8bfe (2018-08-30, ' from ' became ' in ', first in v4.19.2)"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) commit 0fbf3ba (2016-01-16, array wording changed, first in v4.16)"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect tests/*/output.txt at tag v4.15: tests/errors/bounds, tests/misc/bad_frame"
+        },
+        {
+          "type": "report",
+          "ref": "https://www.sa-mp.ro/forums/topic/33559-run-time-error-4-array-index-out-of-bounds/"
+        },
+        {
+          "type": "report",
+          "ref": "https://sampforum.blast.hk/showthread.php?tid=669045"
+        },
+        {
+          "type": "report",
+          "ref": "https://forum.open.mp/showthread.php?tid=2452"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:02",
+          "code": 4,
+          "message": "Array index out of bounds",
+          "script": null,
+          "details": [
+            "Accessing element at index 9 past array upper bound 8"
+          ],
+          "frames": [
+            [
+              0,
+              "amx",
+              "??",
+              false,
+              null,
+              null,
+              "example.amx"
+            ],
+            [
+              1,
+              "amx",
+              "OnPlayerConnect",
+              true,
+              null,
+              null,
+              "example.amx"
+            ],
+            [
+              2,
+              "native",
+              "CallLocalFunction",
+              false,
+              null,
+              null,
+              "samp03svr"
+            ],
+            [
+              3,
+              "amx",
+              "OnGameModeInit",
+              true,
+              "C:\\Games\\server\\gamemodes\\example.pwn",
+              77,
+              null
+            ]
+          ],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "timestamp_variants.log",
+      "origin": "synthetic",
+      "status": "verified-format",
+      "summary": "Six timestamp styles seen in logs: HH:MM:SS, DD/MM/YYYY HH:MM:SS, DD/MM/YYYY - HH:MM:SS, YYYY-MM-DD HH:MM:SS, open.mp ISO 8601 with an [Info] label, and none.",
+      "evidence": [
+        {
+          "type": "source",
+          "ref": "open.mp b6de2f2 Server/Source/core_impl.hpp (default timestamp format '[%Y-%m-%dT%H:%M:%S%z]', labels [Debug] [Info] [Warning] [Error])"
+        },
+        {
+          "type": "source",
+          "ref": "crashdetect (Y-Less fork 2bb17d3, v4.22) src/log.cpp (time format comes from the server logtimeformat option, default '[%H:%M:%S]')"
+        },
+        {
+          "type": "report",
+          "ref": "https://github.com/nexiustailer/nex-ac/issues/45"
+        },
+        {
+          "type": "report",
+          "ref": "https://forum.open.mp/showthread.php?tid=2452"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:00:11",
+          "code": 11,
+          "message": "Divide by zero",
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnTick",
+              true,
+              "gamemodes/example.pwn",
+              1,
+              null
+            ]
+          ],
+          "native_frames": []
+        },
+        {
+          "kind": "runtime_error",
+          "line_number": 4,
+          "timestamp": "23/06/2017 23:19:57",
+          "code": 11,
+          "message": "Divide by zero",
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnTick",
+              true,
+              "gamemodes/example.pwn",
+              2,
+              null
+            ]
+          ],
+          "native_frames": []
+        },
+        {
+          "kind": "runtime_error",
+          "line_number": 7,
+          "timestamp": "28/03/2019 - 04:00:40",
+          "code": 11,
+          "message": "Divide by zero",
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnTick",
+              true,
+              "gamemodes/example.pwn",
+              3,
+              null
+            ]
+          ],
+          "native_frames": []
+        },
+        {
+          "kind": "runtime_error",
+          "line_number": 10,
+          "timestamp": "2023-09-03 12:41:38",
+          "code": 11,
+          "message": "Divide by zero",
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnTick",
+              true,
+              "gamemodes/example.pwn",
+              4,
+              null
+            ]
+          ],
+          "native_frames": []
+        },
+        {
+          "kind": "runtime_error",
+          "line_number": 13,
+          "timestamp": "2026-09-28T15:55:49+0330",
+          "code": 11,
+          "message": "Divide by zero",
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnTick",
+              true,
+              "gamemodes/example.pwn",
+              5,
+              null
+            ]
+          ],
+          "native_frames": []
+        },
+        {
+          "kind": "runtime_error",
+          "line_number": 16,
+          "timestamp": null,
+          "code": 11,
+          "message": "Divide by zero",
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnTick",
+              true,
+              "gamemodes/example.pwn",
+              6,
+              null
+            ]
+          ],
+          "native_frames": []
+        }
+      ]
+    },
+    {
+      "file": "truncated_file_without_final_newline.log",
+      "origin": "synthetic",
+      "status": "characterization",
+      "summary": "A log that ends in the middle of a frame line keeps the block; the cut location is not parsed.",
+      "evidence": [
+        {
+          "type": "design",
+          "ref": "LineSplitter.finish and LogParser.flush"
+        }
+      ],
+      "events": [
+        {
+          "kind": "runtime_error",
+          "line_number": 1,
+          "timestamp": "12:01:00",
+          "code": 4,
+          "message": "Array index out of bounds",
+          "script": null,
+          "details": [],
+          "frames": [
+            [
+              0,
+              "amx",
+              "OnTick",
+              true,
+              null,
+              null,
+              null
+            ]
+          ],
+          "native_frames": []
+        }
+      ]
+    }
+  ]
+}

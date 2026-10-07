@@ -1,0 +1,4 @@
+[12:00:05] Error: Function not registered: 'CreateDynamicObject'
+[12:00:05] Error: Function not registered: 'sscanf'
+[12:00:05] Script[gamemodes/example.amx]: Run time error 19: "File or function is not found"
+[12:00:05] Number of vehicle models: 0

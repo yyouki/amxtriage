@@ -1,0 +1,12 @@
+[12:00:13] [debug] Long callback execution detected (hang or performance issue)
+[12:00:13] [debug] AMX backtrace:
+[12:00:13] [debug] #0 00000008 in public ExampleCommand () at :0
+[12:00:13] [debug] #1 00449c30 in public CloseCells ()
+[12:00:13] [debug] #2 000f5d38 in ?? (playerid=5, itemid=20605, ... <1073741821 arguments>) at example/core/craft.pwn:141
+[12:00:13] [debug] #3 0001cc8c in public OnPlayerUseItem (... <2 arguments>) at C:\inc\YSI\..\YSI_Coding\y_cgen.inc:37
+[12:00:13] [debug] #4 0001fc64 in Opcode:UnrelocateOpcode (Opcode:opcode=-147914857) at C:\inc\opcode.inc:830
+[12:00:13] [debug] #5 00026ca0 in bool:CodeScanRunFast (csState[CodeScanner:164]=@021f31f4, searchFuncAddr=133396) at C:\inc\codescan.inc:866
+[12:00:13] [debug] #6 00005e24 in public OnDialogResponse (playerid=0, inputtext[]=@0297b810 "hello (world) in here", 1) at gamemodes/example.pwn:300
+[12:00:13] [debug] #7 0000a1b2 in public OnStateChange (playerid=1) <fsm:running, idle> at gamemodes/example.pwn:55
+[12:00:13] [debug] #8 0000a1c3 in public OnLoad () at <unknown file>:12
+[12:00:13] [debug] #9 000001fc in f3 (&Float:f=@00003fb0 1.50000, UknownTag:n=999, e[struct:1]=@00003f70, a[3]=@00003fd0 "", s[]=@00000018 "hi there", bool:b1=true) at gamemodes/example.pwn:45

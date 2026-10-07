@@ -1,0 +1,18 @@
+[12:00:11] [debug] Run time error 11: "Divide by zero"
+[12:00:11] [debug] AMX backtrace:
+[12:00:11] [debug] #0 00000a10 in public OnTick () at gamemodes/example.pwn:1
+[23/06/2017 23:19:57] [debug] Run time error 11: "Divide by zero"
+[23/06/2017 23:19:57] [debug] AMX backtrace:
+[23/06/2017 23:19:57] [debug] #0 00000a10 in public OnTick () at gamemodes/example.pwn:2
+[28/03/2019 - 04:00:40] [debug] Run time error 11: "Divide by zero"
+[28/03/2019 - 04:00:40] [debug] AMX backtrace:
+[28/03/2019 - 04:00:40] [debug] #0 00000a10 in public OnTick () at gamemodes/example.pwn:3
+[2023-09-03 12:41:38] [debug] Run time error 11: "Divide by zero"
+[2023-09-03 12:41:38] [debug] AMX backtrace:
+[2023-09-03 12:41:38] [debug] #0 00000a10 in public OnTick () at gamemodes/example.pwn:4
+[2026-09-28T15:55:49+0330] [Info] [debug] Run time error 11: "Divide by zero"
+[2026-09-28T15:55:49+0330] [Info] [debug] AMX backtrace:
+[2026-09-28T15:55:49+0330] [Info] [debug] #0 00000a10 in public OnTick () at gamemodes/example.pwn:5
+[debug] Run time error 11: "Divide by zero"
+[debug] AMX backtrace:
+[debug] #0 00000a10 in public OnTick () at gamemodes/example.pwn:6

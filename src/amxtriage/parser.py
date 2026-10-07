@@ -12,6 +12,8 @@ MAX_DETAILS = 4
 MAX_NAME_DETAILS = 64
 QUIET_LINE_TOLERANCE = 2
 NAME_DETAIL_CODES = frozenset({10, 19})
+REPEATED_HEADER_CODES = frozenset({19})
+MAX_MODULE_LENGTH = 260
 
 _TIMESTAMP = re.compile(r"\[(\d[^\[\]]{0,63})\] ?")
 _TAG = re.compile(r"\[([A-Za-z][\w\-]{0,31})\] ?")
@@ -22,16 +24,21 @@ _RUNTIME_ERROR = re.compile(
     r"(?:Script\[(?P<script>[^\]]{1,260})\]: )?"
     r'Run time error (?P<code>\d{1,3}): "(?P<message>[^"]{0,200})"'
 )
-_CRASH = re.compile(
-    r"Server crashed (?:while executing (?P<script>.{1,260})|due to an unknown error)"
-)
-_INTERRUPT = re.compile(
-    r"Server received interrupt signal(?: while executing (?P<script>.{1,260}))?"
-)
-_LONG_CALL_PREFIX = "Long callback execution detected"
+_AMX_NAME = r"(?P<script><unknown>|.{1,256}\.(?i:amx))"
+_CRASH = re.compile(rf"Server crashed (?:while executing {_AMX_NAME}|due to an unknown error)")
+_INTERRUPT = re.compile(rf"Server received interrupt signal(?: while executing {_AMX_NAME})?")
+_LONG_CALL = "Long callback execution detected (hang or performance issue)"
+_NATIVE_LABELS = frozenset({"Native backtrace:", "System backtrace:"})
 _FRAME_INDEX = re.compile(r"#(\d{1,5}) ")
 _ADDRESS_IN = re.compile(r"[0-9A-Fa-f]{6,16} in ")
-_NATIVE_FRAME = re.compile(r"native (?P<name>\S{1,128}) \(\)(?: (?:in|from) (?P<module>.{1,260}))?")
+_NATIVE_FRAME = re.compile(
+    r"native (?P<name>\S{1,128}) \(\)"
+    r"(?: \[[0-9A-Fa-f]{1,16}\])?"
+    r"(?: (?:in|from) (?P<module>.+))?"
+)
+_UNNAMED_FRAME = re.compile(r"\?\?(?: (?:in|from) (?P<module>.+))?")
+_MODULE_MARKERS = (") in ", ") from ")
+_NATIVE_MODULE_MARKERS = (" in ", " from ")
 _LOCATION = re.compile(r"(?P<file>.{1,500}):(?P<line>\d{1,9})")
 _NAME_DETAIL = re.compile(r"[A-Za-z_@][\w@.]{0,127}")
 _DETAIL_PATTERNS = (
@@ -80,12 +87,12 @@ def split_prefix(line: str) -> Prefix:
 
 
 def _parse_header(body: str) -> _Header | None:
-    match = _RUNTIME_ERROR.match(body)
+    text = body.rstrip()
+    match = _RUNTIME_ERROR.fullmatch(text)
     if match is not None:
         return _Header("runtime_error", int(match["code"]), match["message"], match["script"])
-    if body.startswith(_LONG_CALL_PREFIX):
+    if text == _LONG_CALL:
         return _Header("long_call", None, None, None)
-    text = body.rstrip()
     crash = _CRASH.fullmatch(text)
     if crash is not None:
         return _Header("crash", None, None, crash["script"])
@@ -98,6 +105,32 @@ def _parse_header(body: str) -> _Header | None:
 def _function_name(raw: str) -> str:
     name = raw.rsplit(":", 1)[-1] if ":" in raw else raw
     return name[:128] or "??"
+
+
+def _clean_module(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return value.strip()[:MAX_MODULE_LENGTH] or None
+
+
+def _split_module(tail: str) -> tuple[str, str | None]:
+    best = -1
+    length = 0
+    for marker in _MODULE_MARKERS:
+        found = tail.rfind(marker)
+        if found > best:
+            best = found
+            length = len(marker)
+    if best == -1:
+        return tail, None
+    return tail[: best + 1], _clean_module(tail[best + length :])
+
+
+def _module_after_native(tail: str) -> str | None:
+    for marker in _NATIVE_MODULE_MARKERS:
+        if tail.startswith(marker):
+            return _clean_module(tail[len(marker) :])
+    return None
 
 
 def _parse_amx_frame(index: int, rest: str) -> Frame | None:
@@ -120,10 +153,7 @@ def _parse_amx_frame(index: int, rest: str) -> Frame | None:
             line = int(location["line"])
             tail = tail[:marker]
     if file is None:
-        marker = tail.rfind(") in ")
-        if marker != -1:
-            module = tail[marker + len(") in ") :].strip() or None
-            tail = tail[: marker + 1]
+        tail, module = _split_module(tail)
     close = tail.rfind(")")
     if close == -1:
         return None
@@ -140,11 +170,17 @@ def parse_frame(text: str) -> Frame | None:
     rest = text[index_match.end() :]
     native = _NATIVE_FRAME.fullmatch(rest)
     if native is not None:
-        return Frame(index, "native", native["name"], False, None, None, native["module"], None)
+        module = _clean_module(native["module"])
+        return Frame(index, "native", native["name"], False, None, None, module, None)
     address = _ADDRESS_IN.match(rest)
     if address is None:
         return None
-    return _parse_amx_frame(index, rest[address.end() :])
+    rest = rest[address.end() :]
+    unnamed = _UNNAMED_FRAME.fullmatch(rest.rstrip())
+    if unnamed is not None:
+        module = _clean_module(unnamed["module"])
+        return Frame(index, "amx", "??", False, None, None, module, None)
+    return _parse_amx_frame(index, rest)
 
 
 def parse_native_frame(text: str) -> NativeFrame | None:
@@ -161,8 +197,7 @@ def parse_native_frame(text: str) -> NativeFrame | None:
     if marker == -1:
         return NativeFrame(index, rest[:128], None)
     tail = rest[marker + len(" ()") :]
-    module = tail[len(" in ") :].strip() if tail.startswith(" in ") else None
-    return NativeFrame(index, rest[:marker][:128], module or None)
+    return NativeFrame(index, rest[:marker][:128], _module_after_native(tail))
 
 
 def _detail_text(code: int | None, body: str) -> str | None:
@@ -278,7 +313,10 @@ class LogParser:
             )
             return events
         if block is not None:
-            events.append(self._close())
+            if self._repeats_empty_block(block, header):
+                self._block = None
+            else:
+                events.append(self._close())
         self._block = _Block(
             kind=header.kind,
             line_number=self._line_number,
@@ -290,12 +328,25 @@ class LogParser:
         return events
 
     @staticmethod
+    def _repeats_empty_block(block: _Block, header: _Header) -> bool:
+        return (
+            header.kind == "runtime_error"
+            and block.kind == "runtime_error"
+            and block.code in REPEATED_HEADER_CODES
+            and block.code == header.code
+            and block.message == header.message
+            and block.script is None
+            and block.section == "header"
+            and not block.details
+        )
+
+    @staticmethod
     def _absorb(block: _Block, body: str) -> bool:
         text = body.strip()
         if text == "AMX backtrace:":
             block.section = "amx"
             return True
-        if text == "Native backtrace:":
+        if text in _NATIVE_LABELS:
             block.section = "native"
             return True
         if block.section == "amx":

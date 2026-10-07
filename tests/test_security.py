@@ -25,7 +25,7 @@ def hostile_log(tmp_path):
     return write_log(
         tmp_path / "hostile.log",
         [
-            "[1\x1b2] [debug] Server crashed while executing evil\x1b[31m.amx\x1b]0;pwned\x07",
+            "[1\x1b2] [debug] Server crashed while executing evil\x1b[31m\x1b]0;pwned\x07.amx",
             "[13:46:01] [debug] AMX backtrace:",
             "[13:46:01] [debug] #0 000a1b2c in public Evil\x1b[2J (x=\x1b[1m)"
             " at C:\\\x1b[1mdir\\f.pwn:3",

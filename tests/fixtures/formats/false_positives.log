@@ -1,0 +1,23 @@
+[12:00:30] [join] Alice has joined the server (0:127.0.0.1)
+[12:00:30] [connection] incoming connection: 127.0.0.1:2256 id: 1
+[12:00:30] [chat] [Alice]: Run time error 4: "Array index out of bounds"
+[12:00:31] [chat] Alice: Server crashed while executing example.amx
+[12:00:31] [part] Alice has left the server (0:1)
+[12:00:32] [death] Alice died 53
+[12:00:32] [kill] Bob killed Alice 24 1
+[12:00:33] Bob said: Script[gamemodes/example.amx]: Run time error 4: "x"
+[12:00:33] The message Run time error 4: "x" was reported by Bob
+[12:00:33] Long callback execution detected is not at line start
+[12:00:33] Long callback execution detected (hang or performance issue) is a phrase players might type
+[12:00:33] Server crashed while executing is a phrase players might type
+[12:00:33] Server crashed while executing notes.txt
+[12:00:33] Server received interrupt signal while executing the tests
+[12:00:34] Run time error 4: no quotes here
+[12:00:34] Run time error: "x"
+[12:00:34] Run time error 4 "x"
+[12:00:34] Run time error 1234: "four digit code"
+[12:00:34] [Error] Function not registered: 'Foo'
+[2026-09-28T15:55:49+0330] [Info] [chat] [Alice]: Server crashed due to an unknown error
+[2026-09-28T15:55:49+0330] [Info] [debug] Alice: Run time error 4: "x"
+[2026-09-28T15:55:49+0330] [Info] [debug] Native backtrace:
+[2026-09-28T15:55:49+0330] [Info] [debug] #0 f7484e8b in ?? () in samp03svr

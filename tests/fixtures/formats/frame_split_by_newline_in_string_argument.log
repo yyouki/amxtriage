@@ -1,0 +1,5 @@
+[12:00:50] [debug] Run time error 4: "Array index out of bounds"
+[12:00:50] [debug] AMX backtrace:
+[12:00:50] [debug] #0 00000a10 in public OnPlayerText (playerid=0, text[]=@00001000 "first
+[12:00:50] [debug] second") at gamemodes/example.pwn:20
+[12:00:50] [debug] #1 00000b20 in public OnPlayerConnect (playerid=0) at gamemodes/example.pwn:30

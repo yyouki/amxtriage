@@ -1,0 +1,18 @@
+[12:00:08] [debug] Server crashed while executing example.amx
+[12:00:08] [debug] AMX backtrace:
+[12:00:08] [debug] #0 native strpack () in samp03svr
+[12:00:08] [debug] #1 000076c4 in public OnGameModeInit () at gamemodes/include/fixes.inc:8739
+[12:00:08] [debug] Native backtrace:
+[12:00:08] [debug] #0 f7b97f7f in _Z13GetStackTraceRSt6vectorI10StackFrameSaIS0_EEPv () in plugins/crashdetect.so
+[12:00:08] [debug] #1 f7b9081d in _ZN11CrashDetect20PrintNativeBacktraceERSoRKN2os7ContextE () in plugins/crashdetect.so
+[12:00:08] [debug] #2 080e2239 in ?? () in ./samp03svr
+[12:00:08] [debug] Registers:
+[12:00:08] [debug] EAX: 00000000 EBX: 00004e1d ECX: 00004e1d EDX: 00000006
+[12:00:08] [debug] ESI: f7347000 EDI: 00000000 EBP: 00000000 ESP: ffb5e1fc
+[12:00:08] [debug] EIP: f7b97f7f EFLAGS: 00010246
+[12:00:08] [debug] Stack:
+[12:00:08] [debug] ESP+00000000: 00000000 00000000 00000000 00000000
+[12:00:08] [debug] ESP+00000010: 00000000 00000000 00000000 00000000
+[12:00:08] [debug] Loaded modules:
+[12:00:08] [debug] 00000000 - 00187f43 samp03svr
+[12:00:08] [debug] f7f36000 - f7f36d4a plugins/crashdetect.so

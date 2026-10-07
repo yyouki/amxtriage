@@ -1,0 +1,5 @@
+[12:00:40] Error: Function not registered: 'example_native'
+[12:00:40] [debug] Run time error 19: "File or function is not found"
+[12:00:40] [debug] Run time error 19: "File or function is not found"
+[12:00:40] Script[gamemodes/example.amx]: Run time error 19: "File or function is not found"
+[12:00:40] Number of vehicle models: 0

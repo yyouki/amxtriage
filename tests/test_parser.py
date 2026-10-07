@@ -446,3 +446,355 @@ def test_very_long_frame_line_is_parsed_quickly_and_safely():
     event = events_of(lines)[0]
     assert event.frames[0].function == "Big"
     assert event.frames[0].line == 1
+
+
+NATIVE_FRAME_CASES = [
+    ("#1 native CallLocalFunction () in samp03svr", "CallLocalFunction", "samp03svr"),
+    ("#1 native CallLocalFunction () from samp03svr", "CallLocalFunction", "samp03svr"),
+    ("#1 native CallLocalFunction () [080dfb90] from samp03svr", "CallLocalFunction", "samp03svr"),
+    ("#1 native CallLocalFunction () [080DFB90] in samp03svr", "CallLocalFunction", "samp03svr"),
+    ("#1 native strcmp () [00474110]", "strcmp", None),
+    ("#1 native strcmp ()", "strcmp", None),
+    (
+        "#1 native Foo () [741d9830] from C:\\Program Files\\samp server\\samp-server.exe",
+        "Foo",
+        "C:\\Program Files\\samp server\\samp-server.exe",
+    ),
+]
+
+
+@pytest.mark.parametrize(("text", "callee", "module"), NATIVE_FRAME_CASES)
+def test_parse_frame_accepts_every_known_native_call_layout(text, callee, module):
+    frame = parse_frame(text)
+    assert frame is not None
+    assert (frame.kind, frame.function, frame.public, frame.module) == (
+        "native",
+        callee,
+        False,
+        module,
+    )
+    assert (frame.file, frame.line, frame.args) == (None, None, None)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "#1 native Foo () [zz] from x",
+        "#1 native Foo () [] from x",
+        "#1 native Foo () [080dfb90 from x",
+        "#1 native Foo (x) in y",
+        "#1 native () in y",
+        "#1 native Foo () through y",
+        "#1 native Foo () [0123456789abcdef0] from x",
+    ],
+)
+def test_parse_frame_rejects_malformed_native_calls(text):
+    assert parse_frame(text) is None
+
+
+MODULE_MARKER_CASES = [
+    ("#0 00060f1c in ?? (0x00000000) from XSR.amx", "??", False, "XSR.amx"),
+    ("#0 00060f1c in ?? (0x00000000) in XSR.amx", "??", False, "XSR.amx"),
+    (
+        "#1 00060ff4 in public OnPlayerConnectEx (0x00000000) from XSR.amx",
+        "OnPlayerConnectEx",
+        True,
+        "XSR.amx",
+    ),
+    (
+        "#2 00006270 in public OnPlayerCommandText (0, 43242804) in Suhartawan World.amx",
+        "OnPlayerCommandText",
+        True,
+        "Suhartawan World.amx",
+    ),
+    ("#2 00006270 in f () from   spaced.amx", "f", False, "spaced.amx"),
+    ("#2 00006270 in f () from", "f", False, None),
+    ("#2 00006270 in f ()", "f", False, None),
+]
+
+
+@pytest.mark.parametrize(("text", "function", "public", "module"), MODULE_MARKER_CASES)
+def test_parse_frame_reads_the_module_after_either_marker(text, function, public, module):
+    frame = parse_frame(text)
+    assert frame is not None
+    assert (frame.function, frame.public, frame.module) == (function, public, module)
+    assert (frame.file, frame.line) == (None, None)
+
+
+def test_parse_frame_uses_the_last_module_marker_when_both_appear():
+    frame = parse_frame("#0 00060f1c in f (a) in b.amx) from c.amx")
+    assert frame is not None
+    assert frame.module == "c.amx"
+    assert frame.args == "a) in b.amx"
+
+
+def test_parse_frame_does_not_read_a_module_marker_inside_a_string_argument():
+    frame = parse_frame('#0 00000010 in f (s[]=@00000018 "a) from b") at /w/t.pwn:9')
+    assert frame is not None
+    assert (frame.file, frame.line, frame.module) == ("/w/t.pwn", 9, None)
+    assert frame.args == 's[]=@00000018 "a) from b"'
+
+
+@pytest.mark.parametrize(
+    ("text", "module"),
+    [
+        ("#1 00019d34 in ??", None),
+        ("#1 00019d34 in ?? from base.amx", "base.amx"),
+        ("#1 00019d34 in ?? in base.amx", "base.amx"),
+    ],
+)
+def test_parse_frame_accepts_unnamed_frames_without_an_argument_list(text, module):
+    frame = parse_frame(text)
+    assert frame is not None
+    assert (frame.kind, frame.function, frame.public, frame.module) == ("amx", "??", False, module)
+    assert (frame.file, frame.line, frame.args) == (None, None, None)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "#1 00019d34 in ??extra",
+        "#1 00019d34 in ?",
+        "#1 00019d34 in public ??",
+        "#1 00019d34 in ?? through base.amx",
+        "#1 in ??",
+    ],
+)
+def test_parse_frame_rejects_unnamed_frame_lookalikes(text):
+    assert parse_frame(text) is None
+
+
+def test_module_names_are_truncated_to_a_fixed_length():
+    long_name = "m" * 400
+    for text in (
+        f"#1 native Foo () in {long_name}",
+        f"#1 00019d34 in ?? from {long_name}",
+        f"#1 00019d34 in f () in {long_name}",
+    ):
+        frame = parse_frame(text)
+        assert frame is not None
+        assert frame.module == "m" * 260
+    native = parse_native_frame(f"#1 00019d34 in f () in {long_name}")
+    assert native is not None
+    assert native.module == "m" * 260
+
+
+@pytest.mark.parametrize(
+    ("text", "callee", "module"),
+    [
+        (
+            "#0 f7484e8b in _ZN10StackTraceC1EPv () in plugins/crashdetect.so",
+            "_ZN10StackTraceC1EPv",
+            "plugins/crashdetect.so",
+        ),
+        (
+            "#0 f7484e8b in _ZN10StackTraceC1EPv () from plugins/crashdetect.so",
+            "_ZN10StackTraceC1EPv",
+            "plugins/crashdetect.so",
+        ),
+        ("#0 f7484e8b in f () from C:\\samp server\\x.exe", "f", "C:\\samp server\\x.exe"),
+        ("#2 f779f410 in ??", "??", None),
+        ("#0 f7484e8b in f ()", "f", None),
+        ("#0 f7484e8b in f () via x", "f", None),
+        ("#0 f7484e8b in f () from ", "f", None),
+    ],
+)
+def test_parse_native_frame_reads_the_module_after_either_marker(text, callee, module):
+    native = parse_native_frame(text)
+    assert native is not None
+    assert (native.callee, native.module) == (callee, module)
+
+
+CRASH_TEXT = "Server crashed while executing {}"
+INTERRUPT_TEXT = "Server received interrupt signal while executing {}"
+
+
+@pytest.mark.parametrize(
+    "script", ["example.amx", "EXAMPLE.AMX", "Example.Amx", "gamemodes/rp.amx"]
+)
+@pytest.mark.parametrize(
+    ("template", "kind"), [(CRASH_TEXT, "crash"), (INTERRUPT_TEXT, "interrupt")]
+)
+def test_crash_and_interrupt_headers_accept_amx_file_names(template, kind, script):
+    events = events_of([f"{STAMP} [debug] {template.format(script)}"])
+    assert [(event.kind, event.script) for event in events] == [(kind, script)]
+
+
+@pytest.mark.parametrize(
+    "script",
+    [
+        "C:\\Program Files\\samp server\\my game.amx",
+        "my game (2).amx",
+        "<unknown>",
+        "x" * 256 + ".amx",
+    ],
+)
+@pytest.mark.parametrize(
+    ("template", "kind"), [(CRASH_TEXT, "crash"), (INTERRUPT_TEXT, "interrupt")]
+)
+def test_crash_and_interrupt_headers_accept_unusual_but_plausible_names(template, kind, script):
+    events = events_of([f"{STAMP} [debug] {template.format(script)}"])
+    assert [(event.kind, event.script) for event in events] == [(kind, script)]
+
+
+@pytest.mark.parametrize(
+    "script",
+    [
+        "notes.txt",
+        "gm.amx.bak",
+        ".amx",
+        "amx",
+        "is a phrase players might type",
+        "the tests",
+        "x.amx extra",
+        "<unknown> extra",
+        "<UNKNOWN>",
+        "x" * 257 + ".amx",
+        "",
+    ],
+)
+@pytest.mark.parametrize("template", [CRASH_TEXT, INTERRUPT_TEXT])
+def test_crash_and_interrupt_headers_reject_text_that_is_not_an_amx_name(template, script):
+    assert events_of([f"{STAMP} [debug] {template.format(script)}"]) == []
+
+
+def test_crash_and_interrupt_headers_tolerate_trailing_whitespace():
+    lines = [
+        f"{STAMP} [debug] Server crashed while executing gm.amx  ",
+        f"{STAMP} [debug] Server received interrupt signal while executing gm.amx\t",
+    ]
+    assert [(event.kind, event.script) for event in events_of(lines)] == [
+        ("crash", "gm.amx"),
+        ("interrupt", "gm.amx"),
+    ]
+
+
+LONG_CALL_TEXT = "Long callback execution detected (hang or performance issue)"
+
+
+@pytest.mark.parametrize("suffix", ["", " ", "  \t"])
+def test_long_callback_header_tolerates_trailing_whitespace(suffix):
+    events = events_of([f"{STAMP} [debug] {LONG_CALL_TEXT}{suffix}"])
+    assert [event.kind for event in events] == ["long_call"]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Long callback execution detected",
+        "Long callback execution detected is not at line start",
+        f"{LONG_CALL_TEXT} is a phrase players might type",
+        "Long callback execution detected (hang or performance issues)",
+        "Long callback execution detected (hang)",
+        f"x {LONG_CALL_TEXT}",
+        LONG_CALL_TEXT.lower(),
+    ],
+)
+def test_long_callback_header_must_match_the_whole_line(text):
+    assert events_of([f"{STAMP} [debug] {text}"]) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        'Run time error 4: "Array index out of bounds" and more',
+        'Run time error 4: "x" "y"',
+        'Run time error 4: "x"y',
+        'Script[a.amx]: Run time error 4: "x" trailing',
+    ],
+)
+def test_runtime_error_header_must_end_with_its_message(text):
+    assert events_of([f"{STAMP} [debug] {text}"]) == []
+
+
+def test_runtime_error_header_tolerates_trailing_whitespace():
+    events = events_of([f'{STAMP} [debug] Run time error 4: "x"  \t'])
+    assert [(event.code, event.message) for event in events] == [(4, "x")]
+
+
+def header19(stamp: str = STAMP) -> str:
+    return f'{stamp} [debug] Run time error 19: "File or function is not found"'
+
+
+SCRIPT19 = f'{STAMP} Script[gamemodes/rp.amx]: Run time error 19: "File or function is not found"'
+
+
+def test_repeated_empty_code_19_headers_report_one_event_with_the_script():
+    events = events_of([header19(), header19(), SCRIPT19])
+    assert [(e.kind, e.code, e.script, e.line_number) for e in events] == [
+        ("runtime_error", 19, "gamemodes/rp.amx", 2)
+    ]
+
+
+def test_many_repeated_empty_code_19_headers_still_report_one_event():
+    events = events_of([header19()] * 5 + [SCRIPT19])
+    assert [(e.script, e.line_number) for e in events] == [("gamemodes/rp.amx", 5)]
+
+
+def test_repeated_empty_code_19_headers_without_a_script_line_report_one_event():
+    events = events_of([header19(), header19(), header19()])
+    assert [(e.script, e.line_number) for e in events] == [(None, 3)]
+
+
+def test_repeated_empty_header_tolerates_a_quiet_line_in_between():
+    events = events_of([header19(), f"{STAMP} unrelated", header19(), SCRIPT19])
+    assert [(e.script, e.line_number) for e in events] == [("gamemodes/rp.amx", 3)]
+
+
+def test_code_19_headers_stay_separate_when_the_first_has_native_names():
+    lines = [header19(), f"{STAMP} [debug]  Foo", header19(), SCRIPT19]
+    events = events_of(lines)
+    assert [(e.script, e.details, e.line_number) for e in events] == [
+        (None, ("Foo",), 1),
+        ("gamemodes/rp.amx", (), 3),
+    ]
+
+
+def test_code_19_headers_stay_separate_when_a_script_line_comes_between():
+    events = events_of([header19(), SCRIPT19, header19(), SCRIPT19])
+    assert [(e.script, e.line_number) for e in events] == [
+        ("gamemodes/rp.amx", 1),
+        ("gamemodes/rp.amx", 3),
+    ]
+
+
+def test_code_19_headers_stay_separate_when_the_first_is_followed_by_a_backtrace():
+    lines = [header19(), f"{STAMP} [debug] AMX backtrace:", header19()]
+    assert [e.line_number for e in events_of(lines)] == [1, 3]
+
+
+def test_code_19_headers_with_different_messages_stay_separate():
+    other = f'{STAMP} [debug] Run time error 19: "Another message"'
+    assert [e.line_number for e in events_of([header19(), other])] == [1, 2]
+
+
+@pytest.mark.parametrize("code", [4, 5, 9, 20, 22])
+def test_repeated_empty_headers_of_other_codes_are_not_collapsed(code):
+    header = f'{STAMP} [debug] Run time error {code}: "same"'
+    assert [e.line_number for e in events_of([header, header])] == [1, 2]
+
+
+def test_repeated_empty_header_does_not_swallow_a_different_kind_of_block():
+    lines = [
+        header19(),
+        f"{STAMP} [debug] Long callback execution detected (hang or performance issue)",
+    ]
+    assert [(e.kind, e.line_number) for e in events_of(lines)] == [
+        ("runtime_error", 1),
+        ("long_call", 2),
+    ]
+
+
+def test_system_backtrace_label_starts_the_native_section():
+    lines = [
+        f"{STAMP} [debug] Server crashed while executing gm.amx",
+        f"{STAMP} [debug] AMX backtrace:",
+        f"{STAMP} [debug] #0 000a1b2c in public A () at x.pwn:9",
+        f"{STAMP} [debug] System backtrace:",
+        f"{STAMP} [debug] #0 70fa59a2 in AMXDebugInfo::Load () from C:\\samp\\crashdetect.DLL",
+    ]
+    event = events_of(lines)[0]
+    assert [frame.function for frame in event.frames] == ["A"]
+    assert [(n.callee, n.module) for n in event.native_frames] == [
+        ("AMXDebugInfo::Load", "C:\\samp\\crashdetect.DLL")
+    ]

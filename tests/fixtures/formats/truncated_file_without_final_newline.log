@@ -1,0 +1,3 @@
+[12:01:00] [debug] Run time error 4: "Array index out of bounds"
+[12:01:00] [debug] AMX backtrace:
+[12:01:00] [debug] #0 00000a10 in public OnTick () at gamemodes/exa

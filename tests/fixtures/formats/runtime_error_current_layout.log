@@ -1,0 +1,6 @@
+[12:00:01] [debug] Run time error 4: "Array index out of bounds"
+[12:00:01] [debug]  Attempted to read/write array element at index 12 in array of size 10
+[12:00:01] [debug] AMX backtrace:
+[12:00:01] [debug] #0 000010a4 in public OnPlayerConnect (playerid=3) at gamemodes/example.pwn:42
+[12:00:01] [debug] #1 native CallLocalFunction () in samp03svr
+[12:00:01] [debug] #2 00000f20 in public OnPlayerConnect (playerid=3) at gamemodes/include/hooks.inc:10

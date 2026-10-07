@@ -1,0 +1,6 @@
+[2026-09-28T15:55:49+0330] [Error] 19 File or function is not found
+[2026-09-28T15:55:49+0330] [Error] File or function is not found
+[2026-09-28T15:55:49+0330] [Error] Function not registered: ExampleNative
+[2026-09-28T15:55:49+0330] [Warning] Deprecated function OldFunction used. This function was replaced by NewFunction.
+[2026-09-28T15:55:49+0330] [Error] SetTimer(Ex): There was a problem in calling OnTimerTick: Array index out of bounds
+[2026-09-28T15:55:49+0330] [Info] Could not find:

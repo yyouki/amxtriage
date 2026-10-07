@@ -1,0 +1,9 @@
+[12:00:46] [debug] Server crashed while executing example.amx
+[12:00:46] [debug] AMX backtrace:
+[12:00:46] [debug] #0 native fwrite () [004056e0] from samp-server.exe
+[12:00:46] [debug] #1 00019d34 in ??
+[12:00:46] [debug] #2 0002a4f4 in public SetLogin () from example.amx
+[12:00:47] [debug] System backtrace:
+[12:00:47] [debug] #0 77632272 in ??
+[12:00:47] [debug] #1 70fa59a2 in AMXDebugInfo::Load () from C:\samp\plugins\crashdetect.DLL
+[12:00:47] [debug] #2 0040531e in ?? () from C:\samp\samp-server.exe

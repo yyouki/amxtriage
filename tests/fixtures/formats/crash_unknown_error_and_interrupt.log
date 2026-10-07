@@ -1,0 +1,11 @@
+[12:00:09] [debug] Server crashed due to an unknown error
+[12:00:09] [debug] Native backtrace:
+[12:00:09] [debug] #0 f7484e8b in _ZN10StackTraceC1EPv () from plugins/crashdetect.so
+[12:00:09] [debug] #1 f747dbcf in _ZN11CrashDetect20PrintNativeBacktraceERSoPv () from plugins/crashdetect.so
+[12:00:09] [debug] #2 f779f410 in ??
+[12:00:09] [debug] Registers:
+[12:00:09] [debug] EAX: 00000000 EBX: 00000a6b ECX: 00000a6b EDX: 00000006
+[12:00:09] [debug] ESI: f7347000 EDI: 00000000 EBP: 00000000 ESP: ffb5e1fc
+[12:00:10] [debug] Server received interrupt signal while executing example.amx
+[12:00:10] [debug] AMX backtrace:
+[12:00:10] [debug] #0 000076c4 in public OnGameModeInit () at gamemodes/example.pwn:5

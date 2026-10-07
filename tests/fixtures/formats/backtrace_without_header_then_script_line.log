@@ -1,0 +1,5 @@
+[12:00:45] [debug] AMX backtrace:
+[12:00:45] [debug] #0 native PrintAmxBacktrace () from crashdetect.so
+[12:00:45] [debug] #1 000000b8 in public OnRuntimeError (code=1, &bool:suppress=@00000014 false) at gamemodes/example.pwn:17
+[12:00:45] [debug] #2 0000008c in error () at gamemodes/example.pwn:12
+[12:00:45] Script[gamemodes/example.amx]: Run time error 1: "Forced exit"

@@ -1,0 +1,7 @@
+[12:00:02] [debug] Run time error 4: "Array index out of bounds"
+[12:00:02] [debug]  Accessing element at index 9 past array upper bound 8
+[12:00:02] [debug] AMX backtrace:
+[12:00:02] [debug] #0 00060f1c in ?? (0x00000000) from example.amx
+[12:00:02] [debug] #1 00060ff4 in public OnPlayerConnect (0x00000000) from example.amx
+[12:00:02] [debug] #2 native CallLocalFunction () from samp03svr
+[12:00:02] [debug] #3 00005fc0 in public OnGameModeInit () at C:\Games\server\gamemodes\example.pwn:77

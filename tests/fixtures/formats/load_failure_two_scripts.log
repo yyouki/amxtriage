@@ -1,0 +1,6 @@
+[12:00:42] [debug] Run time error 19: "File or function is not found"
+[12:00:42] [debug]  native_a
+[12:00:42] Script[filterscripts/one.amx]: Run time error 19: "File or function is not found"
+[12:00:43] [debug] Run time error 19: "File or function is not found"
+[12:00:43] [debug]  native_b
+[12:00:43] Script[filterscripts/two.amx]: Run time error 19: "File or function is not found"

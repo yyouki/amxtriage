@@ -1,0 +1,7 @@
+[12:00:06] Run time error 4: "Array index out of bounds"
+[12:00:06]  Attempted to read/write array element at index 2001 in array of size 2000
+[12:00:06] AMX backtrace:
+[12:00:06] #0 004ade54 in main (params[]=@00000028 "", 9092328) at C:\Server\gamemodes\example.pwn:3417
+[12:00:07] Long callback execution detected (hang or performance issue)
+[12:00:07] AMX backtrace:
+[12:00:07] #0 0002c7b8 in public OnGameModeInit () at C:\Server\gamemodes\example.pwn:25

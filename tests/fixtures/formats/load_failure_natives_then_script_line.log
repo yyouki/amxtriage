@@ -1,0 +1,5 @@
+[12:00:04] [debug] Run time error 19: "File or function is not found"
+[12:00:04] [debug]  mysql_connect
+[12:00:04] [debug]  cache_get_row_count
+[12:00:04] Script[gamemodes/example.amx]: Run time error 19: "File or function is not found"
+[12:00:04] Number of vehicle models: 0

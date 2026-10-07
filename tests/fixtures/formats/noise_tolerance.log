@@ -1,0 +1,11 @@
+[12:00:20] [debug] Run time error 4: "Array index out of bounds"
+[12:00:20] [EXAMPLE_DEBUG]: unrelated line one
+[12:00:20] [EXAMPLE_DEBUG]: unrelated line two
+[12:00:20] [debug] AMX backtrace:
+[12:00:20] [debug] #0 00000a10 in public OnTick () at gamemodes/example.pwn:1
+[12:00:21] [debug] Run time error 4: "Array index out of bounds"
+[12:00:21] [EXAMPLE_DEBUG]: unrelated line one
+[12:00:21] [EXAMPLE_DEBUG]: unrelated line two
+[12:00:21] [EXAMPLE_DEBUG]: unrelated line three
+[12:00:21] [debug] AMX backtrace:
+[12:00:21] [debug] #0 00000a10 in public OnTick () at gamemodes/example.pwn:2

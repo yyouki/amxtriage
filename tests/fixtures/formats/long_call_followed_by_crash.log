@@ -1,0 +1,11 @@
+[12:00:12] [debug] Long callback execution detected (hang or performance issue)
+[12:00:12] [debug] AMX backtrace:
+[12:00:12] [debug] #0 00021104 in Opcode:UnrelocateOpcode (Opcode:opcode=-138828459) at gamemodes/include/opcode.inc:830
+[12:00:12] [debug] #1 000076c4 in public OnGameModeInit () at gamemodes/include/fixes.inc:8739
+[12:00:12] [debug] Server crashed while executing example.amx
+[12:00:12] [debug] AMX backtrace:
+[12:00:12] [debug] #0 native strpack () in samp03svr
+[12:00:12] [debug] #1 000076c4 in public OnGameModeInit () at gamemodes/include/fixes.inc:8739
+[12:00:12] [debug] Native backtrace:
+[12:00:12] [debug] #0 f7b97f7f in _Z13GetStackTraceRSt6vectorI10StackFrameSaIS0_EEPv () in plugins/crashdetect.so
+[12:00:12] [debug] #4 f7b9779f in ??

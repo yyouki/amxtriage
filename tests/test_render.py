@@ -156,14 +156,14 @@ def test_markdown_report_structure(sample_log, sample_sources):
 
 def test_markdown_cannot_be_broken_out_of_by_backticks_in_log_content(tmp_path):
     lines = [
-        "[13:46:01] [debug] Server crashed while executing evil`.amx`](http://x)",
+        "[13:46:01] [debug] Server crashed while executing evil`](http://x)`.amx",
         "[13:46:01] [debug] AMX backtrace:",
         "[13:46:01] [debug] #0 000a1b2c in public Fo`o (x=1) at a`b.pwn:3",
     ]
     markdown = render_markdown(report_from(tmp_path, lines))
     heading = next(line for line in markdown.splitlines() if line.startswith("## 1."))
     assert heading.count("`") == 2
-    assert "evil'.amx'" in heading
+    assert "evil'](http://x)'.amx" in heading
     fenced = markdown.split("```text")[1].split("```")[0]
     assert "`" not in fenced
 
