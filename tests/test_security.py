@@ -150,6 +150,19 @@ def regex_stress_lines():
         "Server crashed while executing " + "x" * 8000,
         "[debug] " * 1000,
         " " + "a" * 8000,
+        "#0 native f () [" + "0" * 8000 + "] from x",
+        "#0 native f () " + "[00] " * 1600,
+        "#0 native f () in " + "a" * 8000,
+        "#0 00000010 in ?? " + "from " * 1600,
+        "#0 00000010 in ?? from " + "a" * 8000,
+        "#0 00000010 in f (" + ") from " * 1000 + ") in x",
+        "#0 00000010 in f () " + "in " * 2500,
+        "Server crashed while executing " + "a.amx" * 1600,
+        "Server crashed while executing " + "a" * 255 + ".amx" + " " * 3000,
+        "Server received interrupt signal while executing " + "x.amx" * 1600,
+        "Long callback execution detected (hang or performance issue)" + " " * 8000,
+        'Run time error 4: "' + "a" * 199 + '"' + " " * 8000,
+        "[1" + "]" * 8000,
     ]
 
 

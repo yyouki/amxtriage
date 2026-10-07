@@ -4,9 +4,9 @@ from typing import Any
 
 import pytest
 
-from amxtriage.model import Event
 from amxtriage.parser import parse_lines
 from amxtriage.reader import LineSplitter
+from helpers import project_event
 
 FORMATS = Path(__file__).resolve().parent / "fixtures" / "formats"
 MANIFEST: dict[str, Any] = json.loads((FORMATS / "manifest.json").read_text(encoding="utf-8"))
@@ -25,23 +25,7 @@ def parse_bytes(data: bytes, chunk_size: int | None = None) -> list[dict[str, An
         for start in range(0, len(data), chunk_size):
             lines.extend(splitter.feed(data[start : start + chunk_size]))
     lines.extend(splitter.finish())
-    return [project(event) for event in parse_lines(lines)]
-
-
-def project(event: Event) -> dict[str, Any]:
-    return {
-        "kind": event.kind,
-        "line_number": event.line_number,
-        "timestamp": event.timestamp,
-        "code": event.code,
-        "message": event.message,
-        "script": event.script,
-        "details": list(event.details),
-        "frames": [
-            [f.index, f.kind, f.function, f.public, f.file, f.line, f.module] for f in event.frames
-        ],
-        "native_frames": [[n.index, n.callee, n.module] for n in event.native_frames],
-    }
+    return [project_event(event) for event in parse_lines(lines)]
 
 
 @pytest.mark.parametrize("entry", ENTRIES, ids=IDS)

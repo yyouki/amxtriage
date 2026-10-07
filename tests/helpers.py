@@ -1,3 +1,6 @@
+from typing import Any
+
+from amxtriage.model import Event
 from amxtriage.parser import parse_lines
 
 
@@ -23,3 +26,19 @@ def error_block(
     if script_line:
         lines.append(f'[{stamp}] Script[gamemodes/rp.amx]: Run time error {code}: "{message}"')
     return lines
+
+
+def project_event(event: Event) -> dict[str, Any]:
+    return {
+        "kind": event.kind,
+        "line_number": event.line_number,
+        "timestamp": event.timestamp,
+        "code": event.code,
+        "message": event.message,
+        "script": event.script,
+        "details": list(event.details),
+        "frames": [
+            [f.index, f.kind, f.function, f.public, f.file, f.line, f.module] for f in event.frames
+        ],
+        "native_frames": [[n.index, n.callee, n.module] for n in event.native_frames],
+    }
