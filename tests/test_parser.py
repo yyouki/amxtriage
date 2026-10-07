@@ -798,3 +798,15 @@ def test_system_backtrace_label_starts_the_native_section():
     assert [(n.callee, n.module) for n in event.native_frames] == [
         ("AMXDebugInfo::Load", "C:\\samp\\crashdetect.DLL")
     ]
+
+
+def test_parse_frame_uses_the_last_occurrence_of_the_same_module_marker():
+    frame = parse_frame("#0 00060f1c in f (a) in b.amx) in c.amx")
+    assert frame is not None
+    assert frame.module == "c.amx"
+    assert frame.args == "a) in b.amx"
+
+
+def test_code_19_headers_are_not_collapsed_with_a_header_of_another_code():
+    same_text = f'{STAMP} [debug] Run time error 4: "File or function is not found"'
+    assert [e.line_number for e in events_of([header19(), same_text])] == [1, 2]

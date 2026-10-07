@@ -330,12 +330,9 @@ class LogParser:
     @staticmethod
     def _repeats_empty_block(block: _Block, header: _Header) -> bool:
         return (
-            header.kind == "runtime_error"
-            and block.kind == "runtime_error"
-            and block.code in REPEATED_HEADER_CODES
+            block.code in REPEATED_HEADER_CODES
             and block.code == header.code
             and block.message == header.message
-            and block.script is None
             and block.section == "header"
             and not block.details
         )

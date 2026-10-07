@@ -233,8 +233,8 @@
   "description": "Script line merges regardless of code",
   "edits": [
    {
-    "old": "and block.code == header.code",
-    "new": "and True",
+    "old": "and block.script is None\n                and block.code == header.code",
+    "new": "and block.script is None\n                and True",
     "count": 1
    }
   ]
@@ -245,8 +245,8 @@
   "description": "runtime error matched anywhere in line (chat forging)",
   "edits": [
    {
-    "old": "match = _RUNTIME_ERROR.match(body)",
-    "new": "match = _RUNTIME_ERROR.search(body)",
+    "old": "match = _RUNTIME_ERROR.fullmatch(text)",
+    "new": "match = _RUNTIME_ERROR.search(text)",
     "count": 1
    }
   ]
@@ -269,8 +269,8 @@
   "description": "long-call matched anywhere in line (chat forging)",
   "edits": [
    {
-    "old": "if body.startswith(_LONG_CALL_PREFIX):",
-    "new": "if _LONG_CALL_PREFIX in body:",
+    "old": "if text == _LONG_CALL:",
+    "new": "if _LONG_CALL in text:",
     "count": 1
    }
   ]
@@ -1176,6 +1176,246 @@
    {
     "old": "raw = handle.read(MAX_BASELINE_BYTES + 1)",
     "new": "raw = handle.read()",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P18",
+  "file": "src/amxtriage/parser.py",
+  "description": "bracketed address on native call frames no longer accepted",
+  "edits": [
+   {
+    "old": "r\"(?: \\[[0-9A-Fa-f]{1,16}\\])?\"",
+    "new": "r\"\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P19",
+  "file": "src/amxtriage/parser.py",
+  "description": "native call frame 'from' marker no longer accepted",
+  "edits": [
+   {
+    "old": "r\"(?: (?:in|from) (?P<module>.+))?\"",
+    "new": "r\"(?: (?:in) (?P<module>.+))?\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P20",
+  "file": "src/amxtriage/parser.py",
+  "description": "unnamed frame 'from' marker no longer accepted",
+  "edits": [
+   {
+    "old": "r\"\\?\\?(?: (?:in|from) (?P<module>.+))?\"",
+    "new": "r\"\\?\\?(?: (?:in) (?P<module>.+))?\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P21",
+  "file": "src/amxtriage/parser.py",
+  "description": "AMX frame 'from' marker no longer accepted",
+  "edits": [
+   {
+    "old": "_MODULE_MARKERS = (\") in \", \") from \")",
+    "new": "_MODULE_MARKERS = (\") in \",)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P22",
+  "file": "src/amxtriage/parser.py",
+  "description": "native backtrace frame 'from' marker no longer accepted",
+  "edits": [
+   {
+    "old": "_NATIVE_MODULE_MARKERS = (\" in \", \" from \")",
+    "new": "_NATIVE_MODULE_MARKERS = (\" in \",)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P23",
+  "file": "src/amxtriage/parser.py",
+  "description": "'System backtrace:' label no longer starts the native section",
+  "edits": [
+   {
+    "old": "_NATIVE_LABELS = frozenset({\"Native backtrace:\", \"System backtrace:\"})",
+    "new": "_NATIVE_LABELS = frozenset({\"Native backtrace:\"})",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P24",
+  "file": "src/amxtriage/parser.py",
+  "description": "unnamed frames without parentheses no longer accepted",
+  "edits": [
+   {
+    "old": "unnamed = _UNNAMED_FRAME.fullmatch(rest.rstrip())",
+    "new": "unnamed = None",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P25",
+  "file": "src/amxtriage/parser.py",
+  "description": "long callback header accepted as a line prefix",
+  "edits": [
+   {
+    "old": "if text == _LONG_CALL:",
+    "new": "if text.startswith(_LONG_CALL):",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P26",
+  "file": "src/amxtriage/parser.py",
+  "description": "trailing whitespace breaks every header",
+  "edits": [
+   {
+    "old": "    text = body.rstrip()\n    match = _RUNTIME_ERROR",
+    "new": "    text = body\n    match = _RUNTIME_ERROR",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P27",
+  "file": "src/amxtriage/parser.py",
+  "description": "crash and interrupt script names no longer validated",
+  "edits": [
+   {
+    "old": "_AMX_NAME = r\"(?P<script><unknown>|.{1,256}\\.(?i:amx))\"",
+    "new": "_AMX_NAME = r\"(?P<script>.{1,260})\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P28",
+  "file": "src/amxtriage/parser.py",
+  "description": "script name extension matched case-sensitively",
+  "edits": [
+   {
+    "old": ".{1,256}\\.(?i:amx))",
+    "new": ".{1,256}\\.amx)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P29",
+  "file": "src/amxtriage/parser.py",
+  "description": "'<unknown>' no longer accepted as a script name",
+  "edits": [
+   {
+    "old": "(?P<script><unknown>|.{1,256}",
+    "new": "(?P<script>.{1,256}",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P30",
+  "file": "src/amxtriage/parser.py",
+  "description": "runtime error header accepts trailing text",
+  "edits": [
+   {
+    "old": "match = _RUNTIME_ERROR.fullmatch(text)",
+    "new": "match = _RUNTIME_ERROR.match(text)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P31",
+  "file": "src/amxtriage/parser.py",
+  "description": "repeated empty headers collapse for every code",
+  "edits": [
+   {
+    "old": "block.code in REPEATED_HEADER_CODES",
+    "new": "True",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P32",
+  "file": "src/amxtriage/parser.py",
+  "description": "repeated empty headers collapse across different codes",
+  "edits": [
+   {
+    "old": "block.code in REPEATED_HEADER_CODES\n            and block.code == header.code",
+    "new": "block.code in REPEATED_HEADER_CODES\n            and True",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P33",
+  "file": "src/amxtriage/parser.py",
+  "description": "repeated empty headers collapse across different messages",
+  "edits": [
+   {
+    "old": "and block.message == header.message",
+    "new": "and True",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P34",
+  "file": "src/amxtriage/parser.py",
+  "description": "repeated headers collapse although the first has details",
+  "edits": [
+   {
+    "old": "and not block.details",
+    "new": "and True",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P35",
+  "file": "src/amxtriage/parser.py",
+  "description": "repeated headers collapse although a backtrace started",
+  "edits": [
+   {
+    "old": "and block.section == \"header\"",
+    "new": "and True",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P36",
+  "file": "src/amxtriage/parser.py",
+  "description": "module names no longer length-limited",
+  "edits": [
+   {
+    "old": "return value.strip()[:MAX_MODULE_LENGTH] or None",
+    "new": "return value.strip() or None",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P37",
+  "file": "src/amxtriage/parser.py",
+  "description": "first instead of last module marker used",
+  "edits": [
+   {
+    "old": "found = tail.rfind(marker)",
+    "new": "found = tail.find(marker)",
     "count": 1
    }
   ]
