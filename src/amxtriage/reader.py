@@ -111,13 +111,27 @@ def open_log(path: str) -> Iterator[ByteReader]:
             yield raw
 
 
-def iter_lines(stream: ByteReader, splitter: LineSplitter, label: str) -> Iterator[str]:
+def size_limit_message(label: str, limit: int) -> str:
+    return (
+        f"'{label}' is larger than the limit of {limit} bytes (counted after decompression); "
+        "raise it with --max-input-bytes, or use 0 for no limit"
+    )
+
+
+def iter_lines(
+    stream: ByteReader, splitter: LineSplitter, label: str, max_bytes: int | None = None
+) -> Iterator[str]:
     first_chunk = True
+    total = 0
     try:
         while True:
-            chunk = stream.read(CHUNK_SIZE)
+            size = CHUNK_SIZE if max_bytes is None else min(CHUNK_SIZE, max_bytes - total + 1)
+            chunk = stream.read(size)
             if not chunk:
                 break
+            total += len(chunk)
+            if max_bytes is not None and total > max_bytes:
+                raise InputError(size_limit_message(label, max_bytes))
             if first_chunk:
                 check_text_like(chunk[:PROBE_BYTES], label)
                 first_chunk = False

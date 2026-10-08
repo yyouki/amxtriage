@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import glob
 import os
+import re
 import signal
 import sys
 import threading
@@ -65,6 +66,19 @@ def _bounded_int(minimum: int, maximum: int | None = None) -> Callable[[str], in
         return value
 
     return convert
+
+
+_SIZE = re.compile(r"(\d{1,15})([KMGkmg]?)")
+_SIZE_UNITS = {"": 1, "K": 1024, "M": 1024**2, "G": 1024**3}
+
+
+def _size(text: str) -> int:
+    match = _SIZE.fullmatch(text.strip())
+    if match is None:
+        raise argparse.ArgumentTypeError(
+            f"invalid size: {text!r} (use a number of bytes, or a number followed by K, M or G)"
+        )
+    return int(match[1]) * _SIZE_UNITS[match[2].upper()]
 
 
 def _poll_interval(text: str) -> float:
@@ -141,6 +155,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="only show this kind of problem (repeatable)",
     )
     analyze.add_argument(
+        "--max-input-bytes",
+        type=_size,
+        default=0,
+        metavar="SIZE",
+        help="stop with an error if an input has more than SIZE bytes after decompression "
+        "(plain number, or with K, M or G; 0 means no limit, which is the default)",
+    )
+    analyze.add_argument(
         "--save-baseline",
         metavar="FILE",
         help="write every problem found in this run to FILE for later comparison",
@@ -206,7 +228,7 @@ def _run_analyze(args: argparse.Namespace) -> int:
     baseline = load_baseline(args.baseline) if args.baseline else None
     source_index = SourceIndex(args.source_dir) if args.source_dir else None
     kinds: list[EventKind] | None = list(dict.fromkeys(args.kinds)) if args.kinds else None
-    result = analyze_logs(expand_paths(args.logs))
+    result = analyze_logs(expand_paths(args.logs), max_input_bytes=args.max_input_bytes or None)
     report = build_report(
         result,
         top=args.top,

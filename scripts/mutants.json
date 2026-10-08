@@ -1515,5 +1515,161 @@
     "count": 1
    }
   ]
+ },
+ {
+  "id": "R11",
+  "file": "src/amxtriage/reader.py",
+  "description": "an input of exactly the limit is rejected",
+  "edits": [
+   {
+    "old": "if max_bytes is not None and total > max_bytes:",
+    "new": "if max_bytes is not None and total >= max_bytes:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R12",
+  "file": "src/amxtriage/reader.py",
+  "description": "reads are not shortened to the remaining allowance",
+  "edits": [
+   {
+    "old": "size = CHUNK_SIZE if max_bytes is None else min(CHUNK_SIZE, max_bytes - total + 1)",
+    "new": "size = CHUNK_SIZE",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R13",
+  "file": "src/amxtriage/reader.py",
+  "description": "no probe byte, so input one byte over the limit passes",
+  "edits": [
+   {
+    "old": "min(CHUNK_SIZE, max_bytes - total + 1)",
+    "new": "min(CHUNK_SIZE, max_bytes - total)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R14",
+  "file": "src/amxtriage/reader.py",
+  "description": "the size limit is never enforced",
+  "edits": [
+   {
+    "old": "if max_bytes is not None and total > max_bytes:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R15",
+  "file": "src/amxtriage/reader.py",
+  "description": "bytes read are not counted",
+  "edits": [
+   {
+    "old": "            total += len(chunk)\n",
+    "new": "",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "R16",
+  "file": "src/amxtriage/reader.py",
+  "description": "the error does not tell how to remove the limit",
+  "edits": [
+   {
+    "old": "raise it with --max-input-bytes, or use 0 for no limit",
+    "new": "raise it with --max-input-bytes",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "N5",
+  "file": "src/amxtriage/analysis.py",
+  "description": "the limit is not passed to the reader",
+  "edits": [
+   {
+    "old": "for line in iter_lines(stream, splitter, path, max_input_bytes):",
+    "new": "for line in iter_lines(stream, splitter, path):",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C14",
+  "file": "src/amxtriage/cli.py",
+  "description": "a limit of zero means a limit of zero bytes",
+  "edits": [
+   {
+    "old": "max_input_bytes=args.max_input_bytes or None",
+    "new": "max_input_bytes=args.max_input_bytes",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C15",
+  "file": "src/amxtriage/cli.py",
+  "description": "K means 1000 bytes",
+  "edits": [
+   {
+    "old": "\"K\": 1024,",
+    "new": "\"K\": 1000,",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C16",
+  "file": "src/amxtriage/cli.py",
+  "description": "lower-case units are rejected",
+  "edits": [
+   {
+    "old": "_SIZE_UNITS[match[2].upper()]",
+    "new": "_SIZE_UNITS[match[2]]",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C17",
+  "file": "src/amxtriage/cli.py",
+  "description": "numbers of any length are accepted",
+  "edits": [
+   {
+    "old": "r\"(\\d{1,15})([KMGkmg]?)\"",
+    "new": "r\"(\\d+)([KMGkmg]?)\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C18",
+  "file": "src/amxtriage/cli.py",
+  "description": "surrounding spaces are rejected",
+  "edits": [
+   {
+    "old": "_SIZE.fullmatch(text.strip())",
+    "new": "_SIZE.fullmatch(text)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C19",
+  "file": "src/amxtriage/cli.py",
+  "description": "the option default is one megabyte",
+  "edits": [
+   {
+    "old": "        default=0,\n        metavar=\"SIZE\",",
+    "new": "        default=1048576,\n        metavar=\"SIZE\",",
+    "count": 1
+   }
+  ]
  }
 ]

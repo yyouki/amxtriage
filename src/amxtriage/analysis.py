@@ -33,7 +33,11 @@ class Report:
     notes: list[str]
 
 
-def analyze_logs(paths: Sequence[str], max_groups: int = MAX_GROUPS) -> AnalysisResult:
+def analyze_logs(
+    paths: Sequence[str],
+    max_groups: int = MAX_GROUPS,
+    max_input_bytes: int | None = None,
+) -> AnalysisResult:
     aggregator = Aggregator(max_groups)
     sources: list[str] = []
     lines_read = 0
@@ -44,7 +48,7 @@ def analyze_logs(paths: Sequence[str], max_groups: int = MAX_GROUPS) -> Analysis
         parser = LogParser()
         splitter = LineSplitter()
         with open_log(path) as stream:
-            for line in iter_lines(stream, splitter, path):
+            for line in iter_lines(stream, splitter, path, max_input_bytes):
                 for event in parser.feed(line):
                     aggregator.add(event, label)
         for event in parser.flush():
