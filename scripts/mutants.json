@@ -653,7 +653,7 @@
   "description": "baseline schema_version not checked",
   "edits": [
    {
-    "old": "if version != SCHEMA_VERSION:",
+    "old": "if type(version) is not int or version != SCHEMA_VERSION:",
     "new": "if False:",
     "count": 1
    }
@@ -1668,6 +1668,150 @@
    {
     "old": "        default=0,\n        metavar=\"SIZE\",",
     "new": "        default=1048576,\n        metavar=\"SIZE\",",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B7",
+  "file": "src/amxtriage/baseline.py",
+  "description": "UTF-8 byte order mark no longer removed",
+  "edits": [
+   {
+    "old": "raw.removeprefix(codecs.BOM_UTF8).decode(\"utf-8\")",
+    "new": "raw.decode(\"utf-8\")",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B8",
+  "file": "src/amxtriage/baseline.py",
+  "description": "any number of byte order marks removed",
+  "edits": [
+   {
+    "old": "raw.removeprefix(codecs.BOM_UTF8)",
+    "new": "raw.lstrip(codecs.BOM_UTF8)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B9",
+  "file": "src/amxtriage/baseline.py",
+  "description": "integer digit limit removed",
+  "edits": [
+   {
+    "old": "if len(digits.lstrip(\"-\")) > MAX_INTEGER_DIGITS:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B10",
+  "file": "src/amxtriage/baseline.py",
+  "description": "integer digit limit excludes its maximum",
+  "edits": [
+   {
+    "old": "if len(digits.lstrip(\"-\")) > MAX_INTEGER_DIGITS:",
+    "new": "if len(digits.lstrip(\"-\")) >= MAX_INTEGER_DIGITS:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B11",
+  "file": "src/amxtriage/baseline.py",
+  "description": "minus sign counted as a digit",
+  "edits": [
+   {
+    "old": "len(digits.lstrip(\"-\"))",
+    "new": "len(digits)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B12",
+  "file": "src/amxtriage/baseline.py",
+  "description": "NaN and Infinity accepted",
+  "edits": [
+   {
+    "old": "json.loads(text, parse_int=integer, parse_constant=constant)",
+    "new": "json.loads(text, parse_int=integer)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B13",
+  "file": "src/amxtriage/baseline.py",
+  "description": "schema_version type not checked (true and 1.0 pass)",
+  "edits": [
+   {
+    "old": "if type(version) is not int or version != SCHEMA_VERSION:",
+    "new": "if version != SCHEMA_VERSION:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B14",
+  "file": "src/amxtriage/baseline.py",
+  "description": "baseline size limit excludes its maximum",
+  "edits": [
+   {
+    "old": "if len(raw) > MAX_BASELINE_BYTES:",
+    "new": "if len(raw) >= MAX_BASELINE_BYTES:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B15",
+  "file": "src/amxtriage/baseline.py",
+  "description": "deeply nested JSON no longer caught",
+  "edits": [
+   {
+    "old": "except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:",
+    "new": "except (UnicodeDecodeError, json.JSONDecodeError) as error:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B16",
+  "file": "src/amxtriage/baseline.py",
+  "description": "invalid UTF-8 no longer caught",
+  "edits": [
+   {
+    "old": "except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:",
+    "new": "except (json.JSONDecodeError, RecursionError) as error:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B17",
+  "file": "src/amxtriage/baseline.py",
+  "description": "malformed JSON no longer caught",
+  "edits": [
+   {
+    "old": "except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:",
+    "new": "except (UnicodeDecodeError, RecursionError) as error:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "B18",
+  "file": "src/amxtriage/baseline.py",
+  "description": "value of a wrong schema_version type echoed",
+  "edits": [
+   {
+    "old": "return f\"of type {type(version).__name__}\"",
+    "new": "return repr(version)",
     "count": 1
    }
   ]

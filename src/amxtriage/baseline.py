@@ -1,3 +1,4 @@
+import codecs
 import contextlib
 import json
 import os
@@ -13,6 +14,7 @@ from amxtriage.textutil import sanitize
 
 SCHEMA_VERSION = 1
 MAX_BASELINE_BYTES = 10 * 1024 * 1024
+MAX_INTEGER_DIGITS = 32
 
 _HEX_DIGITS = frozenset("0123456789abcdef")
 
@@ -53,13 +55,34 @@ def save_baseline(path: str, groups: Iterable[Group]) -> int:
     return len(entries)
 
 
+def _loads(text: str, path: str) -> object:
+    def integer(digits: str) -> int:
+        if len(digits.lstrip("-")) > MAX_INTEGER_DIGITS:
+            raise BaselineError(
+                f"'{path}' contains a number with more than {MAX_INTEGER_DIGITS} digits"
+            )
+        return int(digits)
+
+    def constant(name: str) -> float:
+        raise BaselineError(f"'{path}' contains the non-standard JSON value {name}")
+
+    return json.loads(text, parse_int=integer, parse_constant=constant)
+
+
+def _version_text(version: object) -> str:
+    if type(version) is int:
+        return str(version)
+    return f"of type {type(version).__name__}"
+
+
 def _validated_ids(data: object, path: str) -> list[str]:
     if not isinstance(data, dict) or data.get("tool") != "amxtriage":
         raise BaselineError(f"'{path}' is not an amxtriage baseline file")
     version = data.get("schema_version")
-    if version != SCHEMA_VERSION:
+    if type(version) is not int or version != SCHEMA_VERSION:
         raise BaselineError(
-            f"'{path}' has unsupported schema_version {version!r}; expected {SCHEMA_VERSION}"
+            f"'{path}' has unsupported schema_version {_version_text(version)}; "
+            f"expected {SCHEMA_VERSION}"
         )
     signatures = data.get("signatures")
     if not isinstance(signatures, list):
@@ -89,7 +112,7 @@ def load_baseline(path: str) -> frozenset[str]:
     if len(raw) > MAX_BASELINE_BYTES:
         raise BaselineError(f"baseline file '{path}' is larger than {MAX_BASELINE_BYTES} bytes")
     try:
-        data = json.loads(raw.decode("utf-8"))
+        data = _loads(raw.removeprefix(codecs.BOM_UTF8).decode("utf-8"), path)
     except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
         raise BaselineError(f"cannot read baseline '{path}': {error}") from error
     return frozenset(_validated_ids(data, path))
