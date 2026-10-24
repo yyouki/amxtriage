@@ -6,6 +6,7 @@ import re
 import signal
 import sys
 import threading
+import traceback
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import FrameType
@@ -34,7 +35,7 @@ from amxtriage.render import (
     render_report,
 )
 from amxtriage.source import MAX_CONTEXT_RADIUS, SourceIndex
-from amxtriage.textutil import sanitize
+from amxtriage.textutil import basename, sanitize
 
 EXIT_OK = 0
 EXIT_NEW_PROBLEMS = 1
@@ -42,6 +43,7 @@ EXIT_ERROR = 2
 EXIT_INTERRUPTED = 130
 
 MESSAGE_LIMIT = 1000
+INTERNAL_ERROR_FRAMES = 5
 
 DEFAULT_TOP = 20
 DEFAULT_CONTEXT = 3
@@ -356,6 +358,17 @@ def _silence_stdout() -> None:
         os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
 
 
+def _internal_error_lines(error: Exception) -> list[str]:
+    label = type(error).__name__
+    if isinstance(error, OSError) and error.strerror:
+        label = f"{label}: {error.strerror}"
+    lines = [f"error: internal error ({sanitize(label, 200)}); please report this as a bug"]
+    for frame in traceback.extract_tb(error.__traceback__)[-INTERNAL_ERROR_FRAMES:]:
+        place = f"{basename(frame.filename)}:{frame.lineno} in {frame.name}"
+        lines.append(f"  at {sanitize(place, 200)}")
+    return lines
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     _configure_streams()
     parser = build_parser()
@@ -376,3 +389,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return EXIT_OK
     except KeyboardInterrupt:
         return EXIT_INTERRUPTED
+    except Exception as error:
+        print("\n".join(_internal_error_lines(error)), file=sys.stderr)
+        return EXIT_ERROR

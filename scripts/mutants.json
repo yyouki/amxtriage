@@ -1815,5 +1815,113 @@
     "count": 1
    }
   ]
+ },
+ {
+  "id": "C20",
+  "file": "src/amxtriage/cli.py",
+  "description": "an internal error exits with the status for new problems",
+  "edits": [
+   {
+    "old": "print(\"\\n\".join(_internal_error_lines(error)), file=sys.stderr)\n        return EXIT_ERROR",
+    "new": "print(\"\\n\".join(_internal_error_lines(error)), file=sys.stderr)\n        return EXIT_NEW_PROBLEMS",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C21",
+  "file": "src/amxtriage/cli.py",
+  "description": "unexpected exceptions are not caught",
+  "edits": [
+   {
+    "old": "except Exception as error:",
+    "new": "except ZeroDivisionError as error:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C22",
+  "file": "src/amxtriage/cli.py",
+  "description": "text of the exception printed",
+  "edits": [
+   {
+    "old": "label = type(error).__name__",
+    "new": "label = repr(error)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C23",
+  "file": "src/amxtriage/cli.py",
+  "description": "all frames listed instead of the innermost five",
+  "edits": [
+   {
+    "old": "[-INTERNAL_ERROR_FRAMES:]",
+    "new": "[:]",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C24",
+  "file": "src/amxtriage/cli.py",
+  "description": "reason of an operating system error dropped",
+  "edits": [
+   {
+    "old": "if isinstance(error, OSError) and error.strerror:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C25",
+  "file": "src/amxtriage/cli.py",
+  "description": "file name of an operating system error printed",
+  "edits": [
+   {
+    "old": "label = f\"{label}: {error.strerror}\"",
+    "new": "label = f\"{label}: {error}\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C26",
+  "file": "src/amxtriage/cli.py",
+  "description": "directories shown in the place of a failure",
+  "edits": [
+   {
+    "old": "{basename(frame.filename)}:",
+    "new": "{frame.filename}:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C27",
+  "file": "src/amxtriage/cli.py",
+  "description": "exception class name not sanitized",
+  "edits": [
+   {
+    "old": "({sanitize(label, 200)})",
+    "new": "({label})",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C28",
+  "file": "src/amxtriage/cli.py",
+  "description": "place of a failure not sanitized",
+  "edits": [
+   {
+    "old": "lines.append(f\"  at {sanitize(place, 200)}\")",
+    "new": "lines.append(f\"  at {place}\")",
+    "count": 1
+   }
+  ]
  }
 ]
