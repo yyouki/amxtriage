@@ -713,8 +713,8 @@
   "description": "symlink escape check removed",
   "edits": [
    {
-    "old": "if not resolved.is_relative_to(self._root) or not resolved.is_file():",
-    "new": "if not resolved.is_file():",
+    "old": "if not resolved.is_relative_to(self._root):",
+    "new": "if False:",
     "count": 1
    }
   ]
@@ -761,8 +761,8 @@
   "description": "source size limit removed",
   "edits": [
    {
-    "old": "if resolved.stat().st_size > MAX_SOURCE_BYTES:",
-    "new": "if False:",
+    "old": "return stat.S_ISREG(info.st_mode) and info.st_size <= MAX_SOURCE_BYTES",
+    "new": "return stat.S_ISREG(info.st_mode)",
     "count": 1
    }
   ]
@@ -833,8 +833,8 @@
   "description": "absolute path shown instead of relative",
   "edits": [
    {
-    "old": "display = \"/\".join(path.relative_to(self._root).parts)",
-    "new": "display = str(path)",
+    "old": "display = \"/\".join(verified.parts)",
+    "new": "display = str(verified.path)",
     "count": 1
    }
   ]
@@ -1920,6 +1920,258 @@
    {
     "old": "lines.append(f\"  at {sanitize(place, 200)}\")",
     "new": "lines.append(f\"  at {place}\")",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S12",
+  "file": "src/amxtriage/source.py",
+  "description": "a symlink as the last component is followed when opening",
+  "edits": [
+   {
+    "old": "return os.open(verified.parts[-1], _FILE_FLAGS | _NOFOLLOW, dir_fd=directory)",
+    "new": "return os.open(verified.parts[-1], _FILE_FLAGS, dir_fd=directory)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S13",
+  "file": "src/amxtriage/source.py",
+  "description": "symlinked directories are followed when opening",
+  "edits": [
+   {
+    "old": "child = os.open(part, os.O_RDONLY | _DIRECTORY | _NOFOLLOW, dir_fd=directory)",
+    "new": "child = os.open(part, os.O_RDONLY | _DIRECTORY, dir_fd=directory)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S14",
+  "file": "src/amxtriage/source.py",
+  "description": "a symlinked source root is followed when opening",
+  "edits": [
+   {
+    "old": "directory = os.open(self._root, os.O_RDONLY | _DIRECTORY | _NOFOLLOW)",
+    "new": "directory = os.open(self._root, os.O_RDONLY | _DIRECTORY)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S15",
+  "file": "src/amxtriage/source.py",
+  "description": "anchored opening switched off",
+  "edits": [
+   {
+    "old": "_ANCHORED = bool(_NOFOLLOW and _DIRECTORY and os.open in os.supports_dir_fd)",
+    "new": "_ANCHORED = False",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S16",
+  "file": "src/amxtriage/source.py",
+  "description": "non-blocking open removed, a named pipe blocks",
+  "edits": [
+   {
+    "old": "    | getattr(os, \"O_NONBLOCK\", 0)\n",
+    "new": "",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S17",
+  "file": "src/amxtriage/source.py",
+  "description": "regular file check removed after opening",
+  "edits": [
+   {
+    "old": "return stat.S_ISREG(info.st_mode) and info.st_size <= MAX_SOURCE_BYTES",
+    "new": "return info.st_size <= MAX_SOURCE_BYTES",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S18",
+  "file": "src/amxtriage/source.py",
+  "description": "size limit excludes its maximum",
+  "edits": [
+   {
+    "old": "return stat.S_ISREG(info.st_mode) and info.st_size <= MAX_SOURCE_BYTES",
+    "new": "return stat.S_ISREG(info.st_mode) and info.st_size < MAX_SOURCE_BYTES",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S19",
+  "file": "src/amxtriage/source.py",
+  "description": "identity of the opened file not compared",
+  "edits": [
+   {
+    "old": "return (info.st_dev, info.st_ino) == (verified.device, verified.inode)",
+    "new": "return True",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S20",
+  "file": "src/amxtriage/source.py",
+  "description": "device number ignored in the identity",
+  "edits": [
+   {
+    "old": "return (info.st_dev, info.st_ino) == (verified.device, verified.inode)",
+    "new": "return info.st_ino == verified.inode",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S21",
+  "file": "src/amxtriage/source.py",
+  "description": "identity compared even when no inode is known",
+  "edits": [
+   {
+    "old": "if verified.inode and info.st_ino:",
+    "new": "if True:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S22",
+  "file": "src/amxtriage/source.py",
+  "description": "refused descriptor not closed",
+  "edits": [
+   {
+    "old": "        os.close(descriptor)\n        return None\n",
+    "new": "        return None\n",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S23",
+  "file": "src/amxtriage/source.py",
+  "description": "root descriptor leaked after opening",
+  "edits": [
+   {
+    "old": "        finally:\n            os.close(directory)\n",
+    "new": "        finally:\n            pass\n",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S24",
+  "file": "src/amxtriage/source.py",
+  "description": "parent descriptors leaked while walking",
+  "edits": [
+   {
+    "old": "                os.close(directory)\n                directory = child\n",
+    "new": "                directory = child\n",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S25",
+  "file": "src/amxtriage/source.py",
+  "description": "total bytes read not limited",
+  "edits": [
+   {
+    "old": "if consumed > MAX_SOURCE_BYTES:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S26",
+  "file": "src/amxtriage/source.py",
+  "description": "total bytes limit excludes its maximum",
+  "edits": [
+   {
+    "old": "if consumed > MAX_SOURCE_BYTES:",
+    "new": "if consumed >= MAX_SOURCE_BYTES:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S27",
+  "file": "src/amxtriage/source.py",
+  "description": "a line is read without a size bound",
+  "edits": [
+   {
+    "old": "raw = handle.readline(MAX_SOURCE_BYTES + 1)",
+    "new": "raw = handle.readline()",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S28",
+  "file": "src/amxtriage/source.py",
+  "description": "line read bound is one byte too small",
+  "edits": [
+   {
+    "old": "raw = handle.readline(MAX_SOURCE_BYTES + 1)",
+    "new": "raw = handle.readline(MAX_SOURCE_BYTES)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S29",
+  "file": "src/amxtriage/source.py",
+  "description": "one line more than needed is read",
+  "edits": [
+   {
+    "old": "for number in range(1, last + 1):",
+    "new": "for number in range(1, last + 2):",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S30",
+  "file": "src/amxtriage/source.py",
+  "description": "inode not recorded when checking",
+  "edits": [
+   {
+    "old": "return _Verified(resolved, relative, info.st_dev, info.st_ino)",
+    "new": "return _Verified(resolved, relative, info.st_dev, 0)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S31",
+  "file": "src/amxtriage/source.py",
+  "description": "fallback opening follows a final symlink",
+  "edits": [
+   {
+    "old": "return os.open(verified.path, _FILE_FLAGS | _NOFOLLOW)",
+    "new": "return os.open(verified.path, _FILE_FLAGS)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S32",
+  "file": "src/amxtriage/source.py",
+  "description": "errors while opening are not handled",
+  "edits": [
+   {
+    "old": "        except OSError:\n            return None\n        with contextlib.suppress(OSError):",
+    "new": "        except ZeroDivisionError:\n            return None\n        with contextlib.suppress(OSError):",
     "count": 1
    }
   ]

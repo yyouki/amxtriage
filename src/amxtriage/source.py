@@ -1,7 +1,10 @@
+import contextlib
 import os
 import re
+import stat
 from dataclasses import dataclass
 from pathlib import Path
+from typing import BinaryIO
 
 from amxtriage.errors import SourceError
 from amxtriage.textutil import sanitize
@@ -17,6 +20,17 @@ SKIPPED_DIRECTORIES = frozenset({".git", "node_modules", "__pycache__"})
 _SEPARATORS = re.compile(r"[\\/]+")
 _DRIVE = re.compile(r"[A-Za-z]:")
 
+_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+_DIRECTORY = getattr(os, "O_DIRECTORY", 0)
+_FILE_FLAGS = (
+    os.O_RDONLY
+    | getattr(os, "O_NONBLOCK", 0)
+    | getattr(os, "O_NOCTTY", 0)
+    | getattr(os, "O_BINARY", 0)
+    | getattr(os, "O_CLOEXEC", 0)
+)
+_ANCHORED = bool(_NOFOLLOW and _DIRECTORY and os.open in os.supports_dir_fd)
+
 
 @dataclass(frozen=True, slots=True)
 class Snippet:
@@ -24,6 +38,26 @@ class Snippet:
     first_line: int
     target_line: int
     lines: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _Verified:
+    path: Path
+    parts: tuple[str, ...]
+    device: int
+    inode: int
+
+
+def _is_acceptable(info: os.stat_result) -> bool:
+    return stat.S_ISREG(info.st_mode) and info.st_size <= MAX_SOURCE_BYTES
+
+
+def _is_checked_file(info: os.stat_result, verified: _Verified) -> bool:
+    if not _is_acceptable(info):
+        return False
+    if verified.inode and info.st_ino:
+        return (info.st_dev, info.st_ino) == (verified.device, verified.inode)
+    return True
 
 
 def path_components(logged_path: str) -> list[str]:
@@ -50,6 +84,10 @@ class SourceIndex:
         return sum(len(paths) for paths in self._files.values())
 
     def find(self, logged_path: str) -> Path | None:
+        verified = self._locate(logged_path)
+        return verified.path if verified is not None else None
+
+    def _locate(self, logged_path: str) -> _Verified | None:
         parts = path_components(logged_path)
         if not parts:
             return None
@@ -75,18 +113,26 @@ class SourceIndex:
         if line < 1 or radius < 1:
             return None
         radius = min(radius, MAX_CONTEXT_RADIUS)
-        path = self.find(logged_path)
-        if path is None:
+        verified = self._locate(logged_path)
+        if verified is None:
+            return None
+        handle = self._open_verified(verified)
+        if handle is None:
             return None
         first = max(1, line - radius)
         last = line + radius
         collected: list[str] = []
         reached = False
+        consumed = 0
         try:
-            with path.open("rb") as handle:
-                for number, raw in enumerate(handle, start=1):
-                    if number > last:
+            with handle:
+                for number in range(1, last + 1):
+                    raw = handle.readline(MAX_SOURCE_BYTES + 1)
+                    if not raw:
                         break
+                    consumed += len(raw)
+                    if consumed > MAX_SOURCE_BYTES:
+                        return None
                     if number == line:
                         reached = True
                     if number >= first:
@@ -96,8 +142,32 @@ class SourceIndex:
             return None
         if not reached:
             return None
-        display = "/".join(path.relative_to(self._root).parts)
+        display = "/".join(verified.parts)
         return Snippet(display, first, line, tuple(collected))
+
+    def _open_verified(self, verified: _Verified) -> BinaryIO | None:
+        try:
+            descriptor = self._open_descriptor(verified)
+        except OSError:
+            return None
+        with contextlib.suppress(OSError):
+            if _is_checked_file(os.fstat(descriptor), verified):
+                return os.fdopen(descriptor, "rb")
+        os.close(descriptor)
+        return None
+
+    def _open_descriptor(self, verified: _Verified) -> int:
+        if not _ANCHORED:
+            return os.open(verified.path, _FILE_FLAGS | _NOFOLLOW)
+        directory = os.open(self._root, os.O_RDONLY | _DIRECTORY | _NOFOLLOW)
+        try:
+            for part in verified.parts[:-1]:
+                child = os.open(part, os.O_RDONLY | _DIRECTORY | _NOFOLLOW, dir_fd=directory)
+                os.close(directory)
+                directory = child
+            return os.open(verified.parts[-1], _FILE_FLAGS | _NOFOLLOW, dir_fd=directory)
+        finally:
+            os.close(directory)
 
     def _scan(self) -> None:
         indexed = 0
@@ -122,13 +192,15 @@ class SourceIndex:
                     )
                 self._files.setdefault(name.lower(), []).append((*relative, name))
 
-    def _checked_path(self, parts: tuple[str, ...]) -> Path | None:
+    def _checked_path(self, parts: tuple[str, ...]) -> _Verified | None:
         try:
             resolved = self._root.joinpath(*parts).resolve(strict=True)
-            if not resolved.is_relative_to(self._root) or not resolved.is_file():
+            if not resolved.is_relative_to(self._root):
                 return None
-            if resolved.stat().st_size > MAX_SOURCE_BYTES:
-                return None
+            info = resolved.stat()
+            relative = resolved.relative_to(self._root).parts
         except (OSError, RuntimeError):
             return None
-        return resolved
+        if not _is_acceptable(info):
+            return None
+        return _Verified(resolved, relative, info.st_dev, info.st_ino)
