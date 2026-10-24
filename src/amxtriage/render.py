@@ -3,7 +3,7 @@ import json
 from amxtriage import __version__
 from amxtriage.amxerrors import AmxError, all_errors, causes_for
 from amxtriage.analysis import Report
-from amxtriage.model import Frame, Group, NativeFrame, Occurrence
+from amxtriage.model import ARGS_DISPLAY_LIMIT, Frame, Group, NativeFrame, Occurrence
 from amxtriage.source import Snippet
 from amxtriage.textutil import inline_code, sanitize
 
@@ -35,7 +35,7 @@ def format_frame(frame: Frame, show_args: bool) -> str:
     prefix = "native " if frame.kind == "native" else ("public " if frame.public else "")
     text = f"#{frame.index} {prefix}{sanitize(frame.function, 128)}"
     if show_args and frame.args is not None:
-        text += f"({sanitize(frame.args, 400)})"
+        text += f"({sanitize(frame.args, ARGS_DISPLAY_LIMIT)})"
     if frame.file is not None and frame.line is not None:
         text += f"  {sanitize(frame.file, 200)}:{frame.line}"
     elif frame.module is not None:
@@ -273,7 +273,7 @@ def _frame_dict(frame: Frame, show_args: bool) -> dict[str, object]:
         "module": _optional(frame.module, 120),
     }
     if show_args:
-        data["args"] = _optional(frame.args, 400)
+        data["args"] = _optional(frame.args, ARGS_DISPLAY_LIMIT)
     return data
 
 

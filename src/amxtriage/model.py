@@ -6,6 +6,9 @@ FrameKind = Literal["amx", "native"]
 
 REPORTED_KINDS: tuple[EventKind, ...] = ("runtime_error", "crash", "long_call")
 
+ARGS_DISPLAY_LIMIT = 400
+MAX_STORED_ARGS = ARGS_DISPLAY_LIMIT + 1
+
 
 @dataclass(frozen=True, slots=True)
 class Frame:

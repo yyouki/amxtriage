@@ -2175,5 +2175,89 @@
     "count": 1
    }
   ]
+ },
+ {
+  "id": "P38",
+  "file": "src/amxtriage/parser.py",
+  "description": "arguments stored without any limit",
+  "edits": [
+   {
+    "old": "stored = min(close, MAX_STORED_ARGS)",
+    "new": "stored = close",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P39",
+  "file": "src/amxtriage/model.py",
+  "description": "stored arguments limit equals the display limit, so a cut is no longer visible",
+  "edits": [
+   {
+    "old": "MAX_STORED_ARGS = ARGS_DISPLAY_LIMIT + 1",
+    "new": "MAX_STORED_ARGS = ARGS_DISPLAY_LIMIT",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P40",
+  "file": "src/amxtriage/model.py",
+  "description": "stored arguments limit is larger than needed",
+  "edits": [
+   {
+    "old": "MAX_STORED_ARGS = ARGS_DISPLAY_LIMIT + 1",
+    "new": "MAX_STORED_ARGS = ARGS_DISPLAY_LIMIT + 2",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P41",
+  "file": "src/amxtriage/parser.py",
+  "description": "stored arguments take the larger of the two bounds",
+  "edits": [
+   {
+    "old": "stored = min(close, MAX_STORED_ARGS)",
+    "new": "stored = max(close, MAX_STORED_ARGS)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "P42",
+  "file": "src/amxtriage/model.py",
+  "description": "display limit for arguments changed",
+  "edits": [
+   {
+    "old": "ARGS_DISPLAY_LIMIT = 400",
+    "new": "ARGS_DISPLAY_LIMIT = 300",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V13",
+  "file": "src/amxtriage/render.py",
+  "description": "text and Markdown show arguments without the display limit",
+  "edits": [
+   {
+    "old": "text += f\"({sanitize(frame.args, ARGS_DISPLAY_LIMIT)})\"",
+    "new": "text += f\"({sanitize(frame.args, 1000)})\"",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "V14",
+  "file": "src/amxtriage/render.py",
+  "description": "JSON shows arguments without the display limit",
+  "edits": [
+   {
+    "old": "data[\"args\"] = _optional(frame.args, ARGS_DISPLAY_LIMIT)",
+    "new": "data[\"args\"] = _optional(frame.args, 1000)",
+    "count": 1
+   }
+  ]
  }
 ]

@@ -3,7 +3,7 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import NamedTuple
 
-from amxtriage.model import Event, EventKind, Frame, NativeFrame
+from amxtriage.model import MAX_STORED_ARGS, Event, EventKind, Frame, NativeFrame
 
 MAX_TAGS = 3
 MAX_FRAMES = 48
@@ -159,7 +159,8 @@ def _parse_amx_frame(index: int, rest: str) -> Frame | None:
         return None
     if file is not None and file.startswith("<unknown"):
         file = None
-    return Frame(index, "amx", function, public, file, line, module, tail[:close])
+    stored = min(close, MAX_STORED_ARGS)
+    return Frame(index, "amx", function, public, file, line, module, tail[:stored])
 
 
 def parse_frame(text: str) -> Frame | None:
