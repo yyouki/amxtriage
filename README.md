@@ -141,7 +141,7 @@ is expanded by amxtriage itself. It is an error if nothing matches.
 | Option | Meaning |
 |---|---|
 | `--format text\|markdown\|json` | Report format. Default `text`. |
-| `-o FILE`, `--output FILE` | Write the report to FILE (UTF-8) instead of the terminal. |
+| `-o FILE`, `--output FILE` | Write the report to FILE (UTF-8) instead of the terminal. A symbolic link, or a file with more than one hard link, is refused (see "Security and privacy"). |
 | `--top N` | Show at most N problems. Default 20. |
 | `--min-count N` | Hide problems that happened fewer than N times. |
 | `--kind runtime_error\|crash\|long_call` | Show only this kind. Can be repeated. |
@@ -193,6 +193,17 @@ name and count. It stores no arguments, file paths or player data.
 Signature ids are the first 12 hex digits of a SHA-256 hash of the signature described above,
 with a version prefix (`v1`). A test pins the id of a known problem, so baselines keep
 working between releases. If the scheme ever changes, the prefix must change with it.
+
+A baseline file is a UTF-8 JSON object of at most 10 MiB with `tool` (`"amxtriage"`),
+`schema_version` (the integer `1`) and `signatures` (a list of objects, each with an `id` of
+12 hexadecimal digits). Other fields are ignored. One leading byte order mark is accepted,
+because some Windows editors add it. A baseline is refused with exit status 2, and never
+treated as an empty one, when it is not valid JSON, is nested too deeply, contains a number
+with more than 32 digits, contains `NaN` or `Infinity`, has a `schema_version` that is not
+the integer 1 (`true`, `1.0` and `"1"` are refused), or has a bad `id`. The message names
+the problem and does not repeat values from the file. If a key appears twice, the last one
+counts, as in most JSON readers. A named pipe is read like a file, up to the size limit, so
+`--baseline <(git show main:baseline.json)` works.
 
 ### watch
 
@@ -262,8 +273,11 @@ a diagnosis.
 |---|---|
 | 0 | Success. With `--fail-on-new`: nothing new. `watch` also exits 0 on Ctrl+C. |
 | 1 | `--fail-on-new` found problems that are not in the baseline. |
-| 2 | Error: file cannot be read, binary input, bad baseline, bad option. |
+| 2 | Error: file cannot be read, binary input, bad baseline, bad option, a report file that cannot be written, or an internal error. An internal error prints `error: internal error (...)` and the places in the code. It is a bug: please report it. |
 | 130 | `analyze` was interrupted with Ctrl+C. |
+
+Status 1 is reserved for new problems. A crash of amxtriage itself ends with 2, so a pipeline
+never mistakes a bug for a finding.
 
 ## Security and privacy
 
@@ -285,17 +299,34 @@ What it does:
 - **Paths found in a log are never joined to the filesystem.** They are only keys that are
   looked up in an index built from a real listing of `--source-dir`. A symlink that points
   outside that folder is rejected, symlinked directories are not followed, and only regular
-  files up to 8 MiB are read.
+  files up to 8 MiB are read. On systems that have `O_NOFOLLOW`, `O_DIRECTORY` and `dir_fd`
+  (tested on Linux only) the file is then opened starting from the source folder, one path
+  component at a time, with `O_NOFOLLOW` (a symlink
+  anywhere in the path is refused) and `O_NONBLOCK` (a named pipe cannot block). The open
+  file is checked again with `fstat`: it must be a regular file within the size limit and the
+  same file (device and inode) that was checked. At most 8 MiB are read, line by line. So
+  replacing a file after the check does not make amxtriage read a file outside the folder.
 - **Memory is bounded.** Lines are cut at 8,192 bytes, input is read in 1 MiB chunks, and
   there are caps of 5,000 problems, 48 AMX frames and 16 native frames per event, and 64
   line numbers per problem. Beyond the cap, events are counted and reported in the notes
-  instead of being stored.
+  instead of being stored. The arguments of a frame are stored up to 401 characters; a report
+  never shows more than 400. Bounded does not mean small: a log built to reach every cap at
+  once (5,000 different problems, 48 frames each, every stored field at its limit) needed
+  320 MB in the test under "Performance", where ordinary logs need about 25 MB.
 - **Binary input is refused** (a NUL byte in the first 4,096 bytes, or a UTF-16 byte order
   mark at the start). Invalid UTF-8 is replaced, not fatal. A damaged `.gz` file is a clean error.
 - **No network, no subprocesses, no dynamic code.** The package imports no networking module
   (a test checks this) and `src/` contains no `subprocess`, `eval` or `pickle`.
 - **Writes only where you tell it to**: `-o FILE` and `--save-baseline FILE`. A baseline is
-  written to a temporary file in the same folder and then moved into place.
+  written to a temporary file in the same folder and then moved into place, which replaces a
+  symbolic link or a hard-linked name instead of writing through it. `-o` opens the file with
+  `O_NOFOLLOW`, so a symbolic link as the file name is refused (this includes
+  `-o /dev/stdout`: leave `-o` out or redirect the output instead), and a file that has more
+  than one hard link is refused before anything is changed. Devices such as `/dev/null` still
+  work.
+- **A bug cannot look like a finding.** An unexpected exception ends with status 2 and a short
+  message that names the exception type and the places in the code. It never prints the text
+  of the exception, which could contain data from the log.
 
 Limits you should know:
 
@@ -306,9 +337,23 @@ Limits you should know:
   the size: measured here, a 1 MiB file that expands to 1 GiB took about 2.6 s, and a 10 KB
   file with 5 million short lines took about 2 s. For archives you do not trust, run it under
   `timeout` or `ulimit -t`.
-- Someone with write access to your `--source-dir` could swap a file between the index scan
-  and the read. Every read checks the resolved path again, which leaves a very small window.
-  Do not point `--source-dir` at a folder that untrusted users can write to.
+- Someone with write access to your `--source-dir` can still change what a snippet shows, by
+  changing the file. On Linux they can no longer make amxtriage read a file outside the
+  folder by swapping one (see above); other POSIX systems were not tested. Windows has no
+  `O_NOFOLLOW`: there the file is
+  opened by path and only the `fstat` checks apply, which narrows the window but does not
+  close it. That path is simulated by tests on Linux and has not been run on Windows. A hard
+  link to a file outside the folder cannot be told from a normal file. Do not point
+  `--source-dir` at a folder that untrusted users can write to.
+- `-o` checks only the last part of the path: a symbolic link in a folder name is followed,
+  and on Windows symbolic links are followed everywhere.
+- A baseline can be up to 10 MiB. A file of that size full of the shortest possible entries
+  (476,617 of them) took about 0.5 s and 158 MB of memory to read. A named pipe given as a
+  baseline waits for its writer.
+- There is no cap on the number of entries in one `--source-dir` folder. A folder with
+  400,000 files took about 2 s and 80 MB of memory in total to index. If thousands of files
+  share one name, every lookup compares all of them (about 20 ms for 32,000), which matters
+  only with a very large `--top`.
 - `--show-args` output can contain passwords. Do not post it.
 - Reports show error messages, function names and file paths exactly as the log has them, after
   sanitising. Read a report before you publish it.
@@ -323,6 +368,9 @@ Measured on one 1-CPU Linux VM with Python 3.12.3. These are measurements, not p
 | 1,000,000 lines, 55.9 MB (text, JSON, Markdown, `.gz`, stdin) | 1.6 to 1.7 s, about 600,000 lines/s, 25 MB peak memory |
 | 895 MB, 16 million lines | 24 s, 24.7 MB peak memory (the same as for 56 MB) |
 | 300,000 distinct problems (60 times the cap) | 8.4 s, 31.5 MB, 295,000 events reported as not grouped |
+| 600,000 distinct problems (120 times the cap) \* | 18 s, 31 MB |
+| 5,000 problems of 48 frames with 8,000-character arguments, a hostile log \* | 178 MB, 5.7 s. Before the argument limit: 1,924 MB, 7.3 s |
+| The same, with every other stored field at its limit as well \* | 320 MB, 7.6 s. Before: 1,917 MB, 18 s |
 | 1,000,000 events in one problem, 265 MB | 28 s, 24.4 MB (about 35,000 events/s) |
 | A single 200 MB line | 0.18 s, 21 MB |
 | `watch`, announcement delay after a write (24 samples) | 24 to 989 ms with the default 1.0 s poll |
@@ -331,9 +379,15 @@ Measured on one 1-CPU Linux VM with Python 3.12.3. These are measurements, not p
 Logs full of errors are slower per line than logs with a few errors, because every error is
 parsed and grouped.
 
+Rows marked with an asterisk were measured in a later session on another 1-CPU VM with
+Python 3.12.3. On that VM a log of 2,000,000 lines (117 MB) took 3.3 s, and the version before
+the security changes took 3.4 to 3.9 s, so the changes did not make it slower.
+
 ## Limitations
 
 - Tested on Linux with Python 3.10, 3.11, 3.12 and 3.13. Windows and macOS were not tested.
+  Opening source files without following links and refusing symbolic links in `-o` need
+  `O_NOFOLLOW`, which Windows does not have; see "Security and privacy".
 - Formats: see "What it understands" for the `Script[...]` line and for open.mp.
 - crashdetect's block and the server's `Script[...]` line are merged only when at most two
   unrelated lines lie between them. In `watch`, a long pause between the two could split them
@@ -368,6 +422,7 @@ Layout:
 | `src/amxtriage/render.py` | Text, Markdown and JSON output |
 | `src/amxtriage/source.py` | Safe source lookup and snippets |
 | `src/amxtriage/baseline.py` | Saving and loading baselines |
+| `src/amxtriage/output.py` | Writing a report file without following links |
 | `src/amxtriage/follow.py` | Following a live log (rotation, truncation) |
 | `src/amxtriage/textutil.py` | `sanitize()` and helpers |
 | `src/amxtriage/amxerrors.py` | AMX error codes and hints |
@@ -384,7 +439,8 @@ Notes for contributors:
 - `examples/sample_server_log.txt` is synthetic. It is built from the verified formats but is
   not a real server log.
 - Large synthetic log: `python scripts/make_synthetic_log.py big.log --lines 1000000 --seed 1`.
-- Mutation check: `python scripts/mutation_check.py` (about 10 minutes), or give mutant ids
+- Mutation check: `python scripts/mutation_check.py` (about 35 minutes on one CPU; one shell
+  command may be limited to 300 s, so run it in chunks of about 24 ids), or give mutant ids
   to run a few. `--check` verifies that the catalogue still matches the source.
 - `HANDOFF.md` has the project state, design decisions and open work for the next person.
 

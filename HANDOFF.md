@@ -1,33 +1,37 @@
 # HANDOFF
 
-For the next developer or the next Claude session. Written at the end of the recovery session
-of 2026-10-04 (sandbox clock). Read sections 1 and 2 first. Everything stated as verified was
-read, run or measured in that session; what could not be verified is marked as such.
+For the next developer or the next Claude session. Written at the end of the Phase 6 session
+(security hardening). Read sections 1, 2 and 11 first. Statements marked **verified** were run
+or measured in that session. Statements marked **recorded** come from the checkpoint of an
+earlier session and were not repeated. Anything not marked is design information.
 
 ## 1. State in one paragraph
 
-`amxtriage` is a working, stdlib-only Python 3.10+ command line tool that triages SA-MP and
-open.mp server logs written by the crashdetect plugin (`analyze`, `watch`, `explain`). The
-repository is the authoritative state: the working tree is clean at the commit that contains
-this file, and the commit list in section 10 explains every change since the original baseline
-`4c01dec`. All checks pass (section 6). Every file in the tree has been reviewed. The origin of
-ten of them is still unknown, and section 5 records how they were checked and adopted.
+`amxtriage` is a stdlib-only Python 3.10+ command line tool that triages SA-MP and open.mp
+server logs written by the crashdetect plugin (`analyze`, `watch`, `explain`). The repository
+is the authoritative state. Code and tests are final at commit `0cb2399`; the commit after it
+only changes Markdown and text files (README, this file, the checkpoint and the manifest).
+Phase 6 (security hardening) is done: five weaknesses were reproduced and fixed, several other
+areas were assessed and left alone, and each decision is recorded in section 7. Phases 7 to 13
+are not done (section 11). The tool is **not** declared production ready: it was tested on Linux
+only, there is no CI, and the `Script[...]` line is still unverified against a real server.
 
 ## 2. Verify the state before trusting this file
 
 ```bash
-git status --short                      # expect no output
-git log --oneline | head -20            # compare with section 10
+git status --short                         # expect no output
+git log --oneline | head -12               # compare with section 10
 python -m venv .venv && . .venv/bin/activate
 python -m pip install -e ".[dev]"
-pytest -o addopts="" -q                 # 646 passed at the time of writing
-ruff check . && ruff format --check .   # both clean
-mypy                                    # no issues in 34 source files
-python scripts/mutation_check.py --check   # the catalogue still matches the source
+pytest                                     # 1763 passed, 1 skipped when run as root
+ruff check . && ruff format --check .      # both clean
+mypy                                       # no issues in 46 source files
+python scripts/mutation_check.py --check   # 203 mutants, every specification matches
 ```
 
-A passing test count is not proof that the tests are good. The proof used here is the mutation
-check (section 6): break the code on purpose and see that tests fail.
+The one skipped test (`test_an_unreadable_baseline_is_a_clean_error`) needs a user that file
+permissions apply to. Run it as a normal user to execute it. A passing test count is not proof
+that the tests are good; the proof used here is the mutation check (section 6).
 
 ## 3. Architecture
 
@@ -38,6 +42,7 @@ file | .gz | stdin
   -> aggregate.Aggregator   signature -> Group, with caps on groups, frames, line numbers
   -> analysis.build_report  filters, baseline, source snippets -> Report
   -> render.render_report   text | markdown | json
+  -> cli._write_output      stdout, or output.write_text_file for -o
 
 watch: follow.LogFollower yields lines (and None when idle) into the same parser and
 aggregator and announces each new group once. cli.py wires everything and owns exit codes.
@@ -45,21 +50,26 @@ aggregator and announces each new group once. cli.py wires everything and owns e
 
 | Module | Responsibility |
 |---|---|
-| `reader.py` | `LineSplitter` (chunk safe, BOM, partial lines), `open_log`, `iter_lines`, `check_text_like` |
-| `parser.py` | Regex based, all repetitions bounded. `LogParser.feed/flush`, frame and detail parsing |
+| `reader.py` | `LineSplitter` (chunk safe, BOM, partial lines), `open_log`, `iter_lines`, `check_text_like`, `--max-input-bytes` |
+| `parser.py` | Regex based, all repetitions bounded. `LogParser.feed/flush`, frame and detail parsing. Stores at most `MAX_STORED_ARGS` characters of a frame's arguments |
+| `model.py` | `Event`, `Frame`, `Group` and the shared constants `ARGS_DISPLAY_LIMIT` (400) and `MAX_STORED_ARGS` (401) |
 | `aggregate.py` | `canonical_signature`, `signature_id`, `Aggregator`, `Group`, caps |
 | `analysis.py` | `analyze_logs` (one parser per file), `build_report`, notes |
 | `render.py` | Three formats, argument hiding, sanitising of every log-derived string |
-| `source.py` | `SourceIndex`: index of real files, lookup by name, symlink checks, snippets |
-| `baseline.py` | Atomic save, bounded and validated load (ids only are used) |
+| `source.py` | `SourceIndex`: index of real files, lookup by name. `_checked_path` resolves a path and records its device and inode; `_open_verified` opens it without following links and checks it again with `fstat` |
+| `baseline.py` | Atomic save; bounded, strict load (ids only are used) |
+| `output.py` | `write_text_file`: the writer behind `-o` (refuses symlinks and multiply linked files) |
 | `follow.py` | `LogFollower`: rotation, truncation, partial lines, injectable sleep and stop hooks |
 | `textutil.py` | `sanitize`, `inline_code`, `basename` |
 | `amxerrors.py` | Error code names and hints (names copied from crashdetect) |
-| `cli.py` | argparse, `analyze`, `watch`, `explain`, exit codes 0, 1, 2, 130 |
+| `errors.py` | `AmxTriageError` and its subclasses (`BaselineError`, `SourceError`, `OutputError`, ...) |
+| `cli.py` | argparse, `analyze`, `watch`, `explain`, exit codes 0, 1, 2, 130, the internal error boundary |
 
 Limits (constants in the modules): line 8192 bytes, chunk 1 MiB, groups 5000, AMX frames 48
-and native frames 16 per event, line numbers 64 per group, baseline 10 MiB, source file 8 MiB,
-`MESSAGE_LIMIT` 1000 characters for text echoed in terminal messages.
+and native frames 16 per event, line numbers 64 per group, stored arguments 401 characters
+(shown: 400), baseline 10 MiB and integers of at most 32 digits, source file 8 MiB, at most
+50,000 indexed source files and 20,000 scanned directories, `MESSAGE_LIMIT` 1000 characters
+for text echoed in terminal messages, 5 places in an internal error message.
 
 ## 4. Design decisions that are not obvious from the code
 
@@ -70,19 +80,22 @@ Keep these unless a test or a real log shows they are wrong.
    Signature string: `v1|kind|code|function|file basename|script|extra`. `extra` is the first
    native frame for crashes without AMX frames, or the sorted native names for codes 10 and 19.
 2. **crashdetect's block and the server's `Script[...]` line are one event** when the code is
-   the same and at most two unrelated lines lie between them (`QUIET_LINE_TOLERANCE`).
+   the same and at most two unrelated lines lie between them (`QUIET_LINE_TOLERANCE`). In
+   `watch` a pending block waits two quiet polls before it is flushed.
 3. **Function arguments are hidden by default.** crashdetect logs string arguments verbatim;
    a login dialog `inputtext` is a password. `--show-args` is opt-in, and arguments are never
    written to a baseline or to JSON without the flag (also in `watch`, tested).
 4. **Paths from a log are lookup keys, never filesystem paths.** `SourceIndex` lists the real
-   `--source-dir` and the logged path only picks among the listed entries. Two layers protect
-   against escapes: symlinked directories are not followed while indexing, and every read
-   resolves the path again and requires it to stay under the root.
+   `--source-dir` and the logged path only picks among the listed entries. Symlinked
+   directories are not followed while indexing. A lookup resolves the path and requires it to
+   stay under the root; opening then starts at the root and goes component by component with
+   `O_NOFOLLOW`, so replacing a file after the check cannot lead outside the root (decision 13).
 5. **All log-derived text goes through `sanitize()`**, in text, Markdown and JSON values, and
    so do file names echoed in stderr messages. JSON needs it even though `json.dumps` escapes
    control characters, because a consumer that decodes the JSON and prints a value would
    otherwise get the raw characters. The tests therefore decode the JSON before checking.
-6. **Memory is bounded** by the limits above. Time is not bounded for decompressed size.
+6. **Memory is bounded** by the limits above. Time is bounded for decompressed size only with
+   `--max-input-bytes`. "Bounded" is not "small": section 7 has the measured worst case.
 7. **Interrupt signals are parsed and ignored.** They are normal stops, counted in the notes.
 8. **Only lines that start with the expected text count.** The match is anchored after the
    timestamp and up to three `[tag]` prefixes, so a player cannot forge an error by chatting it.
@@ -90,185 +103,289 @@ Keep these unless a test or a real log shows they are wrong.
    `--kind` show. Otherwise a filtered run would make old problems look new later.
 10. **The signature scheme is locked** by a test (`test_signature_values_are_locked_for_baseline_compatibility`).
 11. **In `watch`, the follower yields `None` when idle** so a block that is still open can be
-    flushed. That is also the reason a very slow writer could split a block (section 8).
+    flushed.
 12. **Standard library only.** Dev tools are in the `dev` extra. Do not add a runtime dependency
     without a strong reason.
+13. **Files whose name comes from untrusted text are opened without following links and
+    verified after opening.** That is the source files (`source.py`). Files that the user names
+    are different: the log and the baseline are opened normally, because named pipes and process
+    substitution (`--baseline <(git show main:baseline.json)`) are legitimate there, so the
+    baseline reader reads a pipe up to the size limit instead of refusing it. Output files are
+    covered by decision 16.
+14. **Status 1 means new problems and nothing else.** `main()` ends with a handler for any
+    unexpected exception: status 2 and a short message with the exception type and the
+    innermost places (file, line, function, no directory). The text of the exception is never
+    printed, because it can hold data from the log. `KeyboardInterrupt` (130), a closed pipe
+    (0) and `SystemExit` are not touched.
+15. **A baseline is rejected, never repaired.** `json.loads` gets hooks (`parse_int` refuses
+    numbers of more than 32 digits before `int()` runs, `parse_constant` refuses NaN and
+    Infinity), so there is no broad `except ValueError`. `schema_version` must be exactly the
+    integer 1 (`True` and `1.0` equal 1 in Python). One leading UTF-8 byte order mark is
+    accepted (RFC 8259 allows readers to ignore it). Messages never repeat values from the file.
+16. **`-o` and `--save-baseline` are deliberately different.** `--save-baseline` writes a
+    temporary file and renames it, which replaces a link instead of following it. `-o` must
+    also work for devices (`-o /dev/null`), which a rename would replace, so it opens with
+    `O_NOFOLLOW`, refuses a regular file with several hard links before truncating anything,
+    and truncates only regular files.
+17. **Stored arguments are cut at `ARGS_DISPLAY_LIMIT + 1`.** The extra character is what lets
+    `sanitize()` still add its ellipsis. Output is identical to storing everything (a test
+    compares both for lengths 1 to 7000, in all formats, with and without `--show-args`).
 
 ## 5. Provenance and recovery record
 
-On 2026-10-02 the previous session stopped because files appeared that it had not written
-(see its checkpoint, kept outside the repository, section 11). This session did the following.
+**Sessions.** (1) The original session produced baseline `4c01dec`; it stopped on 2026-10-02
+because files appeared that it had not written. (2) A recovery session (2026-10-04) reviewed
+ten files of unknown origin and adopted them. (3) A session carried out Phases 0 to 5 (format
+audit, parser fixes, watch grace period, `--max-input-bytes`) and stopped when six tracked source
+files changed on disk without any action of its own. (4) The Phase 6 session, which wrote this
+file.
 
-**Authoritative baseline.** Commit `4c01dec` plus the `textutil.py` fix of the previous session.
-The 37 hashes in `SESSION_MANIFEST.txt` all matched the snapshot, so the snapshot was
-faithful. That says nothing about whether the unknown files were good, so they were reviewed.
+**Recovery session (recorded).** The ten files of unknown provenance (`tests/test_analysis.py`,
+`test_baseline.py`, `test_cli.py`, `test_follow.py`, `test_fuzz.py`, `test_render.py`,
+`test_security.py`, `test_source.py`, `test_watch.py`, `scripts/make_synthetic_log.py`) were read
+in full and scanned for network access, dynamic code, `shell=True`, destructive file operations
+and paths outside `tmp_path`. Nothing harmful was found. They were committed byte for byte in
+`f057727`. Who wrote them was **not determined**. `pyproject.toml` got `S105` and `S311` ignores
+for tests (fake passwords and a seeded `random.Random`), and `textutil.sanitize()` was fixed so it
+never returns more than the limit.
 
-**The ten files of unknown provenance** (`tests/test_analysis.py`, `test_baseline.py`,
-`test_cli.py`, `test_follow.py`, `test_fuzz.py`, `test_render.py`, `test_security.py`,
-`test_source.py`, `test_watch.py`, `scripts/make_synthetic_log.py`) were read in full and
-scanned for network access, dynamic code, `shell=True`, destructive file operations and paths
-outside `tmp_path`. Nothing harmful was found: hostile paths such as `/etc/passwd` appear only
-as data, subprocesses use argument lists and timeouts. Their assertions match the design
-decisions. Each of the nine test files fails at least one deliberately broken variant of the
-code. They were committed byte for byte as found (hashes equal to the manifest) in `f057727`;
-all later changes to them are separate commits. Who wrote them and why was **not determined**.
-The hypothesis of the previous session (a parallel session working from the same plan) fits
-but is unproven.
+**Session 3 (recorded).** Its six commits are in section 10. It stopped because six files under
+`src/amxtriage/` (`baseline.py`, `parser.py`, `cli.py`, `model.py`, `render.py`, `source.py`)
+differed from HEAD in the original workspace, with no command of that session having written
+them. It left the original workspace as found, took an archive of it and a patch
+(`anomaly-evidence.zip`, 62 insertions and 13 deletions, never applied), and delivered a clean
+snapshot of `21fa90f`. Who or what wrote the changes is **unknown**.
 
-**The three files "reformatted by someone else"** (`test_aggregate.py`, `test_parser.py`,
-`test_textutil.py`) were read in full. Content and test counts (14, 62, 29) match the checkpoint.
+**Session 4, this one (verified).**
 
-**`pyproject.toml`.** The unexplained change added `S105` and `S311` to the ruff ignores for
-`tests/**`. Linting without it gives exactly six findings: `SECRET = "hunter2-secret"` in
-`test_render.py` and `test_security.py` (a fake password to prove it never leaks, S105) and four
-uses of the seeded `random.Random` in `test_fuzz.py` (S311). Justified, kept, committed alone.
+- The snapshot zip was listed before extraction: 446 entries, one top-level folder, no absolute
+  or `..` paths, no symlinks, `testzip` clean. `.git/config` and the hooks folder were read
+  before any `git` command: no hooks, no filters, no `fsmonitor`.
+- HEAD was `21fa90fac2b326bd13dac5de8325458040fa2c98`, branch `main`, tree clean, `git fsck
+  --full` clean, 20 commits. The 72 tracked files matched the manifest by SHA-256, the six
+  commit ids of session 3 existed with the recorded subjects, and the six blob ids that the
+  checkpoint names for HEAD matched.
+- The recorded baseline was reproduced before any change: 1506 tests passed on Python 3.10.20,
+  3.11.15, 3.12.3 and 3.13.13; ruff, ruff format and mypy strict were clean.
+- A tripwire outside the repository (SHA-256, size, mode and mtime of every tracked file, the
+  content hash of untracked files, HEAD and `git status`) was checked before and after every
+  substantial operation, including every mutation run. **It reported no unexplained change.**
+  Every difference it reported was one this session made on purpose.
+- `anomaly-evidence.zip` was not among the files given to this session, so the foreign patch
+  was never seen. Only the checkpoint's description of it was used, as a list of questions.
+  Everything was reimplemented from the reproduced failures. Where the description says what
+  the foreign patch did, the differences are: the baseline loader uses `json.loads` hooks and
+  not `except ValueError`; the internal error message prints the exception type and places and
+  not the text and a traceback; source files are opened component by component and not only
+  with `O_NOFOLLOW` on the last component plus an inode comparison; `-o` and the explain,
+  rendering and tree-size assessments are new.
 
-**`textutil.py`.** Kept. Against the HEAD version, four tests fail (limits 0 to 3 return `...`).
-
-**Corrections to the checkpoint.**
-
-- Its mypy fix, `module = ["test_*", ...]`, does not work: mypy rejects the pattern. The modules
-  are now listed by name (`[[tool.mypy.overrides]]`). A new test file must be added to that
-  list, otherwise mypy fails.
-- `.coverage` was not in the snapshot, so there was nothing to remove. It is in `.gitignore`.
-- The file that `ruff format` wanted to change was `scripts/make_synthetic_log.py`. Its output is
-  byte identical before and after the fix.
-
-**Format facts, re-checked from source** (crashdetect `a537639`, fork `efbe179`, open.mp
-`b6de2f2`):
-
-| Fact | Where |
-|---|---|
-| `Run time error %d: "%s"`, `Server crashed while executing %s`, `... due to an unknown error`, `Server received interrupt signal [while executing %s]`, `AMX backtrace:`, `Native backtrace:`, `Registers:`, `Long callback execution detected (hang or performance issue)` | `src/crashdetect.cpp` (lines 312, 315, 331, 334, 356, 436, 499, 584, 642) |
-| Detail lines start with one space after the `[debug]` prefix (two spaces in the log): array index, stack and heap pointers, unknown opcode, native names for codes 10 and 19 | `src/crashdetect.cpp` (around lines 360 to 420) |
-| Frame layout `#N <8 hex> in [public ]name (args) at file:line`, `<unknown file>` | `src/amxstacktrace.cpp` |
-| `variable arguments`, `<Foo:on, undefined>`, `native CallLocalFunction () from ...` | `tests/bad_frame.pwn`, `stacklow.pwn`, `states.pwn` |
-| Old wording `Accessing element at index N past array upper bound M` | `tests/bad_frame.pwn:2` only. The current `src/` no longer prints it. Kept for old plugin versions |
-| open.mp prints script errors as `<code> <message>`, not `Run time error` | open.mp `Manager.cpp` (lines 442, 559) and `Script.cpp:91`. Not parsed |
-| `Script[file.amx]: Run time error N: "msg"` | **Not found in any of the three repositories.** It comes from the closed-source SA-MP server. Unverified |
-
-The one unverified assumption carries weight: the merge of the two lines and the
-`QUIET_LINE_TOLERANCE` rule depend on it. Check it against a real `server_log.txt`.
-
-**Anomalies during the recovery session:** none. A tripwire (hash and modification time of every
-file, plus HEAD) was checked after every step. The only differences it ever reported were the
-changes made on purpose.
+**Format facts.** The evidence for every log format, with its level, is in
+`docs/LOG_FORMATS.md`. One point carries weight: the `Script[file.amx]: Run time error N:
+"msg"` line is printed by the closed-source SA-MP server and was **not found in any open-source
+repository**. The merge of the two lines and `QUIET_LINE_TOLERANCE` depend on it. Check it
+against a real `server_log.txt`. (Session 3 could not find the crashdetect commit ids that the
+older handoff named; the `Y-Less` fork was used. open.mp revision `b6de2f2` matched.)
 
 ## 6. Verification record
 
-Environment: Linux sandbox, 1 CPU, 4 GB RAM. Python 3.12.3, and 3.10.22, 3.11.17, 3.13.16
-installed with `uv python install`. ruff 0.16.10, mypy 2.4.0, pytest 9.1.1, pytest-cov 7.1.0,
-build 1.6.1, hatchling 1.32.4.
+Environment (verified): Linux sandbox, 1 CPU, about 4 GB RAM, running as root. Python 3.12.3,
+and 3.10.20, 3.11.15 and 3.13.13 installed with `uv python install`. ruff 0.17.2, mypy 2.4.0,
+pytest 9.1.1, pytest-cov 7.1.0, coverage 7.17.0, build 1.6.1, hatchling 1.32.4, twine 7.0.0.
 
-**Tests: 646, all passing** on Python 3.10.22, 3.11.17, 3.12.3 and 3.13.16.
+**Tests: 1764 collected, 1763 passed and 1 skipped** on Python 3.10.20, 3.11.15, 3.12.3 and
+3.13.13, on the final code. The same count passed from the extracted sdist (Python 3.12). The
+skipped test passes when run as the unprivileged user `nobody`.
 
-| Origin | Files (tests) | Total |
-|---|---|---|
-| Written by the earlier session before the anomaly | `test_textutil` 29, `test_reader` 25, `test_parser` 62, `test_aggregate` 14 | 130 |
-| Unknown provenance, reviewed and adopted | `test_analysis` 19, `test_baseline` 21, `test_cli` 45, `test_follow` 18, `test_fuzz` 311, `test_render` 22, `test_security` 18, `test_source` 35, `test_watch` 8 | 497 |
-| Added in the recovery session | `test_hardening` | 19 |
+| File | Tests | File | Tests |
+|---|---|---|---|
+| `test_aggregate` | 14 | `test_internal_errors` | 13 |
+| `test_analysis` | 19 | `test_output` | 24 |
+| `test_argument_storage` | 34 | `test_parser` | 172 |
+| `test_baseline` | 21 | `test_parser_model` | 500 |
+| `test_baseline_hardening` | 77 | `test_reader` | 25 |
+| `test_cli` | 45 | `test_render` | 22 |
+| `test_explain_inputs` | 17 | `test_rendering_hostile` | 40 |
+| `test_follow` | 35 | `test_security` | 18 |
+| `test_format_fixtures` | 178 | `test_source` | 35 |
+| `test_fuzz` | 311 | `test_source_race` | 53 |
+| `test_hardening` | 19 | `test_textutil` | 29 |
+| `test_input_limits` | 50 | `test_watch` / `test_watch_loop` | 8 / 5 |
 
-Changes this session to adopted files: two type fixes (`test_render.py`, `test_watch.py`) and one
-test in `test_follow.py` that now uses the bounded `follow()` helper.
+Phase 6 added 258 tests (1506 before): baseline hardening 77, internal errors 13, source race 53,
+argument storage 34, output 24, hostile rendering 40, explain 17. Every new test was written
+before its fix and seen to fail on the old behaviour.
 
 **Mutation check.** `scripts/mutation_check.py` applies one fault at a time to a copy of the
-tree: 98 mutants. At first, 15 of the first 94 survived against the adopted tests. 14 were real
-gaps (sanitising of the error message, script name, function and file and of JSON values after
-decoding, hostile file names, the native frame cap, baseline id length, symlinked directories,
-`--save-baseline` with filters, line numbers per file, argument hiding in `watch`). They are
-covered by `test_hardening`. The last one, `V12`, is an equivalent mutant: detail lines are
-limited by strict regexes, so `sanitize` cannot change them. Final state: **97 killed, 1
-equivalent, 0 unexpected survivors.** Every adopted test file kills at least one mutant.
+tree. The catalogue has 203 mutants (139 before Phase 6, 64 added). The full catalogue was run on the final
+source (201 mutants on the tree at `984b155`, whose `src/` is identical to the final one, and
+the two mutants added afterwards on the final tree): **202 killed, 1 survivor.** The survivor is
+`V12`, declared equivalent: detail lines are limited by strict regexes, so `sanitize` cannot
+change them. `R15` is killed only by a timeout. `--check` confirms that every specification
+still matches the source.
 
-**Static checks:** `ruff check .` and `ruff format --check .` clean (36 files: 34 Python and 2 Markdown), `mypy` strict on
-`src`, `scripts` and the tests with their relaxation: no issues in 34 source files.
+**Static checks (verified):** `ruff check .` and `ruff format --check .` clean (49 files),
+`mypy` strict clean (46 source files).
 
-**Coverage** (pytest-cov, line and branch, measured before the last two fixes): 94 %. The
-numbers for `cli.py` (73 %) and `__main__.py` (0 %) are low only because `watch` and `python -m`
-run in subprocesses that this measurement does not trace.
+**Coverage** (Python 3.12, line and branch): 98 %, 1521 statements with 24 missed and 456
+branches with 13 partial (before Phase 6: 1406 and 29, 428 and 14, also 98 %). `source.py` and
+`output.py` are fully covered. Lowest: `__main__.py` 0 % (it runs in a subprocess), `cli.py` 94 %.
 
-**Packaging.** `python -m build` produced the wheel and the sdist. The wheel holds only the 15
-modules and `py.typed` plus metadata (`Requires-Python >=3.10`, entry point
-`amxtriage = amxtriage.cli:main`). Installed from the wheel and from the sdist, each in a fresh
-venv that contained only `amxtriage` and `pip`: `scripts/smoke_installed.py` reported 14 passes
-and 0 failures each time. The test suite also ran from the extracted sdist: 645 passed.
+**Packaging (verified).** `python -m build` made the wheel and the sdist; `twine check` passed
+for both. The wheel has 22 entries: the 16 modules (including the new `output.py`), `py.typed`
+and the metadata. The sdist has `HANDOFF.md`, `README.md`, `src/`, `tests/`, `scripts/`,
+`examples/`, and no `docs/`. Each installed into a clean venv (Python 3.12),
+`scripts/smoke_installed.py` reported 14 passes and 0 failures.
 
-**Not tested:** Windows, macOS, other Linux distributions, a real SA-MP or open.mp server.
+**Compatibility with `21fa90f` (verified).** The old and the new code were run on the sample
+log and on a synthetic log of 2,000,000 lines (117 MB), in text, Markdown and JSON, with and
+without `--show-args` and `--source-dir`, and with `--fail-on-new --top 50`: **30 of 30 runs gave
+the same exit status, stdout and stderr, byte for byte.** `--save-baseline` wrote identical files,
+and each version read the other's baseline. The new code was not slower (3.25 to 3.37 s against
+3.44 to 3.86 s for 2,000,000 lines, same VM).
 
-## 7. Security review
+**Not tested:** Windows, macOS, other Linux distributions, other file systems than the sandbox's
+ext4-like one, a real SA-MP or open.mp server, any CI.
 
-Concrete mitigations, each with its test. This is not a claim that the tool is secure.
+## 7. Security review (Phase 6)
+
+### 7.1 What was investigated and what was found
+
+Every area was reproduced or measured on the unchanged commit `21fa90f` before any code changed.
+
+| Area | Result on `21fa90f` | Decision |
+|---|---|---|
+| Baseline: integer of more than 4,300 digits | `ValueError` from `int()`, traceback, **exit status 1** (the status of "new problems") | Fixed |
+| Baseline: `schema_version` `true` and `1.0`; `NaN`, `-Infinity` | Accepted as a valid baseline | Fixed |
+| Baseline: UTF-8 byte order mark | Rejected with a clear message | One BOM accepted |
+| Baseline: 10 MiB of minimal entries (476,617) | 0.44 s, 158 MB peak | Bounded, unchanged |
+| Baseline: directory, unreadable file, `/dev/zero` | Clean error, status 2 | Unchanged |
+| Baseline: named pipe with no writer | Waits (by design, a test pins reading a pipe) | Unchanged |
+| Source lookup: file swapped after the check | Symlink, hard link and symlinked directory leaked lines of a file outside the root; a named pipe blocked forever; a 300 MiB file used 623 MB | Fixed |
+| Frame arguments | 1,924 MB at 5,000 problems (7.3 s); 1,917 MB for a log with every field at its limit (18 s) | Fixed |
+| `-o` | Followed a symlink and truncated its target; wrote into a file with other names | Fixed |
+| Any unexpected exception | Python's exit status 1 | Fixed |
+| `explain` with odd arguments | Every case ends as a usage error (2) or an answer, no traceback | Tests only |
+| 5,000-digit numbers in any numeric position of a log line | No exception (regexes bound the digits) | Unchanged |
+| Hostile text and file names in text, Markdown, JSON | No finding in 40 seeds. The test fails when `sanitize` is weakened | Test only |
+| 600,000 distinct problems | 31 MB flat, 18 s | Unchanged |
+| One folder with 400,000 files | Index in 1.8 to 2.1 s, 80 MB peak in total | Unchanged, documented |
+| 32,000 files with the same name | 16 to 20 ms per lookup | Unchanged, documented |
+
+### 7.2 Fixes
+
+| Commit | Change | New tests | Mutants |
+|---|---|---|---|
+| `5e285fe` | Baseline loader: hooks, strict version type, BOM, no echo of file values | 77 | B7 to B18, B1 retargeted |
+| `674d5d2` | Internal error boundary in `main()` | 13 | C20 to C28 |
+| `2853439` | Source files opened component by component with `O_NOFOLLOW`, `O_NONBLOCK`, checked with `fstat`, bounded reads | 45 | S12 to S32, S1, S5, S11 retargeted |
+| `61002ee` | Arguments stored up to 401 characters | 34 | P38 to P42, V13, V14 |
+| `ddde066` | `output.py`: `-o` refuses symlinks and multiply linked files | 24 | O1 to O12, C29 |
+| `5fc8837`, `984b155` | Regression tests for rendering and for `explain` | 40, 17 | none needed |
+| `0cb2399` | Tests for a file that vanishes or loops after indexing | 8 | S33, S34 |
+
+Measured effect of the argument limit (same machine and method): 5,000 problems with 8,000
+character arguments 1,924 MB to 178 MB; the log with every stored field at its limit 1,917 MB to
+320 MB. The remaining 320 MB is the other stored fields (file 500, module 260, function 128
+characters, 48 frames per problem). They are part of the JSON contract and of the signature,
+so they were not cut.
+
+### 7.3 Mitigations and their evidence
 
 | Threat | Mitigation | Evidence |
 |---|---|---|
-| Log injection and forged lines from chat | Anchored matching, so only lines that start with the expected text count | `test_security`, mutants P4, P5, P6 |
-| Terminal escapes, bidi and format characters | `sanitize()` on every log-derived string and on file names in messages | `test_render`, `test_security`, `test_hardening`, mutants T1, T2, V3 to V11, E1 to E3 |
-| Password leakage through arguments | Hidden unless `--show-args`, also in watch mode and JSON | `test_security`, `test_hardening`, mutants V1, V2, C4, C12, C13 |
+| Log injection and forged lines from chat | Anchored matching | `test_security`, mutants P4, P5, P6 |
+| Terminal escapes, bidi and format characters | `sanitize()` on every log-derived string and on file names in messages | `test_render`, `test_security`, `test_hardening`, `test_rendering_hostile`, mutants T1, T2, V3 to V11, E1 to E3 |
+| Markdown injection | Untrusted text only inside code spans or fences | `test_rendering_hostile` |
+| Password leakage through arguments | Hidden unless `--show-args` | `test_security`, `test_hardening`, mutants V1, V2, C4, C12, C13 |
 | Path traversal | Log paths are only lookup keys | `test_source`, `test_security`, mutants S1, S9 |
-| Symlink escape | Not followed while indexing, checked again at read time | `test_source`, `test_hardening`, mutants S1, S2 |
-| Huge input and unbounded memory | Chunked reading, line cap, group and frame caps, baseline and source size caps | `test_reader`, `test_security`, `test_hardening`, mutants R1, R10, A2, A3, P2, P14, P15, B2, B6 |
-| Malformed gzip, binary input, partial lines | Clean errors, probe for NUL and UTF-16 BOM | `test_reader`, `test_cli`, `test_follow`, mutants R2, R3, R8 |
-| Slow regular expressions | Every repetition is bounded; stress lines tested | `test_security` (time bound 5 s) |
-| Shell and subprocess risks | None in `src/`, no network import | `test_security`, grep of `src/` |
+| Source file swapped after the check | Anchored `O_NOFOLLOW` open, `fstat` identity and type check, bounded read | `test_source_race`, mutants S12 to S34 |
+| Report written through a link | `output.write_text_file` | `test_output`, mutants O1 to O12, C29 |
+| A bug mistaken for a finding | Internal error boundary, status 2 | `test_internal_errors`, mutants C20 to C28 |
+| Malformed baseline | Hooks, strict validation, size limit | `test_baseline`, `test_baseline_hardening`, `test_hardening`, mutants B1 to B18 |
+| Huge input and unbounded memory | Chunked reading, line cap, group, frame and argument caps, size caps, `--max-input-bytes` | `test_reader`, `test_input_limits`, `test_argument_storage`, `test_hardening`, mutants R, A, P, B |
+| Malformed gzip, binary input, partial lines | Clean errors, probe for NUL and UTF-16 BOM | `test_reader`, `test_cli`, `test_follow` |
+| Slow regular expressions | Every repetition is bounded; stress lines tested | `test_security`, `test_parser_model` |
+| Shell and subprocess risks | None in `src/`, no network import | `test_security` |
 
-Found and fixed in the recovery session:
+### 7.4 Remaining risks and untested behaviour
 
-1. File names were echoed unsanitised in error messages, in `saved baseline ...` and in the
-   `watching ...` banner (raw ESC and BEL reached stderr). Fixed in `cli.py`.
-2. The baseline size limit was bypassed by files without a size (`/dev/zero`, named pipes): with
-   a 400 MB limit, `--baseline /dev/zero` ended in an unhandled `MemoryError`. Fixed in `baseline.py`.
+- **Windows and macOS were not tested.** `O_NOFOLLOW` does not exist on Windows. There the source
+  file is opened by path and only the `fstat` checks apply (type, size, device and inode where
+  the file system reports an inode); a link that leads to the very same file is not detected.
+  `-o` follows symlinks on Windows. The fallback code is exercised on Linux by tests that
+  switch the flags off; those tests are skipped on Windows (the whole module is), so nothing
+  runs the fallback on the platform it is meant for. Other POSIX systems (macOS, BSD) were not
+  tested either; the code accepts `EMLINK` and `EFTYPE` for the refused symlink, from the
+  documentation of those systems and not from a test.
+- **Hard links.** A hard link to a file outside `--source-dir` cannot be told from a normal file.
+- **`-o`** checks only the last path component. A symlink in a folder name is followed.
+- **File systems without stable inode numbers** (inode 0 is accepted without a comparison; an
+  inode that changes between `stat` and `fstat` makes the snippet disappear).
+- **Memory** is bounded but not small: 320 MB for the worst log found, 158 MB while reading a
+  10 MiB baseline.
+- **Tree size.** No cap on entries in a single `--source-dir` folder; `find()` compares all files
+  of one name.
+- **Time** for `.gz` input is bounded only with `--max-input-bytes`.
+- **Internal error messages** print the class name of the exception. The name is sanitised, and
+  log data cannot create a class, so this is not a way in.
+- The assessment covers the code paths named here. It is not a guarantee, and a passing test
+  suite is not a statement that the project is production ready.
 
-Remaining limitations (not fixed, documented in the README):
+### 7.5 Decisions the owner may want to revisit
 
-- A `.gz` file has no cap on its decompressed size. Memory stays flat, but time does not. A
-  10 KB archive with 5 million short lines took 2.1 s, so about 1 MB of compressed data with
-  500 million short lines would take roughly 3.5 minutes (an extrapolation, not a measurement).
-  Use `timeout` or `ulimit -t` for untrusted archives.
-- A person who can inject newlines into logged text can forge whole lines.
-- Someone with write access to `--source-dir` can swap a file between the check and the read.
-- `--show-args` output can contain passwords.
-- `sanitize()` is not defined for a negative limit (a programming error, never log-derived).
+1. **A BOM is accepted** in a baseline. Rejecting it again is a one-line change (mutant B7 shows
+   where) but would make baselines saved by some Windows editors fail.
+2. **`-o /dev/stdout` is refused**, because it is a symlink. Allowing symlinks that lead to
+   non-regular files would allow `link -> /dev/sda`, which is why it was not done.
+3. **Internal errors use status 2**, not a new status, so the set 0, 1, 2, 130 is unchanged.
+4. **The baseline size limit stayed at 10 MiB.** A legitimate baseline has at most 5,000 entries.
+5. **Four things were assessed and left unchanged** with numbers (table 7.1): large baseline,
+   large source folder, same-name candidates, many problems.
 
 ## 8. Known limitations
 
-- Formats: the `Script[...]` line is unverified from source (section 5). open.mp's own error
-  lines are not parsed. crashdetect lines through open.mp's legacy plugin layer are accepted
-  by design (any leading tags up to three) but were never seen on a real open.mp server.
-- The block and `Script[...]` merge needs them within two unrelated lines. In `watch`, an idle
-  flush during a long pause can split them into two events.
-- `watch` misses a file that is truncated and regrows past its old size between two polls, and
-  does not follow a rotation into `.gz`. By reading the code (not tested): after a rotation the
-  new file is not probed for binary content again.
-- The binary probe covers only the first 4096 bytes.
+Recorded by session 3 (not repeated here) unless noted.
+
+- `watch`: truncation is detected by size only; a file truncated and regrown past its old size
+  within one poll is not noticed (pinned by a test).
+- `watch`: a file rotated away twice within one poll loses the middle file (pinned by a test).
+- `watch`: the file must exist when it starts, and it does not follow a rotation into `.gz`.
+- `watch`: a block waits two quiet polls, so a problem can be announced up to about two poll
+  intervals late.
+- Parser: whether the server prints `Script[...]` for failures inside public callbacks is
+  unknown; frames split by a newline in a string argument are dropped; `????????` addresses
+  (crashdetect 4.10 and earlier) and the missing native names in `Error: Function not
+  registered` lines are not parsed; open.mp's own error lines are not parsed; two non-empty
+  code 19 blocks before one `Script[...]` stay two events.
+- The binary probe covers only the first 4,096 bytes.
 - `examples/sample_server_log.txt` is synthetic, built from the verified formats.
 - Python 3.10 to 3.13 on Linux only.
 
 ## 9. Performance (measured)
 
-Method: `scripts/make_synthetic_log.py --lines 1000000 --seed 1` (55.9 MB); larger files by
-concatenating it 4 and 16 times; peak memory from `os.wait4` rusage; bytecode cache enabled.
-One 1-CPU VM, so absolute numbers will differ elsewhere.
+Method: `scripts/make_synthetic_log.py --lines 1000000 --seed 1` (55.9 MB); peak memory from
+`os.wait4` rusage. Rows marked **R** were recorded by an earlier session on another VM; rows
+marked **V** were measured in the Phase 6 session on the sandbox described in section 6. Absolute
+numbers differ between machines; compare rows of the same mark.
 
 | Case | Wall time | Peak memory |
 |---|---|---|
-| Start-up, `explain 4`, median of 15 | 81 ms (empty Python 21 ms) | n/a |
-| 1M lines, text / JSON / Markdown / `.gz` / stdin | 1.6 to 1.7 s (about 600k lines/s) | 25 MB |
-| 4M lines (224 MB) | 6.0 s | 24.6 MB |
-| 16M lines (895 MB) | 24.3 s | 24.7 MB |
-| 5,000 distinct problems | 0.25 s | 27 MB |
-| 300,000 distinct problems | 8.4 s, 295,000 events reported as not grouped | 31.5 MB |
-| 1M events in one problem, 1M distinct line numbers (265 MB) | 28.3 s | 24.4 MB |
-| One 200 MB line | 0.18 s | 21 MB |
-| 1M lines of tag spam (47 MB) | 3.9 s | 25 MB |
-| 100,000 lines of 8 KB with an unclosed quote (767 MB) | 1.1 s | 24 MB |
-| `.gz` of 1 MiB that expands to 1 GiB without a newline | 2.6 s | 23 MB |
-| `.gz` of 10 KB with 5M short lines | 2.1 s | 29 MB |
-| `watch`, delay between a write and the announcement, 24 samples | 24 to 989 ms (poll interval 1.0 s) | n/a |
-| `watch`, idle for 10 s | 0.07 s CPU (the start-up cost) | 19 MB |
-| `watch --from-start` on 1M lines | caught up in under 2 s, 1.6 s CPU | 25 MB |
-
-Lines that hold errors cost more than other lines: about 35,000 events per second against
-600,000 plain lines per second. Nothing here was optimised, and nothing needs it yet.
+| R: 1M lines, text / JSON / Markdown / `.gz` / stdin | 1.6 to 1.7 s (about 600k lines/s) | 25 MB |
+| R: 2M lines (117.3 MB) | 2.3 to 2.5 s | n/a |
+| R: 16M lines (895 MB) | 24.3 s | 24.7 MB |
+| R: 300,000 distinct problems | 8.4 s, 295,000 events reported as not grouped | 31.5 MB |
+| R: 1M events in one problem, 1M distinct line numbers (265 MB) | 28.3 s | 24.4 MB |
+| R: one 200 MB line | 0.18 s | 21 MB |
+| R: `.gz` of 19.7 MB that expands to 2 GiB | 15.6 s with no limit, 2.06 s with `--max-input-bytes 256M`, 0.59 s with 64M | about 25 MB |
+| R: `watch`, delay between a write and the announcement | 24 to 989 ms (poll 1.0 s) | n/a |
+| V: 2M lines (117 MB), JSON, new code and `21fa90f` | 3.25 to 3.37 s and 3.44 to 3.86 s | n/a |
+| V: 600,000 distinct problems | 18 s | 31 MB |
+| V: 5,000 problems of 48 frames with 8,000-character arguments | 5.7 s (7.3 s before the argument limit) | 178 MB (1,924 MB before) |
+| V: the same with every stored field at its limit | 7.6 s (18 s before) | 320 MB (1,917 MB before) |
+| V: baseline of 10 MiB, 476,617 entries | about 0.5 s | 158 MB |
+| V: one source folder with 400,000 files | 1.8 to 2.1 s | 80 MB |
+| V: 32,000 source files with the same name | 16 to 20 ms per lookup | 18 MB |
 
 ## 10. History of the repository
 
@@ -287,26 +404,60 @@ Lines that hold errors cost more than other lines: about 35,000 events per secon
 | `2ae600e` | test: add the mutation check used in the recovery review |
 | `b6572fc` | test: add a smoke test for an installed amxtriage |
 | `7ce6f16` | fix(baseline): enforce the size limit by reading, not by stat() |
-| (next) | docs: add README and HANDOFF, declare Python 3.13 as tested |
+| `e2e4f3c` | docs: add README and HANDOFF, declare Python 3.13 as tested |
+| `0c12ab3` | fix(parser): close gaps found by the log format audit |
+| `43e3823` | docs: record verified SA-MP and open.mp log formats |
+| `3598e84` | test(parser): add a model-based grammar test and more pathological shapes |
+| `8576f1b` | test(mutation): cover the parser rules added by the format audit |
+| `ddc13a9` | fix(watch): give a pending block time to receive its Script line |
+| `21fa90f` | feat(analyze): add --max-input-bytes to bound the work done per input |
+| `5e285fe` | fix(baseline): reject oversized numbers and wrong types without a traceback |
+| `674d5d2` | fix(cli): an unexpected exception must not exit with status 1 |
+| `2853439` | fix(source): open source files without following links and check them after opening |
+| `61002ee` | fix(parser): store at most 401 characters of each frame argument list |
+| `ddde066` | fix(cli): do not write the report through a symbolic link or a hard link |
+| `5fc8837` | test(render): add a seeded test for hostile names and text in every output |
+| `984b155` | test(cli): pin how explain handles unusual error codes |
+| `0cb2399` | test(source): cover a file that vanishes or loops after indexing |
+| (next) | docs: update README, HANDOFF, checkpoint and manifest after Phase 6 |
 
 ## 11. Remaining work, in order of value
 
-1. **Check the `Script[...]` line against a real SA-MP `server_log.txt`**, and the merge rule with
-   it. This is the largest unverified assumption.
-2. Check a real open.mp server: the tags in front of crashdetect lines, and whether its own
-   `<code> <message>` lines are worth parsing. Get the exact format from a real log first.
-3. Test on Windows (and macOS). SA-MP servers often run on Windows. `watch` uses `st_ino` and
-   signals, and the mutation script is POSIX only.
-4. Add continuous integration: pytest on 3.10 to 3.13, ruff, mypy, `python -m build` and
-   `scripts/smoke_installed.py` on the built wheel. There is no CI configuration yet.
-5. Decide whether to cap decompressed size or line count (for example `--max-bytes`). Today it
-   is documented only.
-6. Give `watch` a grace period before it flushes an open block, to avoid splitting a block from
-   its `Script[...]` line.
-7. Make `sanitize()` reject or clamp a negative limit.
-8. Decide about publishing. There is no release process, tag or PyPI configuration.
+Phases 7 to 13 were not started. The plan below comes from the checkpoint of session 3 and was
+completed with what Phase 6 learned. Phases 9 and 10 are not described in any file that the
+Phase 6 session was given; take their definition from the original task statement.
 
-Deliberately not done: new features, a redesign, new dependencies, publishing.
+1. **Phase 7, other platforms.** Known risks: the follower keeps the log open (Windows opens
+   without share-delete, so the log may not be renameable or deletable while `watch` runs);
+   `st_ino` may be zero on some Windows file systems, which would hide rotation; the signal
+   tests and the smoke test use POSIX signals; `O_NOFOLLOW` does not exist on Windows (the
+   anchored open in `source.py` and the symlink check in `output.py` fall back to weaker
+   checks, section 7.4); non-UTF-8 logs (Windows code pages) turn non-ASCII characters into
+   U+FFFD; README commands are shell specific; waiting on an event cannot be interrupted by
+   Ctrl+C on Windows (believed, not tested). Also: `test_source_race.py`, `test_output.py` and
+   `test_rendering_hostile.py` are skipped as a whole on Windows, so Windows needs its own tests
+   of the fallback paths. macOS and BSD need a run of the new `O_NOFOLLOW` code.
+2. **Phase 8, CI.** There is no `.github/` folder. A small workflow: Python 3.10 to 3.13 on Linux
+   running ruff, the format check, mypy, pytest and the build; one Windows job and one macOS job
+   on one Python version. The full mutation run takes about 35 minutes on one CPU, so keep it
+   manual or scheduled. One shell command may be limited to 300 s: run mutants in chunks of
+   about 24 ids.
+3. **Phase 11, packaging.** The sdist contains `HANDOFF.md` but not `docs/`; decide whether either
+   belongs there. The metadata says `Operating System :: OS Independent`, which is not backed by
+   tests on Windows or macOS, and `Development Status :: 4 - Beta`; review both.
+4. **Phase 12, README.** Rewrite from verified behaviour only, with five categories: supported,
+   tested, partially tested, unknown, unsupported.
+5. **Phase 13, release.** Phase 6 changed behaviour: a new option (`--max-input-bytes`, session 3),
+   `-o` refusing symlinks and multiply linked files, a stricter baseline reader, different
+   internal error behaviour. A minor version (`0.2.0`) fits better than `0.1.1`. Do not bump the
+   version before the end.
+6. **Open questions that carry weight:** check the `Script[...]` line and the merge rule against a
+   real SA-MP `server_log.txt`; check a real open.mp server (tags in front of crashdetect lines,
+   and whether its own `<code> <message>` lines are worth parsing).
+7. Ideas that Phase 6 did not need: cache the result of `SourceIndex.find` per logged path;
+   count entries in a source folder while listing it; make `sanitize()` clamp a negative limit.
+
+Deliberately not done in Phase 6: new features, a redesign, new dependencies, publishing.
 
 ## 12. Migration and upgrade notes
 
@@ -314,15 +465,22 @@ Deliberately not done: new features, a redesign, new dependencies, publishing.
   the same commit. Old baselines would then match nothing, every problem would look new, and
   `--fail-on-new` would fail. Plan a migration or tell users to save a new baseline.
 - **JSON schemas.** The report and the baseline both carry `schema_version` 1. Adding fields is
-  safe. Renaming, removing or changing meaning needs a new version. `load_baseline` rejects
-  other versions.
+  safe. Renaming, removing or changing meaning needs a new version. `load_baseline` accepts only
+  the integer 1.
 - **Sanitising rules.** Changing what `sanitize()` replaces changes every output. Golden tests
-  in `test_textutil`, `test_render` and `test_hardening` will tell you.
+  in `test_textutil`, `test_render`, `test_hardening` and `test_rendering_hostile` will tell you.
+- **Display limits.** `ARGS_DISPLAY_LIMIT` lives in `model.py`. `MAX_STORED_ARGS` must stay one
+  larger, otherwise the ellipsis disappears (mutant P39).
 - **Python support.** `requires-python >=3.10` and `[tool.mypy] python_version = "3.10"` must
   move together. The classifiers list 3.10 to 3.13.
-- **New test files** go into the mypy override list in `pyproject.toml`.
+- **New test files.** The files from Phase 6 are fully typed and need no mypy override. Older,
+  untyped modules are listed by name in `[[tool.mypy.overrides]]` in `pyproject.toml`.
 - **Mutation catalogue.** `scripts/mutants.json` matches exact source text. Run
-  `python scripts/mutation_check.py --check` after a refactor and update what it reports.
+  `python scripts/mutation_check.py --check` after a refactor and update what it reports. The file
+  is `json.dumps(data, indent=1)` plus a newline.
+- **Tests that need a POSIX user** (`geteuid() != 0`) are skipped as root. Several tests use
+  `SIGALRM` as a deadline and raise a `BaseException`, because `TimeoutError` is an `OSError`
+  and would be swallowed by the `except OSError` in the code under test.
 - `HANDOFF.md` is listed in the sdist `include` of `pyproject.toml`.
 
 ## 13. Build and test commands
@@ -335,29 +493,7 @@ ruff check . && ruff format --check .
 mypy
 python -m build --outdir /tmp/dist        # keeps the repo free of build/ and dist/
 python scripts/smoke_installed.py /path/to/clean/venv/bin/python
-python scripts/mutation_check.py          # about 10 minutes; give ids to run a few
+python scripts/mutation_check.py --check  # does the catalogue still match the source?
+python scripts/mutation_check.py S12 S13  # run a few; the whole catalogue takes about 35 minutes
 python scripts/make_synthetic_log.py big.log --lines 1000000 --seed 1
 ```
-
-Other Python versions without root: `pip install uv`, then `uv python install 3.10 3.11 3.13`,
-`uv venv --python 3.10 /tmp/v310`, `uv pip install --python /tmp/v310/bin/python pytest`, and
-`/tmp/v310/bin/python -m pytest`.
-
-## 14. Working agreements
-
-- One session works on the directory at a time. If a file changes that you did not change,
-  stop, record it, and do not repair it blindly.
-- Keep a simple tripwire while you work: hash and modification time of every tracked file plus
-  `git rev-parse HEAD`, compared after each step.
-- Inspect before you change. Small commits, one concern each. Foreign material goes into its own
-  commit, unmodified, before anyone edits it.
-- Never report a verification that was not run. Say what was run, on what, with what result.
-- Do not claim the tool is secure. Describe mitigations and their limits.
-- No placeholders, no fake features, no decorative output.
-
-## 15. The earlier session's artifacts
-
-`SESSION_CHECKPOINT.md`, `SESSION_MANIFEST.txt` and the snapshot zip of 2026-10-02 are not part of
-the repository. They are historical and superseded: the manifest hashes no longer match the
-tree, by design, because files were committed, fixed and added. They were handed over unchanged
-next to this repository for traceability.
