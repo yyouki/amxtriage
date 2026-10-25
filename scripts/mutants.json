@@ -2415,5 +2415,29 @@
     "count": 1
    }
   ]
+ },
+ {
+  "id": "S33",
+  "file": "src/amxtriage/source.py",
+  "description": "errors while checking a path are not handled",
+  "edits": [
+   {
+    "old": "        except (OSError, RuntimeError):\n            return None\n        if not _is_acceptable(info):",
+    "new": "        except ZeroDivisionError:\n            return None\n        if not _is_acceptable(info):",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "S34",
+  "file": "src/amxtriage/source.py",
+  "description": "a logged path without components is looked up",
+  "edits": [
+   {
+    "old": "        if not parts:\n            return None\n        candidates",
+    "new": "        if False:\n            return None\n        candidates",
+    "count": 1
+   }
+  ]
  }
 ]

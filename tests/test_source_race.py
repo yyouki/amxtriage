@@ -255,6 +255,28 @@ def test_an_inside_symlink_resolved_at_check_time_is_still_allowed(tmp_path: Pat
     assert snippet.lines == ("line 1", "line 2", "line 3")
 
 
+def test_a_file_deleted_after_indexing_is_not_found(layout: Layout) -> None:
+    index = SourceIndex(str(layout.root))
+    layout.target.unlink()
+    assert index.find("mods/rp.pwn") is None
+    assert index.snippet("mods/rp.pwn", 3, 2) is None
+
+
+def test_a_symlink_loop_created_after_indexing_is_not_found(layout: Layout) -> None:
+    index = SourceIndex(str(layout.root))
+    layout.target.unlink()
+    layout.target.symlink_to(layout.target)
+    assert index.find("mods/rp.pwn") is None
+    assert index.snippet("mods/rp.pwn", 3, 2) is None
+
+
+@pytest.mark.parametrize("logged_path", ["", "/", "//", "\\", "..", "../.."])
+def test_a_logged_path_without_a_usable_name_is_not_found(layout: Layout, logged_path: str) -> None:
+    index = SourceIndex(str(layout.root))
+    assert index.find(logged_path) is None
+    assert index.snippet(logged_path, 3, 2) is None
+
+
 def test_the_descriptor_of_a_regular_file_reads_the_checked_content(layout: Layout) -> None:
     index, verified = verified_file(layout)
     handle = index._open_verified(verified)
