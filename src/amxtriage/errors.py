@@ -12,3 +12,7 @@ class BaselineError(AmxTriageError):
 
 class SourceError(AmxTriageError):
     pass
+
+
+class OutputError(AmxTriageError):
+    pass

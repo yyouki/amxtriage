@@ -2259,5 +2259,161 @@
     "count": 1
    }
   ]
+ },
+ {
+  "id": "O1",
+  "file": "src/amxtriage/output.py",
+  "description": "a symbolic link as the output file is followed",
+  "edits": [
+   {
+    "old": "        | _NOFOLLOW\n",
+    "new": "",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O2",
+  "file": "src/amxtriage/output.py",
+  "description": "refusal of a symbolic link not explained",
+  "edits": [
+   {
+    "old": "if error.errno in _LINK_ERRORS and os.path.islink(path):",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O3",
+  "file": "src/amxtriage/output.py",
+  "description": "hard linked output file not refused",
+  "edits": [
+   {
+    "old": "if info.st_nlink > 1:",
+    "new": "if False:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O4",
+  "file": "src/amxtriage/output.py",
+  "description": "output file with two hard links accepted",
+  "edits": [
+   {
+    "old": "if info.st_nlink > 1:",
+    "new": "if info.st_nlink > 2:",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O5",
+  "file": "src/amxtriage/output.py",
+  "description": "existing output file not truncated",
+  "edits": [
+   {
+    "old": "    os.ftruncate(descriptor, 0)\n",
+    "new": "    pass\n",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O6",
+  "file": "src/amxtriage/output.py",
+  "description": "non-regular output files are truncated",
+  "edits": [
+   {
+    "old": "    if not stat.S_ISREG(info.st_mode):\n        return\n",
+    "new": "    if False:\n        return\n",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O7",
+  "file": "src/amxtriage/output.py",
+  "description": "new output file created with mode 777",
+  "edits": [
+   {
+    "old": "os.open(path, flags, 0o666)",
+    "new": "os.open(path, flags, 0o777)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O8",
+  "file": "src/amxtriage/output.py",
+  "description": "output file no longer created",
+  "edits": [
+   {
+    "old": "        | os.O_CREAT\n",
+    "new": "",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O9",
+  "file": "src/amxtriage/output.py",
+  "description": "errors while writing not reported cleanly",
+  "edits": [
+   {
+    "old": "    except OSError as error:\n        raise OutputError(f\"cannot write '{path}': {error.strerror or error}\") from error",
+    "new": "    except ZeroDivisionError as error:\n        raise OutputError(f\"cannot write '{path}': {error.strerror or error}\") from error",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O10",
+  "file": "src/amxtriage/output.py",
+  "description": "errors while opening not reported cleanly",
+  "edits": [
+   {
+    "old": "    except OSError as error:\n        raise OutputError(f\"cannot write '{path}': {_open_failure(path, error)}\") from error",
+    "new": "    except ZeroDivisionError as error:\n        raise OutputError(f\"cannot write '{path}': {_open_failure(path, error)}\") from error",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O11",
+  "file": "src/amxtriage/output.py",
+  "description": "operating system error printed with its file name",
+  "edits": [
+   {
+    "old": "return str(error.strerror or error)",
+    "new": "return str(error)",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "O12",
+  "file": "src/amxtriage/output.py",
+  "description": "output encoding changed",
+  "edits": [
+   {
+    "old": "os.fdopen(descriptor, \"w\", encoding=\"utf-8\")",
+    "new": "os.fdopen(descriptor, \"w\", encoding=\"latin-1\")",
+    "count": 1
+   }
+  ]
+ },
+ {
+  "id": "C29",
+  "file": "src/amxtriage/cli.py",
+  "description": "report written with the unsafe Path.write_text",
+  "edits": [
+   {
+    "old": "    write_text_file(output, text)\n",
+    "new": "    Path(output).write_text(text, encoding=\"utf-8\")\n",
+    "count": 1
+   }
+  ]
  }
 ]

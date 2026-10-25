@@ -26,6 +26,7 @@ from amxtriage.follow import (
     interruptible_sleep,
 )
 from amxtriage.model import REPORTED_KINDS, Event, EventKind
+from amxtriage.output import write_text_file
 from amxtriage.reader import STDIN_NAME, display_name
 from amxtriage.render import (
     FORMATS,
@@ -220,10 +221,7 @@ def _write_output(text: str, output: str | None) -> None:
         sys.stdout.write(text)
         sys.stdout.flush()
         return
-    try:
-        Path(output).write_text(text, encoding="utf-8")
-    except OSError as error:
-        raise AmxTriageError(f"cannot write '{output}': {error.strerror or error}") from error
+    write_text_file(output, text)
 
 
 def _run_analyze(args: argparse.Namespace) -> int:
