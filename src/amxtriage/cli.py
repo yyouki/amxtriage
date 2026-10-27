@@ -461,9 +461,7 @@ def _run_diagnose(args: argparse.Namespace) -> int:
         source_language=args.source_language,
         max_input_bytes=args.max_input_bytes or None,
     )
-    _write_output(
-        render_compiler_report(report, args.format, language=args.language), args.output
-    )
+    _write_output(render_compiler_report(report, args.format, language=args.language), args.output)
     return EXIT_OK
 
 

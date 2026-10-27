@@ -1,4 +1,5 @@
 """Parse saved compiler/linter output without executing source code or tool commands."""
+
 from __future__ import annotations
 
 import hashlib
@@ -60,9 +61,7 @@ _RUST_HEAD = re.compile(
     r"(?:\[(?P<code>E\d+)\])?:\s*(?P<message>.*)$",
     re.IGNORECASE,
 )
-_RUST_ARROW = re.compile(
-    r"^\s*-->\s*(?P<file>.+?):(?P<line>\d+):(?P<column>\d+)\s*$"
-)
+_RUST_ARROW = re.compile(r"^\s*-->\s*(?P<file>.+?):(?P<line>\d+):(?P<column>\d+)\s*$")
 _ESLINT_LINE = re.compile(
     r"^\s*(?P<line>\d+):(?P<column>\d+)\s+"
     r"(?P<severity>error|warning)\s+(?P<message>.+?)"
@@ -257,10 +256,7 @@ def parse_compiler_lines(
 
         if source_language in {"auto", "rust"}:
             rust_head = _RUST_HEAD.match(line_text)
-            if rust_head and (
-                source_language == "rust"
-                or rust_head.group("code")
-            ):
+            if rust_head and (source_language == "rust" or rust_head.group("code")):
                 if rust_pending is not None:
                     severity, code, message = rust_pending
                     emit(
@@ -325,9 +321,9 @@ def parse_compiler_lines(
         stripped = line_text.strip()
         if source_language in {"auto", "javascript", "typescript"} and stripped:
             suffix_language = _extension_language(stripped)
-            if stripped.lower().endswith(
-                (".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx")
-            ) and (source_language == "auto" or source_language == suffix_language):
+            if stripped.lower().endswith((".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx")) and (
+                source_language == "auto" or source_language == suffix_language
+            ):
                 eslint_file = stripped
                 continue
             eslint_match = _ESLINT_LINE.match(line_text)
@@ -374,8 +370,10 @@ def parse_compiler_lines(
             file_language = _extension_language(paren_match.group("file"))
             code = paren_match.group("code")
             inferred = (
-                "typescript" if code and code.upper().startswith("TS")
-                else "csharp" if code and code.upper().startswith("CS")
+                "typescript"
+                if code and code.upper().startswith("TS")
+                else "csharp"
+                if code and code.upper().startswith("CS")
                 else file_language
             )
             compatible = (
@@ -418,10 +416,11 @@ def parse_compiler_lines(
             inferred = _extension_language(file)
             has_severity = colon_match.group("severity") is not None
             compatible = (
-                source_language == "auto" and inferred == "c_cpp" and has_severity
-            ) or (source_language == "c_cpp" and has_severity) or (
-                source_language == "auto" and inferred == "go"
-            ) or source_language == "go"
+                (source_language == "auto" and inferred == "c_cpp" and has_severity)
+                or (source_language == "c_cpp" and has_severity)
+                or (source_language == "auto" and inferred == "go")
+                or source_language == "go"
+            )
             if compatible:
                 severity = colon_match.group("severity") or "error"
                 emit(
@@ -523,9 +522,7 @@ def render_compiler_report(
             "diagnostic_count": len(report.diagnostics),
             "dropped_diagnostics": report.dropped_diagnostics,
             "diagnostics": [_diagnostic_dict(item) for item in report.diagnostics],
-            "notes": [
-                tr(language, "compiler_no_findings_note") if not report.diagnostics else ""
-            ],
+            "notes": [tr(language, "compiler_no_findings_note") if not report.diagnostics else ""],
         }
         payload["notes"] = [note for note in payload["notes"] if note]
         return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
@@ -552,8 +549,7 @@ def render_compiler_report(
                     f"## {index}. {inline_code(_severity_label(item.severity, language), 80)} "
                     f"{where}",
                     "",
-                    f"- **{tr(language, 'compiler_message')}:** "
-                    f"{inline_code(item.message, 2000)}",
+                    f"- **{tr(language, 'compiler_message')}:** {inline_code(item.message, 2000)}
                     f"- **{tr(language, 'compiler_source_language')}:** {item.source_language}",
                     f"- **{tr(language, 'compiler_code')}:** {inline_code(item.code or '-', 80)}",
                     f"- **{tr(language, 'compiler_hint')}:** {item.hint}",
@@ -565,9 +561,7 @@ def render_compiler_report(
                 [tr(language, "compiler_no_findings"), tr(language, "compiler_no_findings_note")]
             )
         if report.dropped_diagnostics:
-            lines.append(
-                tr(language, "compiler_dropped").format(count=report.dropped_diagnostics)
-            )
+            lines.append(tr(language, "compiler_dropped").format(count=report.dropped_diagnostics))
         return "\n".join(lines).rstrip() + "\n"
 
     lines = [
@@ -604,7 +598,5 @@ def render_compiler_report(
     if report.truncated_lines:
         lines.append(f"Truncated overlong input lines: {report.truncated_lines}")
     if report.dropped_diagnostics:
-        lines.append(
-            tr(language, "compiler_dropped").format(count=report.dropped_diagnostics)
-        )
+        lines.append(tr(language, "compiler_dropped").format(count=report.dropped_diagnostics))
     return "\n".join(lines).rstrip() + "\n"
