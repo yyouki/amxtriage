@@ -12,6 +12,7 @@ from pathlib import Path
 from types import FrameType
 
 from amxtriage import __version__
+from amxtriage.alerts import DEFAULT_ALERT_PREFIX, DEFAULT_ALERT_TEMPLATE, JsonlAlertSink
 from amxtriage.aggregate import Aggregator
 from amxtriage.amxerrors import lookup
 from amxtriage.analysis import AnalysisResult, analyze_logs, build_report, snippet_for
@@ -213,6 +214,23 @@ def build_parser() -> argparse.ArgumentParser:
     watch.add_argument("log", metavar="LOG", help="log file to follow")
     watch.add_argument("--from-start", action="store_true", help="read the existing content first")
     watch.add_argument(
+        "--alert-jsonl",
+        metavar="FILE",
+        help="append structured local JSONL alerts for a separate bridge; does not send in-game messages",
+    )
+    watch.add_argument(
+        "--alert-prefix",
+        default=DEFAULT_ALERT_PREFIX,
+        metavar="TEXT",
+        help="prefix for structured alert summaries (requires --alert-jsonl)",
+    )
+    watch.add_argument(
+        "--alert-template",
+        default=DEFAULT_ALERT_TEMPLATE,
+        metavar="TEMPLATE",
+        help="single-line alert template using safe fields such as {prefix}, {severity}, {file}, {line}, {message}",
+    )
+    watch.add_argument(
         "--poll-interval",
         type=_poll_interval,
         default=DEFAULT_POLL_INTERVAL,
@@ -378,6 +396,7 @@ def _announce_new_problem(
     baseline: frozenset[str] | None,
     source_index: SourceIndex | None,
     args: argparse.Namespace,
+    alert_sink: JsonlAlertSink | None = None,
 ) -> None:
     added = aggregator.add(event, label)
     group = added.group
@@ -385,6 +404,10 @@ def _announce_new_problem(
         return
     if baseline is not None and group.signature_id in baseline:
         return
+    if alert_sink is not None and not alert_sink.emit(group) and not alert_sink.warning_emitted:
+        detail = alert_sink.failure_reason or "write failed"
+        print(f"warning: local alert export disabled: {detail}", file=sys.stderr, flush=True)
+        alert_sink.warning_emitted = True
     snippet = None
     if source_index is not None and args.context > 0:
         snippet = snippet_for(group, source_index, args.context)
@@ -397,6 +420,15 @@ def _announce_new_problem(
 def _run_watch(args: argparse.Namespace) -> int:
     baseline = load_baseline(args.baseline) if args.baseline else None
     source_index = SourceIndex(args.source_dir) if args.source_dir else None
+    alert_sink = (
+        JsonlAlertSink(
+            args.alert_jsonl,
+            prefix=args.alert_prefix,
+            template=args.alert_template,
+        )
+        if args.alert_jsonl
+        else None
+    )
     stop = threading.Event()
     follower = LogFollower(
         args.log,
@@ -420,14 +452,18 @@ def _run_watch(args: argparse.Namespace) -> int:
         for item in follower.lines():
             events = parser.idle() if item is None else parser.feed(item)
             for event in events:
-                _announce_new_problem(event, aggregator, label, baseline, source_index, args)
+                _announce_new_problem(
+                    event, aggregator, label, baseline, source_index, args, alert_sink
+                )
     except KeyboardInterrupt:
         pass
     finally:
         restore_signal()
         follower.close()
     for event in parser.finish():
-        _announce_new_problem(event, aggregator, label, baseline, source_index, args)
+        _announce_new_problem(
+            event, aggregator, label, baseline, source_index, args, alert_sink
+        )
     result = AnalysisResult([label], parser.line_number, follower.truncated_lines, aggregator)
     report = build_report(
         result,
