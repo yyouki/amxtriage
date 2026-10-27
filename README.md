@@ -225,7 +225,8 @@ counts, as in most JSON readers. A named pipe is read like a file, up to the siz
 
 ```text
 amxtriage watch [--from-start] [--poll-interval SECONDS] [--source-dir DIR]
-                [--context N] [--show-args] [--baseline FILE] LOG
+                [--context N] [--show-args] [--baseline FILE]
+                [--alert-jsonl FILE] [--alert-prefix TEXT] [--alert-template TEMPLATE] LOG
 ```
 
 Follows a growing log, like `tail -f`. Each new problem is printed once, the first time it
@@ -253,6 +254,20 @@ The banner goes to standard error, the problems to standard output.
   last problem does not wait for another line.
 - `watch` does not read `.gz` files or standard input.
 
+#### Structured local alert export
+
+`watch` can append new diagnostic events to a local JSONL file for a separately configured bridge:
+
+```bash
+amxtriage watch server_log.txt --alert-jsonl ./scriptfiles/amxtriage-alerts.jsonl
+amxtriage watch server_log.txt --alert-jsonl alerts.jsonl \\
+  --alert-prefix OWNER --alert-template "{prefix} {severity}: {message}"
+```
+
+This is **not an in-game chat sender**. It creates a local structured event stream; a separate, authenticated SA-MP/open.mp bridge still needs to consume it and implement the server-specific chat API. The template changes the summary text only. Structured `source.file` and `source.line` fields remain separate and cannot be set by template text. The event includes target presentation metadata (file red, line blue); a bridge must apply actual API color codes. The exporter refuses unsafe link/non-regular-file targets and disables only alert export after a write failure, leaving log following active. No player argument/backtrace values are sent by default.
+
+Template fields are restricted to `{prefix}`, `{severity}`, `{kind}`, `{message}`, `{file}`, `{line}`, `{code}`, `{signature}`, and `{count}`. Newlines, unknown fields, attribute access, conversions and format specifications are rejected.
+
 ### explain
 
 ```text
@@ -269,6 +284,19 @@ These are common causes, not a diagnosis. The backtrace in the log is the eviden
 
 `amxtriage explain` without a code lists all known codes. The hints are general advice, not
 a diagnosis.
+
+### catalog (alias: plugins)
+
+List the bundled offline compatibility evidence for plugins/components:
+
+```bash
+amxtriage catalog
+amxtriage catalog --server open.mp
+amxtriage catalog --server open.mp --format markdown -o plugin-catalog.md
+amxtriage plugins --format json -o plugin-catalog.json
+```
+
+Each entry contains the official project/release links, target server, installation location, evidence URL/date, and a status (`verified`, `documented`, `unknown`, or `incompatible`). The current snapshot has documented open.mp component entries from the official installation guide. `documented` means the upstream guide lists the release; it is **not a claim of runtime testing**. Empty version/platform fields mean the cited source did not specify those values. This command is fully offline: it does not check live releases, download binaries, or install components. Unknown evidence must remain `unknown` instead of being guessed.
 
 ### recommend (alias: suggest)
 
