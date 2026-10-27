@@ -233,8 +233,8 @@ class JsonlAlertSink:
 
 
 MAX_PAWN_BRIDGE_BYTES = 4096
-MAX_PAWN_FILE_LENGTH = 240
-MAX_PAWN_MESSAGE_LENGTH = 250
+MAX_PAWN_FILE_LENGTH = 160
+MAX_PAWN_MESSAGE_LENGTH = 160
 
 
 def _pawn_bridge_field(text: str, limit: int) -> str:
