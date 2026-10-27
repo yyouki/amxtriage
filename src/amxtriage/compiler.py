@@ -425,7 +425,11 @@ def parse_compiler_lines(
             colon_language = _extension_language(file)
             has_severity = colon_match.group("severity") is not None
             compatible = (
-                (source_language == "auto" and colon_language == "c_cpp" and has_severity)
+                (
+                    source_language == "auto"
+                    and colon_language == "c_cpp"
+                    and has_severity
+                )
                 or (source_language == "c_cpp" and has_severity)
                 or (source_language == "auto" and colon_language == "go")
                 or source_language == "go"
