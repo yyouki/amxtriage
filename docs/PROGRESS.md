@@ -2,7 +2,8 @@
 
 **Snapshot:** 28 Oktober 2026  
 **Branch target:** `main`  
-**CI teknis terakhir yang dikonfirmasi hijau:** [run 40556940240](https://github.com/yyouki/amxtriage/actions/runs/40556940240), pada commit `9715b7e7d4123ae8867146e8d2e2dd53aa3574ec`. Run itu lulus pada tes Python 3.10–3.13, pemeriksaan kualitas/packaging, dan kompilasi filterscript Pawn. Periksa badge/runs terbaru setelah perubahan dokumentasi terbaru sebelum merilis ulang.
+**Main yang diperiksa sebelum pembaruan status ini:** `8cc8a035b833c2b0ddd7f41d1696ed305415fb60`  
+**CI:** [Run 40557952282 lulus](https://github.com/yyouki/amxtriage/actions/runs/40557952282), mencakup tes Python 3.10–3.13, quality/package checks, dan kompilasi filterscript Pawn. Run test yang sama mencatat 1.828 tes lulus pada Python 3.10. Tidak ada tes live pada server game dalam CI.
 
 **Bahasa / Language / Idioma:** [English README](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
 
@@ -27,26 +28,26 @@ Nilai dibulatkan untuk tampilan. Persentase area bukan bukti kualitas runtime: p
 ## Yang sudah tersedia
 
 - CLI Python untuk analisis log SA-MP/open.mp, pengelompokan masalah, `watch`, baseline, konteks source, dan rekomendasi offline.
-- Diagnostik teks compiler/linter untuk format umum Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go, dan Rust. Ini tidak mencakup semua versi tool dan tidak menjalankan compiler pada perintah `diagnose`.
+- Diagnostik teks compiler/linter untuk format umum Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go, dan Rust. Ini tidak mencakup semua versi tool dan perintah `diagnose` tidak menjalankan compiler.
 - Label laporan dan dokumentasi English, Bahasa Indonesia, dan Español.
-- Katalog offline berisi lima component open.mp yang tercatat dari dokumentasi upstream; status `documented` bukan bukti runtime kompatibel pada semua OS/versi.
-- Alert JSONL dengan template terbatas, file/line terstruktur yang tidak bisa ditimpa template, safe local output, dan perilaku fail-safe jika ekspor gagal.
+- Katalog offline berisi lima component open.mp yang tercatat dari dokumentasi upstream; status `documented` bukan bukti kompatibilitas runtime pada semua OS/versi.
+- Alert JSONL dengan template terbatas, field lokasi terstruktur yang tidak dapat ditimpa template, safe local output, dan perilaku fail-safe jika ekspor gagal.
 - Opsi `watch --alert-pawn-file` dan source filterscript `integrations/pawn/amxtriage_bridge.pwn`. Bridge default hanya mengirim ke admin RCON, membatasi pemrosesan menjadi lima record per detik, serta menampilkan path merah dan nomor baris biru.
-- GitHub Actions menjalankan tes Python 3.10–3.13, quality/package checks, dan kompilasi Pawn dengan toolchain yang dipatok. CI telah mengompilasi source bridge.
+- GitHub Actions menjalankan tes Python 3.10–3.13, pemeriksaan kualitas/paket, dan kompilasi Pawn dengan toolchain yang dipatok. Source bridge berhasil dikompilasi dalam CI.
 
 ## Yang belum boleh diklaim selesai
 
-- Chat alert **belum diverifikasi end-to-end pada server staging/live SA-MP/open.mp**. Kompilasi Pawn tidak membuktikan file permission, callback timing, role/ACL, warna, rotasi/truncation, atau operasi di server nyata berjalan benar.
+- Chat alert **belum diverifikasi end-to-end pada server staging/live SA-MP/open.mp**. Kompilasi Pawn tidak membuktikan izin file, callback timing, role/ACL, warna, rotasi/truncation, atau dampak resource/ping di server nyata.
 - Dampak CPU/RAM/disk I/O dan ping belum diukur secara benchmark pada server nyata; tidak ada klaim “nol overhead”.
-- Katalog kompatibilitas masih kecil; hanya lima component open.mp yang didokumentasikan. Belum ada cakupan umum untuk plugin SA-MP/open.mp lintas versi, OS, arsitektur, dan dependensi.
+- Katalog kompatibilitas masih kecil; hanya lima component open.mp yang terdokumentasi. Cakupan kompatibilitas plugin lintas versi, OS, arsitektur, dan dependensi masih belum lengkap.
 - Mitigasi DDoS jaringan/provider dan integrasi anti-cheat server-side belum dibuat.
-- Mode `patch`/`apply` dengan checkpoint, compiler/test validation, bounded repair loop, dan rollback belum dibuat.
+- Mode `patch`/`apply` dengan checkpoint, validasi compiler/tes, bounded repair loop, dan rollback belum dibuat.
 
 ## Gerbang untuk milestone berikutnya
 
-1. Uji bridge di server staging dengan versi server dan OS yang diketahui; periksa filter admin, warna, path/baris, izin file bersama, alert ganda, file belum lengkap, rotasi/truncation, dan kegagalan bridge.
+1. Uji bridge pada server staging dengan versi server dan OS yang diketahui; periksa filter admin, warna, path/baris, izin file bersama, alert ganda, record belum lengkap, rotasi/truncation, dan latensi alert.
 2. Ukur penggunaan CPU/RAM/disk I/O dan latency alert saat idle serta saat log sibuk; laporkan angka hasil ukur, bukan janji.
-3. Perluas katalog hanya bila proyek, rilis, versi dan kompatibilitas memiliki bukti resmi; jika bukti tidak cukup, gunakan `unknown`.
+3. Perluas katalog hanya bila proyek, rilis, versi, dan kompatibilitas memiliki bukti resmi; jika bukti kurang, gunakan `unknown`.
 4. Buat mode patch sebagai diff-only dahulu, lalu apply opt-in dengan checkpoint, compiler/test resmi, pemeriksaan regresi, dan rollback.
 5. Untuk DDoS/anti-cheat, integrasikan hanya provider atau API yang benar-benar didukung. Jangan mengklaim perlindungan universal dari analisis log.
 
