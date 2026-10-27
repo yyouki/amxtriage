@@ -230,3 +230,111 @@ class JsonlAlertSink:
             self.failure_reason = sanitize(str(error), 300)
             return False
         return True
+
+
+MAX_PAWN_BRIDGE_BYTES = 4096
+MAX_PAWN_FILE_LENGTH = 240
+MAX_PAWN_MESSAGE_LENGTH = 250
+
+
+def _pawn_bridge_field(text: str, limit: int) -> str:
+    """Escape record separators, percent signs and color-tag braces for the Pawn consumer.
+
+    The bridge deliberately does not decode braces. This prevents log-derived text from
+    injecting SA-MP/open.mp inline color tags such as {FF0000}.
+    """
+    safe = sanitize(text, limit)
+    return (
+        safe.replace("%", "%25")
+        .replace("|", "%7C")
+        .replace("{", "%7B")
+        .replace("}", "%7D")
+    )
+
+
+def serialize_pawn_bridge_record(
+    group: Group,
+    *,
+    prefix: str = DEFAULT_ALERT_PREFIX,
+) -> str:
+    """Serialize one safe, bounded record for the optional Pawn filterscript.
+
+    Protocol: AMXTRIAGE1|severity|prefix|file|line|message|count|END\n
+    Fields are pipe-separated. '%' and '|' are escaped; braces remain percent-encoded
+    all the way into chat so untrusted text cannot inject inline color formatting.
+    """
+    if len(prefix) > MAX_PREFIX_LENGTH or sanitize(prefix, MAX_PREFIX_LENGTH + 1) != prefix:
+        raise InputError(
+            f"alert prefix must be a single line of at most {MAX_PREFIX_LENGTH} characters"
+        )
+    source_file = _clean_optional(group.file, MAX_PAWN_FILE_LENGTH) or "unknown"
+    line_rows = group.top_lines(1)
+    source_line = line_rows[0][0] if line_rows and line_rows[0][0] > 0 else 0
+    severity = _SEVERITY.get(group.kind, "LOW")
+    message = sanitize(group.message or group.kind.replace("_", " "), MAX_PAWN_MESSAGE_LENGTH)
+    fields = (
+        "AMXTRIAGE1",
+        severity,
+        _pawn_bridge_field(prefix, MAX_PREFIX_LENGTH),
+        _pawn_bridge_field(source_file, MAX_PAWN_FILE_LENGTH),
+        str(source_line),
+        _pawn_bridge_field(message, MAX_PAWN_MESSAGE_LENGTH),
+        str(max(1, group.count)),
+        "END",
+    )
+    record = "|".join(fields) + "\n"
+    if len(record.encode("utf-8")) > MAX_PAWN_BRIDGE_BYTES:
+        raise InputError(f"Pawn bridge record exceeds {MAX_PAWN_BRIDGE_BYTES} bytes")
+    return record
+
+
+def append_pawn_bridge_record(path: str, group: Group, *, prefix: str = DEFAULT_ALERT_PREFIX) -> None:
+    """Append one protocol record for the Pawn filterscript using the same safe file checks."""
+    data = serialize_pawn_bridge_record(group, prefix=prefix).encode("utf-8")
+    descriptor = _open_append(path)
+    try:
+        written = 0
+        while written < len(data):
+            try:
+                count = os.write(descriptor, data[written:])
+            except OSError as error:
+                raise OutputError(
+                    f"cannot append Pawn bridge alert to '{path}': {error.strerror or error}"
+                ) from error
+            if count <= 0:
+                raise OutputError(
+                    f"cannot append Pawn bridge alert to '{path}': write made no progress"
+                )
+            written += count
+    finally:
+        os.close(descriptor)
+
+
+class PawnBridgeAlertSink:
+    """Optional local file sink consumed by integrations/pawn/amxtriage_bridge.pwn."""
+
+    def __init__(self, path: str, *, prefix: str = DEFAULT_ALERT_PREFIX) -> None:
+        serialize_prefix = prefix
+        if (
+            len(serialize_prefix) > MAX_PREFIX_LENGTH
+            or sanitize(serialize_prefix, MAX_PREFIX_LENGTH + 1) != serialize_prefix
+        ):
+            raise InputError(
+                f"alert prefix must be a single line of at most {MAX_PREFIX_LENGTH} characters"
+            )
+        self.path = path
+        self.prefix = prefix
+        self.disabled = False
+        self.failure_reason: str | None = None
+        self.warning_emitted = False
+
+    def emit(self, group: Group) -> bool:
+        if self.disabled:
+            return False
+        try:
+            append_pawn_bridge_record(self.path, group, prefix=self.prefix)
+        except OutputError as error:
+            self.disabled = True
+            self.failure_reason = sanitize(str(error), 300)
+            return False
+        return True
