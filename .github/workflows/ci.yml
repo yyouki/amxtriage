@@ -76,19 +76,25 @@ jobs:
             "https://github.com/pawn-lang/samp-stdlib/archive/refs/tags/0.3.7-R2-2-1.tar.gz" \
             --output "$RUNNER_TEMP/samp-stdlib.tar.gz"
           tar -xzf "$RUNNER_TEMP/samp-stdlib.tar.gz" -C "$RUNNER_TEMP/samp-stdlib"
+          find "$RUNNER_TEMP/pawn-compiler" -maxdepth 5 -type f -printf 'compiler file: %P\n'
+          find "$RUNNER_TEMP/samp-stdlib" -maxdepth 4 -type f -name '*.inc' -printf 'standard include: %P\n'
           PAWNCC="$(find "$RUNNER_TEMP/pawn-compiler" -type f -name pawncc -print -quit)"
-          CORE_INCLUDE="$(find "$RUNNER_TEMP/pawn-compiler" -type f -name core.inc -print -quit)"
+          CORE_INCLUDE="$(find "$RUNNER_TEMP/pawn-compiler" "$RUNNER_TEMP/samp-stdlib" -type f -name core.inc -print -quit)"
           SAMP_INCLUDE="$(find "$RUNNER_TEMP/samp-stdlib" -type f -name a_samp.inc -print -quit)"
           test -n "$PAWNCC"
-          test -n "$CORE_INCLUDE"
           test -n "$SAMP_INCLUDE"
           chmod +x "$PAWNCC"
           printf 'Pawn compiler: %s\n' "$PAWNCC"
-          printf 'Core include: %s\n' "$CORE_INCLUDE"
           printf 'SA-MP include: %s\n' "$SAMP_INCLUDE"
+          INCLUDE_ARGS=("-i$(dirname "$SAMP_INCLUDE")")
+          if [ -n "$CORE_INCLUDE" ]; then
+            printf 'Core include: %s\n' "$CORE_INCLUDE"
+            INCLUDE_ARGS+=("-i$(dirname "$CORE_INCLUDE")")
+          else
+            echo "Compiler archive has no core.inc; relying on its standard include search path."
+          fi
           "$PAWNCC" \
-            "-i$(dirname "$CORE_INCLUDE")" \
-            "-i$(dirname "$SAMP_INCLUDE")" \
+            "${INCLUDE_ARGS[@]}" \
             "-o$RUNNER_TEMP/amxtriage_bridge.amx" \
             "$GITHUB_WORKSPACE/integrations/pawn/amxtriage_bridge.pwn"
           test -s "$RUNNER_TEMP/amxtriage_bridge.amx"
