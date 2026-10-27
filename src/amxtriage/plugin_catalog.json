@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-10-27",
+  "entries": [
+    {
+      "id": "pawn-cmd-openmp-3.4.0-omp",
+      "name": "Pawn.CMD",
+      "kind": "component",
+      "project_url": "https://github.com/katursis/Pawn.CMD",
+      "release_url": "https://github.com/katursis/Pawn.CMD/releases/tag/3.4.0-omp",
+      "version": "3.4.0-omp",
+      "target_server": "open.mp",
+      "server_versions": [],
+      "platforms": [],
+      "install_location": "../components",
+      "status": "documented",
+      "checked_on": "2026-10-27",
+      "evidence": [
+        {
+          "url": "https://open.mp/docs/server/Installation",
+          "checked_on": "2026-10-27",
+          "statement": "The official open.mp installation guide lists this release in the component installation section."
+        }
+      ],
+      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. The guide does not specify all server builds, operating systems, or CPU architectures. Verify the downloaded artifact and required include/API on the target host."
+    },
+    {
+      "id": "pawn-raknet-openmp-1.6.0-omp",
+      "name": "Pawn.RakNet",
+      "kind": "component",
+      "project_url": "https://github.com/katursis/Pawn.RakNet",
+      "release_url": "https://github.com/katursis/Pawn.RakNet/releases/tag/1.6.0-omp",
+      "version": "1.6.0-omp",
+      "target_server": "open.mp",
+      "server_versions": [],
+      "platforms": [],
+      "install_location": "../components",
+      "status": "documented",
+      "checked_on": "2026-10-27",
+      "evidence": [
+        {
+          "url": "https://open.mp/docs/server/Installation",
+          "checked_on": "2026-10-27",
+          "statement": "The official open.mp installation guide lists this release in the component installation section."
+        }
+      ],
+      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. The guide does not specify all server builds, operating systems, or CPU architectures. Verify the downloaded artifact and required include/API on the target host."
+    },
+    {
+      "id": "sampvoice-openmp-3.1.5-omp",
+      "name": "sampvoice",
+      "kind": "component",
+      "project_url": "https://github.com/AmyrAhmady/sampvoice",
+      "release_url": "https://github.com/AmyrAhmady/sampvoice/releases/tag/v3.1.5-omp",
+      "version": "v3.1.5-omp",
+      "target_server": "open.mp",
+      "server_versions": [],
+      "platforms": [],
+      "install_location": "../components",
+      "status": "documented",
+      "checked_on": "2026-10-27",
+      "evidence": [
+        {
+          "url": "https://open.mp/docs/server/Installation",
+          "checked_on": "2026-10-27",
+          "statement": "The official open.mp installation guide lists this release in the component installation section."
+        }
+      ],
+      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. The guide does not specify all server builds, operating systems, or CPU architectures. Voice-related firewall/network configuration and client requirements are outside this catalog entry."
+    },
+    {
+      "id": "discord-connector-openmp-0.3.6-pre",
+      "name": "discord-connector",
+      "kind": "component",
+      "project_url": "https://github.com/maddinat0r/samp-discord-connector",
+      "release_url": "https://github.com/maddinat0r/samp-discord-connector/releases/tag/v0.3.6-pre",
+      "version": "v0.3.6-pre",
+      "target_server": "open.mp",
+      "server_versions": [],
+      "platforms": [],
+      "install_location": "../components",
+      "status": "documented",
+      "checked_on": "2026-10-27",
+      "evidence": [
+        {
+          "url": "https://open.mp/docs/server/Installation",
+          "checked_on": "2026-10-27",
+          "statement": "The official open.mp installation guide lists this release in the component installation section."
+        }
+      ],
+      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. Discord API/service requirements and compatibility with other server builds must be checked separately."
+    },
+    {
+      "id": "sscanf-openmp-2.13.8",
+      "name": "sscanf",
+      "kind": "component",
+      "project_url": "https://github.com/Y-Less/sscanf",
+      "release_url": "https://github.com/Y-Less/sscanf/releases/tag/v2.13.8",
+      "version": "v2.13.8",
+      "target_server": "open.mp",
+      "server_versions": [],
+      "platforms": [],
+      "install_location": "../components",
+      "status": "documented",
+      "checked_on": "2026-10-27",
+      "evidence": [
+        {
+          "url": "https://open.mp/docs/server/Installation",
+          "checked_on": "2026-10-27",
+          "statement": "The official open.mp installation guide lists this release in the component installation section."
+        }
+      ],
+      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. Match the include and runtime binary version; the guide does not specify a full OS/architecture matrix."
+    }
+  ]
+}
