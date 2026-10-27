@@ -19,11 +19,11 @@ The intended end state is broader than the current log triager. Track progress b
 | Area | Current status | Completion of that area |
 |---|---|---:|
 | Existing SA-MP/open.mp log triage | Implemented for its documented input formats; real-server format coverage still has gaps | 100% of current v0.1 scope |
-| CI, architecture and safety documentation | Foundation being added; CI must pass before calling it validated | In progress |
+| CI, architecture and safety documentation | Cross-version tests, static checks, packaging and the pinned Pawn bridge compile job pass in GitHub Actions; live server behavior remains unverified | CI baseline implemented |
 | Compiler output adapters for common formats | Initial parsers/tests for common formats are implemented; real compiler-version coverage is incomplete | First slice implemented |
 | User-facing CLI/report localization | Report labels and explain headings support en/id/es; remediation advice and argparse help are still English | First slice implemented |
 | Evidence-backed plugin/dependency compatibility catalog | Offline snapshot with 5 documented open.mp component entries; runtime verification and broader OS/version coverage are not implemented | First slice implemented |
-| In-game admin warning bridge | Local JSONL event schema/export is implemented; a real game-chat bridge is not implemented | First slice implemented |
+| In-game admin warning bridge | JSONL and `--alert-pawn-file` export, Pawn filterscript source, and CI compilation are implemented; live staging delivery is not yet verified | Implementation slice complete; staging verification pending |
 | Actual network-layer DDoS mitigation / server-side anti-cheat integration | Not implemented | 0% |
 | Patch generation, compile/test validation and rollback | Existing suggestions only; transactional patch workflow not implemented | Early design stage |
 
@@ -81,7 +81,7 @@ Cheat detection needs server-side game rules and authoritative events. Heuristic
 
 ## Proposed admin chat/log alert contract
 
-The local alert event schema and JSONL export are implemented via `amxtriage watch --alert-jsonl FILE`, including bounded template fields, protected structured source location, target file/line color metadata, safe local file handling, and fail-safe disablement on write errors. This is **not an in-game sender** yet. In-game delivery still needs a separately tested SA-MP/open.mp filterscript/plugin or authenticated local bridge; the current Python CLI cannot directly broadcast a message to players.
+The local JSONL event schema and the `--alert-pawn-file FILE` protocol are implemented. The optional filterscript at [`integrations/pawn/amxtriage_bridge.pwn`](../integrations/pawn/amxtriage_bridge.pwn) consumes the local protocol, sends alerts only to connected RCON-authenticated admins by default, and applies red file-path / blue source-line colors. Its compiler smoke test passes in GitHub Actions using the pinned Pawn compiler and standard-library revision. See the [installation guide](../integrations/pawn/README.md). **End-to-end delivery has not yet been verified on a live SA-MP/open.mp staging server**, so runtime compatibility, permissions, file rotation and actual ping/resource effects remain unverified.
 
 Example conceptual layout:
 
@@ -116,7 +116,7 @@ A successful compiler run does not guarantee gameplay correctness. Regression fi
 3. Add a Pawn compiler-output adapter and fixtures captured from official tool output.
 4. Extend `en`/`id`/`es` localization to complete CLI help, error messages and remediation rules, with completeness tests and stable JSON.
 5. Expand the upstream-evidence compatibility catalog only with verified official sources; add stale-entry checks and compatibility filters.
-6. Add a tested SA-MP/open.mp alert bridge that consumes local JSONL safely, applies actual red file/blue line colors, checks admin authorization, deduplicates and rate-limits; only claim it works after staging-server tests.
+6. Exercise the implemented Pawn bridge on a staging SA-MP/open.mp server: verify actual chat delivery, RCON-admin filtering, red/blue colors, shared file permissions, startup/rotation/truncation and alert latency. Keep the CI compile test, but do not equate it with runtime verification.
 7. Add additional language adapters only as each has real compiler fixtures and validation support.
 8. Add deterministic patch mode first, then opt-in apply/checkpoint/rollback with compiler and regression validation.
 9. Add DDoS-provider and anti-cheat integrations only when an explicit supported interface and security review exist.
