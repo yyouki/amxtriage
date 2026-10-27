@@ -244,7 +244,12 @@ def _pawn_bridge_field(text: str, limit: int) -> str:
     injecting SA-MP/open.mp inline color tags such as {FF0000}.
     """
     safe = sanitize(text, limit)
-    return safe.replace("%", "%25").replace("|", "%7C").replace("{", "%7B").replace("}", "%7D")
+    return (
+        safe.replace("%", "%25")
+        .replace("|", "%7C")
+        .replace("{", "%7B")
+        .replace("}", "%7D")
+    )
 
 
 def serialize_pawn_bridge_record(
