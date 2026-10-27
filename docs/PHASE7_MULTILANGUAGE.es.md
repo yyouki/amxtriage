@@ -17,11 +17,11 @@
 | Área | Estado actual |
 |---|---|
 | Diagnóstico de logs SA-MP/open.mp | Base implementada; falta validar más formatos de servidores reales |
-| CI, empaquetado y seguridad | Hay una base; todos los trabajos de CI deben pasar antes de declarar esta fase completa |
+| CI, empaquetado y seguridad | Las pruebas en varias versiones de Python, los controles estáticos, el empaquetado y la compilación del bridge Pawn pasan en GitHub Actions; el comportamiento del servidor aún necesita pruebas de staging |
 | Diagnósticos multilenguaje de compilador | Parsers iniciales y pruebas de formatos comunes; cobertura de versiones incompleta |
 | Localización de CLI y Markdown | Etiquetas y documentación en en/id/es; parte de la ayuda y recomendaciones detalladas siguen en inglés |
 | Catálogo de compatibilidad de plugins/dependencias | Instantánea offline con 5 componentes open.mp documentados; sin validación en tiempo de ejecución ni cobertura completa de SO/versiones |
-| Avisos dentro del juego a administradores/propietarios | Esquema de eventos y exportación JSONL local implementados; el puente de chat del juego no está implementado |
+| Avisos dentro del juego a administradores/propietarios | Exportación JSONL/`--alert-pawn-file`, source del filterscript Pawn y compilación en CI implementados; la entrega en un servidor staging aún no está verificada |
 | Mitigación DDoS de red e integración anti-cheat en el servidor | No implementado |
 | Parches, validación y reversión | Solo hay recomendaciones; no existe un flujo de parche aplicado |
 
@@ -62,7 +62,7 @@ Mide CPU, RAM, E/S de disco y latencia con registros realistas. Limita tamaño d
 
 Un analizador de logs no puede detener por sí solo un DDoS volumétrico; hacen falta filtros de red y mitigación del proveedor/hosting. No afirmes que existe protección DDoS solo por monitorizar logs. La detección anti-cheat debe ejecutarse de forma autoritativa en el servidor y tener en cuenta los falsos positivos. No hagas baneos automáticos por una sola señal débil.
 
-El esquema local de alertas y la exportación JSONL ya están implementados mediante `amxtriage watch --alert-jsonl FILE`. Incluyen campos de ubicación estructurados y protegidos, plantilla con campos permitidos, metadatos de color objetivo y escritura local segura con desactivación aislada si falla. Esto **no envía mensajes al chat del juego**. Para ello sigue siendo necesario un filterscript/plugin SA-MP/open.mp probado o un puente local autenticado que consuma JSONL. El puente deberá aplicar los colores reales (ruta roja, línea azul), verificar permisos de administrador, deduplicar y limitar la frecuencia. No se debe declarar listo hasta probarlo en un servidor de staging.
+El esquema local JSONL y el protocolo `--alert-pawn-file FILE` están implementados. El filterscript opcional está en [`integrations/pawn/amxtriage_bridge.pwn`](../integrations/pawn/amxtriage_bridge.pwn); valida registros locales, envía avisos solo a administradores autenticados por RCON de forma predeterminada y aplica ruta roja/línea azul. La compilación del source Pawn pasa en GitHub Actions con versiones fijadas del compilador y la biblioteca estándar. Consulta la [guía de instalación](../integrations/pawn/README.md). **La entrega end-to-end no se ha probado aún en un servidor staging real de SA-MP/open.mp**, así que siguen sin verificarse la compatibilidad en tiempo de ejecución, los permisos de archivos, la rotación del log y el efecto real en recursos/ping.
 
 ## Corrección segura
 
@@ -79,7 +79,7 @@ Que un compilador pase no garantiza que la lógica del juego sea correcta. Se ne
 3. Añadir el adaptador de compilador Pawn con fixtures de herramientas oficiales.
 4. Completar en/id/es y probar traducciones y esquema JSON estable.
 5. Ampliar el catálogo de compatibilidad solo con evidencia oficial y detectar entradas obsoletas.
-6. Crear un puente SA-MP/open.mp probado que lea JSONL, aplique colores reales rojo/azul, compruebe permisos de administración, deduplique y limite alertas; no declararlo listo antes de pruebas en staging.
+6. Probar el bridge Pawn compilado en un servidor staging SA-MP/open.mp: entrega real en chat, filtro RCON-admin, colores rojo/azul, permisos de archivo compartido, arranque/rotación/truncamiento y latencia de avisos. La compilación en CI no equivale a la verificación de runtime.
 7. Añadir otros lenguajes solo con fixtures reales y herramientas de validación.
 8. Añadir primero generación de parches; después aplicar con aprobación, checkpoint, pruebas de compiler/regresión y reversión.
 9. Integrar DDoS/anti-cheat solo con interfaces compatibles y revisión de seguridad.
