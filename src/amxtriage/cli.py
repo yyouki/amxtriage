@@ -339,7 +339,7 @@ def build_parser() -> argparse.ArgumentParser:
         aliases=["plugins"],
         help="list plugins/components with upstream compatibility evidence",
         description=(
-            "List the bundled offline compatibility snapshot. No network calls, downloads, or 
+            "List the bundled offline compatibility snapshot. No network calls, downloads, or "
             "binary execution are performed. Documented does not mean runtime-tested."
         ),
     )
@@ -546,7 +546,8 @@ def _run_catalog(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _run_explain(args: argparse.Namespace) -> int:    if args.code is None:
+def _run_explain(args: argparse.Namespace) -> int:
+    if args.code is None:
         _write_output(render_error_list(args.language), None)
         return EXIT_OK
     error = lookup(args.code)
