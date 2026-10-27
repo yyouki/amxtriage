@@ -325,10 +325,11 @@ def parse_compiler_lines(
         stripped = line_text.strip()
         if source_language in {"auto", "javascript", "typescript"} and stripped:
             suffix_language = _extension_language(stripped)
-            if stripped.lower().endswith((".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx")):
-                if source_language == "auto" or source_language == suffix_language:
-                    eslint_file = stripped
-                    continue
+            if stripped.lower().endswith(
+                (".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx")
+            ) and (source_language == "auto" or source_language == suffix_language):
+                eslint_file = stripped
+                continue
             eslint_match = _ESLINT_LINE.match(line_text)
             if eslint_match and eslint_file:
                 inferred = _extension_language(eslint_file) or source_language
