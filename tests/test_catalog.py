@@ -1,5 +1,6 @@
 import json
 from dataclasses import asdict
+from typing import cast
 
 import pytest
 
@@ -14,14 +15,17 @@ from amxtriage.plugin_catalog import (
 
 
 def raw_catalog(snapshot: CatalogSnapshot) -> dict[str, object]:
-    return json.loads(
-        json.dumps(
-            {
-                "schema_version": snapshot.schema_version,
-                "snapshot_date": snapshot.snapshot_date,
-                "entries": [asdict(entry) for entry in snapshot.entries],
-            }
-        )
+    return cast(
+        dict[str, object],
+        json.loads(
+            json.dumps(
+                {
+                    "schema_version": snapshot.schema_version,
+                    "snapshot_date": snapshot.snapshot_date,
+                    "entries": [asdict(entry) for entry in snapshot.entries],
+                }
+            )
+        ),
     )
 
 
