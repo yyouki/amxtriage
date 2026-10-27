@@ -54,3 +54,5 @@ jobs:
           python -m venv "$RUNNER_TEMP/amxtriage-smoke"
           "$RUNNER_TEMP/amxtriage-smoke/bin/python" -m pip install --no-deps dist/*.whl
           "$RUNNER_TEMP/amxtriage-smoke/bin/amxtriage" --help
+          "$RUNNER_TEMP/amxtriage-smoke/bin/amxtriage" catalog --format json > "$RUNNER_TEMP/plugin-catalog.json"
+          "$RUNNER_TEMP/amxtriage-smoke/bin/python" -c 'import json,sys; p=json.load(open(sys.argv[1], encoding="utf-8")); assert p["schema_version"] == 1 and p["entry_count"] == len(p["entries"])' "$RUNNER_TEMP/plugin-catalog.json"
