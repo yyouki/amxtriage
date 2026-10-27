@@ -467,9 +467,7 @@ def _run_watch(args: argparse.Namespace) -> int:
         restore_signal()
         follower.close()
     for event in parser.finish():
-        _announce_new_problem(
-            event, aggregator, label, baseline, source_index, args, alert_sink
-        )
+        _announce_new_problem(event, aggregator, label, baseline, source_index, args, alert_sink)
     result = AnalysisResult([label], parser.line_number, follower.truncated_lines, aggregator)
     report = build_report(
         result,
