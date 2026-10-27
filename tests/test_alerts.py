@@ -57,7 +57,9 @@ def test_alert_event_keeps_structured_location_and_color_metadata() -> None:
     assert event["severity"] == "HIGH"
     assert event["source"] == {"file": "gamemodes/rp.pwn", "line": 42}
     assert event["presentation"] == {"file_color": "red", "line_color": "blue"}
-    assert "gamemodes/rp.pwn:42" in event["summary"]
+    summary = event["summary"]
+    assert isinstance(summary, str)
+    assert "gamemodes/rp.pwn:42" in summary
 
 
 @pytest.mark.parametrize(
