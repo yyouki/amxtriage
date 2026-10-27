@@ -27,7 +27,7 @@ def test_pawn_compiler_output_keeps_location_and_rule_hint():
         "017",
     )
     assert first.severity == "error"
-    assert "spelling" in first.hint
+    assert first.hint_key == "compiler_hint_undefined"
     assert diagnostics[1].severity == "warning"
 
 
@@ -106,6 +106,7 @@ def test_compiler_report_json_schema_is_stable():
     assert payload["diagnostic_count"] == 1
     assert payload["diagnostics"][0]["file"] == "game.pwn"
     assert payload["diagnostics"][0]["line"] == 12
+    assert payload["diagnostics"][0]["hint"].startswith("Periksa ejaan")
 
 
 def test_input_file_and_cli_integration(tmp_path, capsys):

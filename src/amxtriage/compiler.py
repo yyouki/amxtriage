@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 from collections.abc import Iterable, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 from amxtriage import __version__
@@ -102,7 +102,7 @@ class CompilerDiagnostic:
     severity: str
     code: str | None
     message: str
-    hint: str
+    hint_key: str
 
 
 @dataclass(slots=True)
@@ -138,8 +138,22 @@ def _stable_id(
     return hashlib.sha256(identity.encode("utf-8", errors="replace")).hexdigest()[:16]
 
 
-def _hint(message: str, severity: str, language: str) -> str:
+def _hint(message: str) -> str:
     lowered = message.casefold()
+    if any(
+        token in lowered
+        for token in (
+            "include file",
+            "module not found",
+            "no such file",
+            "file not found",
+            "cannot open include",
+            "cannot find module",
+            "cannot find symbol",
+            "could not find",
+        )
+    ):
+        return "compiler_hint_missing"
     if any(
         token in lowered
         for token in (
@@ -148,11 +162,9 @@ def _hint(message: str, severity: str, language: str) -> str:
             "cannot find name",
             "not found",
             "unresolved external",
-            "cannot find module",
-            "could not find",
         )
     ):
-        return tr(language, "compiler_hint_undefined")
+        return "compiler_hint_undefined"
     if any(
         token in lowered
         for token in (
@@ -165,18 +177,7 @@ def _hint(message: str, severity: str, language: str) -> str:
             "mismatched types",
         )
     ):
-        return tr(language, "compiler_hint_type")
-    if any(
-        token in lowered
-        for token in (
-            "include file",
-            "module not found",
-            "no such file",
-            "file not found",
-            "cannot open include",
-        )
-    ):
-        return tr(language, "compiler_hint_missing")
+        return "compiler_hint_type"
     if any(
         token in lowered
         for token in (
@@ -188,8 +189,8 @@ def _hint(message: str, severity: str, language: str) -> str:
             "unterminated",
         )
     ):
-        return tr(language, "compiler_hint_syntax")
-    return tr(language, "compiler_hint_generic")
+        return "compiler_hint_syntax"
+    return "compiler_hint_generic"
 
 
 def _make_diagnostic(
@@ -225,7 +226,7 @@ def _make_diagnostic(
         severity=normal_severity,
         code=safe_code,
         message=safe_message,
-        hint=_hint(safe_message, normal_severity, language),
+        hint_key=_hint(safe_message),
     )
 
 
@@ -500,8 +501,20 @@ def _severity_label(severity: str, language: str) -> str:
     return tr(language, key)
 
 
-def _diagnostic_dict(diagnostic: CompilerDiagnostic) -> dict[str, object]:
-    return asdict(diagnostic)
+def _diagnostic_dict(
+    diagnostic: CompilerDiagnostic, language: str
+) -> dict[str, object]:
+    return {
+        "diagnostic_id": diagnostic.diagnostic_id,
+        "source_language": diagnostic.source_language,
+        "file": diagnostic.file,
+        "line": diagnostic.line,
+        "column": diagnostic.column,
+        "severity": diagnostic.severity,
+        "code": diagnostic.code,
+        "message": diagnostic.message,
+        "hint": tr(language, diagnostic.hint_key),
+    }
 
 
 def render_compiler_report(
@@ -521,7 +534,7 @@ def render_compiler_report(
             "truncated_lines": report.truncated_lines,
             "diagnostic_count": len(report.diagnostics),
             "dropped_diagnostics": report.dropped_diagnostics,
-            "diagnostics": [_diagnostic_dict(item) for item in report.diagnostics],
+            "diagnostics": [_diagnostic_dict(item, language) for item in report.diagnostics],
             "notes": [tr(language, "compiler_no_findings_note") if not report.diagnostics else ""],
         }
         payload["notes"] = [note for note in payload["notes"] if note]
@@ -552,7 +565,7 @@ def render_compiler_report(
                     f"- **{tr(language, 'compiler_message')}:** {inline_code(item.message, 2000)}
                     f"- **{tr(language, 'compiler_source_language')}:** {item.source_language}",
                     f"- **{tr(language, 'compiler_code')}:** {inline_code(item.code or '-', 80)}",
-                    f"- **{tr(language, 'compiler_hint')}:** {item.hint}",
+                    f"- **{tr(language, 'compiler_hint')}:** {tr(language, item.hint_key)}",
                     "",
                 ]
             )
