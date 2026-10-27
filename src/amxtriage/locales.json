@@ -101,7 +101,17 @@
     "compiler_hint_type": "Compare expected and actual types at the reported call/site. Avoid a cast-only workaround unless it is semantically correct.",
     "compiler_hint_missing": "Check include/module search paths, case sensitivity, and dependency installation/version. Do not download an unverified binary.",
     "compiler_hint_syntax": "Inspect the reported line and the preceding line; compilers may point at the token after the actual syntax mistake.",
-    "compiler_hint_generic": "Read the original diagnostic and upstream documentation; rerun the official compiler or linter after making a targeted change."
+    "compiler_hint_generic": "Read the original diagnostic and upstream documentation; rerun the official compiler or linter after making a targeted change.",
+    "catalog_title": "Plugin and dependency compatibility catalog",
+    "catalog_snapshot": "Evidence snapshot: {date}",
+    "catalog_limit": "Offline evidence snapshot. `documented` is not a runtime-tested compatibility guarantee; empty platform/version lists mean the source did not specify them.",
+    "catalog_no_entries": "No catalog entries matched these filters. This does not mean no compatible plugins or components exist.",
+    "catalog_project": "Project",
+    "catalog_release": "Official release",
+    "catalog_install": "Install location",
+    "catalog_checked": "Checked on",
+    "catalog_evidence": "Evidence",
+    "catalog_notes": "Notes"
   },
   "id": {
     "input_label": "masukan:",
@@ -205,7 +215,17 @@
     "compiler_hint_type": "Bandingkan tipe yang diharapkan dan aktual di lokasi tersebut. Hindari cast saja jika tidak benar secara semantik.",
     "compiler_hint_missing": "Periksa jalur pencarian include/modul, huruf besar-kecil path, serta versi dependensi. Jangan mengunduh biner yang belum terverifikasi.",
     "compiler_hint_syntax": "Periksa baris yang dilaporkan dan baris sebelumnya; compiler mungkin menunjuk token setelah kesalahan sintaks sebenarnya.",
-    "compiler_hint_generic": "Baca diagnostik asli dan dokumentasi upstream; jalankan ulang compiler/linter resmi setelah perubahan terarah."
+    "compiler_hint_generic": "Baca diagnostik asli dan dokumentasi upstream; jalankan ulang compiler/linter resmi setelah perubahan terarah.",
+    "catalog_title": "Katalog kompatibilitas plugin dan dependensi",
+    "catalog_snapshot": "Snapshot bukti: {date}",
+    "catalog_limit": "Snapshot bukti offline. Status `documented` bukan jaminan kompatibilitas yang sudah diuji saat runtime; daftar versi/platform kosong berarti sumber tidak menyebutkannya.",
+    "catalog_no_entries": "Tidak ada entri katalog yang cocok dengan filter ini. Ini tidak berarti tidak ada plugin atau component yang kompatibel.",
+    "catalog_project": "Proyek",
+    "catalog_release": "Rilis resmi",
+    "catalog_install": "Lokasi instalasi",
+    "catalog_checked": "Diperiksa pada",
+    "catalog_evidence": "Bukti",
+    "catalog_notes": "Catatan"
   },
   "es": {
     "input_label": "entrada:",
@@ -309,6 +329,16 @@
     "compiler_hint_type": "Compara los tipos esperado y real en la ubicación indicada. Evita una conversión de tipos que no sea semánticamente correcta.",
     "compiler_hint_missing": "Comprueba las rutas de búsqueda, las mayúsculas/minúsculas y la versión de la dependencia. No descargues binarios sin verificar.",
     "compiler_hint_syntax": "Revisa la línea indicada y la anterior; el compilador puede señalar el token posterior al error de sintaxis real.",
-    "compiler_hint_generic": "Consulta el diagnóstico original y la documentación del proyecto; vuelve a ejecutar el compilador/linter oficial tras un cambio específico."
+    "compiler_hint_generic": "Consulta el diagnóstico original y la documentación del proyecto; vuelve a ejecutar el compilador/linter oficial tras un cambio específico.",
+    "catalog_title": "Catálogo de compatibilidad de plugins y dependencias",
+    "catalog_snapshot": "Fecha de comprobación de evidencia: {date}",
+    "catalog_limit": "Instantánea de evidencia sin conexión. `documented` no garantiza compatibilidad probada en tiempo de ejecución; las listas vacías de plataformas/versiones indican que la fuente no las especifica.",
+    "catalog_no_entries": "Ninguna entrada coincide con estos filtros. Esto no significa que no existan plugins o componentes compatibles.",
+    "catalog_project": "Proyecto",
+    "catalog_release": "Versión oficial",
+    "catalog_install": "Ubicación de instalación",
+    "catalog_checked": "Comprobado el",
+    "catalog_evidence": "Evidencia",
+    "catalog_notes": "Notas"
   }
 }
