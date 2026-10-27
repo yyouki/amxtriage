@@ -149,8 +149,7 @@ def render_group_text(
         lines.append(f"{PAD}{tr(language, 'source_label')} {sanitize(snippet.path, 200)}")
         lines.extend(f"{PAD}  {row}" for row in _snippet_lines(snippet))
     lines.extend(
-        f"{PAD}{tr(language, 'hint_label')} {hint}"
-        for hint in _hint_lines(group, language)
+        f"{PAD}{tr(language, 'hint_label')} {hint}" for hint in _hint_lines(group, language)
     )
     return lines
 

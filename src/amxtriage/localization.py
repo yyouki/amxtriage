@@ -2,6 +2,7 @@
 
 Log text, source code, plugin identifiers and JSON schema keys remain untranslated.
 """
+
 from __future__ import annotations
 
 import json

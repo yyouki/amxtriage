@@ -123,7 +123,10 @@ def _add_context_arguments(command: argparse.ArgumentParser) -> None:
 
 def _add_language_argument(command: argparse.ArgumentParser) -> None:
     command.add_argument(
-        "--language", "--lang", choices=SUPPORTED_LANGUAGES, default=argparse.SUPPRESS,
+        "--language",
+        "--lang",
+        choices=SUPPORTED_LANGUAGES,
+        default=argparse.SUPPRESS,
         help=tr("en", "language_help"),
     )
 
@@ -136,7 +139,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"amxtriage {__version__}")
     parser.add_argument(
-        "--language", "--lang", choices=SUPPORTED_LANGUAGES, default="en",
+        "--language",
+        "--lang",
+        choices=SUPPORTED_LANGUAGES,
+        default="en",
         help=tr("en", "language_help"),
     )
     commands = parser.add_subparsers(dest="command", required=True, metavar="command")
@@ -421,9 +427,7 @@ def _run_explain(args: argparse.Namespace) -> int:
         return EXIT_OK
     error = lookup(args.code)
     if error is None:
-        raise AmxTriageError(
-            tr(args.language, "unknown_code").format(code=args.code)
-        )
+        raise AmxTriageError(tr(args.language, "unknown_code").format(code=args.code))
     _write_output(render_explain(error, args.language), None)
     return EXIT_OK
 
