@@ -79,12 +79,16 @@ jobs:
           find "$RUNNER_TEMP/pawn-compiler" -maxdepth 5 -type f -printf 'compiler file: %P\n'
           find "$RUNNER_TEMP/samp-stdlib" -maxdepth 4 -type f -name '*.inc' -printf 'standard include: %P\n'
           PAWNCC="$(find "$RUNNER_TEMP/pawn-compiler" -type f -name pawncc -print -quit)"
+          PAWN_LIB="$(find "$RUNNER_TEMP/pawn-compiler" -type f -name libpawnc.so -print -quit)"
           CORE_INCLUDE="$(find "$RUNNER_TEMP/pawn-compiler" "$RUNNER_TEMP/samp-stdlib" -type f -name core.inc -print -quit)"
           SAMP_INCLUDE="$(find "$RUNNER_TEMP/samp-stdlib" -type f -name a_samp.inc -print -quit)"
           test -n "$PAWNCC"
+          test -n "$PAWN_LIB"
           test -n "$SAMP_INCLUDE"
           chmod +x "$PAWNCC"
+          export LD_LIBRARY_PATH="$(dirname "$PAWN_LIB"):${LD_LIBRARY_PATH:-}"
           printf 'Pawn compiler: %s\n' "$PAWNCC"
+          printf 'Pawn shared library: %s\n' "$PAWN_LIB"
           printf 'SA-MP include: %s\n' "$SAMP_INCLUDE"
           INCLUDE_ARGS=("-i$(dirname "$SAMP_INCLUDE")")
           if [ -n "$CORE_INCLUDE" ]; then
