@@ -562,7 +562,7 @@ def render_compiler_report(
                     f"## {index}. {inline_code(_severity_label(item.severity, language), 80)} "
                     f"{where}",
                     "",
-                    f"- **{tr(language, 'compiler_message')}:** {inline_code(item.message, 2000)}
+                    f"- **{tr(language, 'compiler_message')}:** {inline_code(item.message, 2000)}",
                     f"- **{tr(language, 'compiler_source_language')}:** {item.source_language}",
                     f"- **{tr(language, 'compiler_code')}:** {inline_code(item.code or '-', 80)}",
                     f"- **{tr(language, 'compiler_hint')}:** {tr(language, item.hint_key)}",
