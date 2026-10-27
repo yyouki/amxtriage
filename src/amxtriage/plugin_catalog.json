@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "snapshot_date": "2026-10-27",
+  "snapshot_date": "2026-10-28",
   "entries": [
     {
       "id": "pawn-cmd-openmp-3.4.0-omp",
@@ -14,11 +14,11 @@
       "platforms": [],
       "install_location": "../components",
       "status": "documented",
-      "checked_on": "2026-10-27",
+      "checked_on": "2026-10-28",
       "evidence": [
         {
           "url": "https://open.mp/docs/server/Installation",
-          "checked_on": "2026-10-27",
+          "checked_on": "2026-10-28",
           "statement": "The official open.mp installation guide lists this release in the component installation section."
         }
       ],
@@ -36,11 +36,11 @@
       "platforms": [],
       "install_location": "../components",
       "status": "documented",
-      "checked_on": "2026-10-27",
+      "checked_on": "2026-10-28",
       "evidence": [
         {
           "url": "https://open.mp/docs/server/Installation",
-          "checked_on": "2026-10-27",
+          "checked_on": "2026-10-28",
           "statement": "The official open.mp installation guide lists this release in the component installation section."
         }
       ],
@@ -58,15 +58,42 @@
       "platforms": [],
       "install_location": "../components",
       "status": "documented",
-      "checked_on": "2026-10-27",
+      "checked_on": "2026-10-28",
       "evidence": [
         {
           "url": "https://open.mp/docs/server/Installation",
-          "checked_on": "2026-10-27",
+          "checked_on": "2026-10-28",
           "statement": "The official open.mp installation guide lists this release in the component installation section."
         }
       ],
-      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. The guide does not specify all server builds, operating systems, or CPU architectures. Voice-related firewall/network configuration and client requirements are outside this catalog entry."
+      "notes": "The official open.mp installation guide explicitly lists v3.1.5-omp, but the upstream releases page now lists v3.2.0-omp. That newer release is tracked separately as unknown until compatibility with the target server build, OS/architecture, and dependencies is verified."
+    },
+    {
+      "id": "sampvoice-openmp-3.2.0-omp",
+      "name": "sampvoice",
+      "kind": "component",
+      "project_url": "https://github.com/AmyrAhmady/sampvoice",
+      "release_url": "https://github.com/AmyrAhmady/sampvoice/releases/tag/v3.2.0-omp",
+      "version": "v3.2.0-omp",
+      "target_server": "open.mp",
+      "server_versions": [],
+      "platforms": [],
+      "install_location": "Not verified for this release; check upstream instructions",
+      "status": "unknown",
+      "checked_on": "2026-10-28",
+      "evidence": [
+        {
+          "url": "https://github.com/AmyrAhmady/sampvoice/releases",
+          "checked_on": "2026-10-28",
+          "statement": "The upstream release page lists v3.2.0-omp as a newer open.mp release."
+        },
+        {
+          "url": "https://open.mp/docs/server/Installation",
+          "checked_on": "2026-10-28",
+          "statement": "The official open.mp installation guide currently lists v3.1.5-omp, not v3.2.0-omp; compatibility for the newer release is not established by that guide."
+        }
+      ],
+      "notes": "Upstream shows a newer open.mp-tagged release than the version named in the official open.mp installation guide. amxtriage has not verified runtime compatibility, target server build, OS/architecture matrix, or dependencies. Treat this release as unknown and test it on a staging server before use."
     },
     {
       "id": "discord-connector-openmp-0.3.6-pre",
@@ -80,11 +107,11 @@
       "platforms": [],
       "install_location": "../components",
       "status": "documented",
-      "checked_on": "2026-10-27",
+      "checked_on": "2026-10-28",
       "evidence": [
         {
           "url": "https://open.mp/docs/server/Installation",
-          "checked_on": "2026-10-27",
+          "checked_on": "2026-10-28",
           "statement": "The official open.mp installation guide lists this release in the component installation section."
         }
       ],
@@ -102,11 +129,11 @@
       "platforms": [],
       "install_location": "../components",
       "status": "documented",
-      "checked_on": "2026-10-27",
+      "checked_on": "2026-10-28",
       "evidence": [
         {
           "url": "https://open.mp/docs/server/Installation",
-          "checked_on": "2026-10-27",
+          "checked_on": "2026-10-28",
           "statement": "The official open.mp installation guide lists this release in the component installation section."
         }
       ],
