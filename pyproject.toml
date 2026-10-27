@@ -96,6 +96,7 @@ module = [
     "conftest",
     "helpers",
     "test_aggregate",
+    "test_alerts",
     "test_analysis",
     "test_baseline",
     "test_cli",
