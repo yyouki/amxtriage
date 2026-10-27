@@ -67,36 +67,34 @@ jobs:
           PAWN_COMPILER_VERSION: "v3.10.10"
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/pawn-compiler" "$RUNNER_TEMP/samp-stdlib"
+          mkdir -p "$RUNNER_TEMP/pawn-compiler" "$RUNNER_TEMP/pawn-compiler-source" "$RUNNER_TEMP/samp-stdlib"
           curl --fail --silent --show-error --location --retry 3 \
             "https://github.com/pawn-lang/compiler/releases/download/${PAWN_COMPILER_VERSION}/pawnc-3.10.10-linux.tar.gz" \
             --output "$RUNNER_TEMP/pawn-compiler.tar.gz"
           tar -xzf "$RUNNER_TEMP/pawn-compiler.tar.gz" -C "$RUNNER_TEMP/pawn-compiler"
           curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/pawn-lang/compiler/archive/refs/tags/${PAWN_COMPILER_VERSION}.tar.gz" \
+            --output "$RUNNER_TEMP/pawn-compiler-source.tar.gz"
+          tar -xzf "$RUNNER_TEMP/pawn-compiler-source.tar.gz" -C "$RUNNER_TEMP/pawn-compiler-source"
+          curl --fail --silent --show-error --location --retry 3 \
             "https://github.com/pawn-lang/samp-stdlib/archive/refs/tags/0.3.7-R2-2-1.tar.gz" \
             --output "$RUNNER_TEMP/samp-stdlib.tar.gz"
           tar -xzf "$RUNNER_TEMP/samp-stdlib.tar.gz" -C "$RUNNER_TEMP/samp-stdlib"
-          find "$RUNNER_TEMP/pawn-compiler" -maxdepth 5 -type f -printf 'compiler file: %P\n'
-          find "$RUNNER_TEMP/samp-stdlib" -maxdepth 4 -type f -name '*.inc' -printf 'standard include: %P\n'
           PAWNCC="$(find "$RUNNER_TEMP/pawn-compiler" -type f -name pawncc -print -quit)"
           PAWN_LIB="$(find "$RUNNER_TEMP/pawn-compiler" -type f -name libpawnc.so -print -quit)"
-          CORE_INCLUDE="$(find "$RUNNER_TEMP/pawn-compiler" "$RUNNER_TEMP/samp-stdlib" -type f -name core.inc -print -quit)"
+          CORE_INCLUDE="$(find "$RUNNER_TEMP/pawn-compiler-source" -type f -name core.inc -print -quit)"
           SAMP_INCLUDE="$(find "$RUNNER_TEMP/samp-stdlib" -type f -name a_samp.inc -print -quit)"
           test -n "$PAWNCC"
           test -n "$PAWN_LIB"
+          test -n "$CORE_INCLUDE"
           test -n "$SAMP_INCLUDE"
           chmod +x "$PAWNCC"
           export LD_LIBRARY_PATH="$(dirname "$PAWN_LIB"):${LD_LIBRARY_PATH:-}"
           printf 'Pawn compiler: %s\n' "$PAWNCC"
           printf 'Pawn shared library: %s\n' "$PAWN_LIB"
+          printf 'Core include: %s\n' "$CORE_INCLUDE"
           printf 'SA-MP include: %s\n' "$SAMP_INCLUDE"
-          INCLUDE_ARGS=("-i$(dirname "$SAMP_INCLUDE")")
-          if [ -n "$CORE_INCLUDE" ]; then
-            printf 'Core include: %s\n' "$CORE_INCLUDE"
-            INCLUDE_ARGS+=("-i$(dirname "$CORE_INCLUDE")")
-          else
-            echo "Compiler archive has no core.inc; relying on its standard include search path."
-          fi
+          INCLUDE_ARGS=("-i$(dirname "$SAMP_INCLUDE")" "-i$(dirname "$CORE_INCLUDE")")
           "$PAWNCC" \
             "${INCLUDE_ARGS[@]}" \
             "-o$RUNNER_TEMP/amxtriage_bridge.amx" \
