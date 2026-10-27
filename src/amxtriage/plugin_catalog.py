@@ -219,8 +219,10 @@ def render_catalog_report(
             "entry_count": len(entries),
             "entries": [asdict(entry) for entry in entries],
             "notes": [
-                "Catalog records contain upstream documentation evidence, not a guarantee of runtime compatibility.",
-                "Empty server_versions/platforms fields mean the cited evidence did not specify them.",
+                "Catalog records contain upstream documentation evidence, not a guarantee "
+                "of runtime compatibility.",
+                "Empty server_versions/platforms fields mean the cited evidence did "
+                "not specify them.",
                 "No downloads, network probes, or binary execution are performed.",
             ],
         }
@@ -242,7 +244,8 @@ def render_catalog_report(
             return "\n".join(lines) + "\n"
         lines.extend(
             [
-                "| Name | Version | Target | Type | Status | Install location | Official release | Evidence checked |",
+                "| Name | Version | Target | Type | Status | Install location | "
+                "Official release | Evidence checked |",
                 "|---|---|---|---|---|---|---|---|",
             ]
         )
