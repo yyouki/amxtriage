@@ -133,3 +133,44 @@ def test_alert_export_failure_does_not_stop_log_following(
     assert "warning: local alert export disabled" in err
     assert "NEW  RUNTIME ERROR 4" in out
     assert "watch summary" in out
+
+
+
+def test_watch_exports_pawn_bridge_record_for_filterscript(
+    run_watch: RunWatch, tmp_path: Path
+) -> None:
+    target = tmp_path / "amxtriage-alerts.txt"
+    code, out, err = run_watch(
+        [*BLOCK, None, None],
+        "--alert-pawn-file",
+        str(target),
+        "--alert-prefix",
+        "SERVER",
+    )
+    assert code == 0
+    assert "local alert export disabled" not in err
+    assert "NEW  RUNTIME ERROR 4" in out
+    records = target.read_text(encoding="utf-8").splitlines()
+    assert len(records) == 1
+    fields = records[0].split("|")
+    assert len(fields) == 8
+    assert fields[0] == "AMXTRIAGE1"
+    assert fields[1] == "HIGH"
+    assert fields[2] == "SERVER"
+    assert fields[3] == "gamemodes/rp.pwn"
+    assert fields[4] == "30"
+    assert fields[5] == "Array index out of bounds"
+    assert fields[7] == "END"
+
+
+def test_alert_template_requires_jsonl_output(
+    run_watch: RunWatch,
+) -> None:
+    code, out, err = run_watch(
+        [*BLOCK, None, None],
+        "--alert-template",
+        "{prefix}: {message}",
+    )
+    assert code == 2
+    assert out == ""
+    assert "--alert-template requires --alert-jsonl" in err
