@@ -101,6 +101,7 @@ module = [
     "test_hardening",
     "test_parser",
     "test_reader",
+    "test_recommendation",
     "test_render",
     "test_security",
     "test_source",

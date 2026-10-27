@@ -254,6 +254,34 @@ These are common causes, not a diagnosis. The backtrace in the log is the eviden
 `amxtriage explain` without a code lists all known codes. The hints are general advice, not
 a diagnosis.
 
+### recommend (alias: suggest)
+
+```bash
+amxtriage recommend server_log.txt --source-dir ./gamemodes
+amxtriage suggest server_log.txt --format markdown -o recommendations.md
+amxtriage recommend server_log.txt --format json -o recommendations.json
+```
+
+`recommend` uses an offline rule catalog to prioritise common AMX runtime errors, crashes, and
+long callbacks. For known issues it gives targeted checks and, for a few common cases, an
+illustrative Pawn pattern such as an array bounds guard or a divide-by-zero guard. With
+`--source-dir`, it also includes the matching source context when the log supplies a unique
+file-and-line location. `--top`, `--min-count`, and `--context` work as they do for `analyze`.
+
+The snippets are **templates, not generated fixes**: names such as `index`, `values`, and
+`divisor` are placeholders. A log rarely contains enough information to infer the intended game
+logic safely. This command never changes source files, contacts a remote service, or runs a
+compiler. It labels uncertain guidance with a confidence level and describes the checks to make.
+The JSON output is a separate schema (`schema_version: 1`, `mode: rule-based-recommendations`)
+and explicitly states that no automatic changes were applied.
+
+Automatic source repair is intentionally not part of this release. A future repair provider must
+produce a reviewable patch, verify that target files remain inside the chosen source directory,
+make backups, and run a configured compiler/test command before retaining changes. It should be
+opt-in; a server-side SA-MP plugin is not the right mechanism for editing `.pwn` files. The
+appropriate extension point is a local analysis/repair provider, optionally backed by a rule pack
+or an explicitly enabled AI service.
+
 ## Output formats
 
 - **text**: readable in a terminal. Default.
@@ -396,6 +424,7 @@ the security changes took 3.4 to 3.9 s, so the changes did not make it slower.
   and it does not follow a rotation into a `.gz` file.
 - The check for binary input looks only at the first 4,096 bytes.
 - Hints from `explain` are general. The backtrace in the log is the evidence.
+- `recommend` provides deterministic playbook guidance, not a semantic Pawn compiler. It never auto-edits files or verifies a suggested pattern by compiling it.
 
 ## Development
 
@@ -419,7 +448,8 @@ Layout:
 | `src/amxtriage/parser.py` | Turns lines into events (runtime error, crash, long call) |
 | `src/amxtriage/aggregate.py` | Signatures and grouping, with caps |
 | `src/amxtriage/analysis.py` | Runs reader, parser and aggregator; builds the report |
-| `src/amxtriage/render.py` | Text, Markdown and JSON output |
+| `src/amxtriage/render.py` | Text, Markdown and JSON analysis reports |
+| `src/amxtriage/recommendation.py` | Offline remediation rules and recommendation output; never writes source files |
 | `src/amxtriage/source.py` | Safe source lookup and snippets |
 | `src/amxtriage/baseline.py` | Saving and loading baselines |
 | `src/amxtriage/output.py` | Writing a report file without following links |

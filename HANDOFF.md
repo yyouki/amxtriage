@@ -8,13 +8,12 @@ earlier session and were not repeated. Anything not marked is design information
 ## 1. State in one paragraph
 
 `amxtriage` is a stdlib-only Python 3.10+ command line tool that triages SA-MP and open.mp
-server logs written by the crashdetect plugin (`analyze`, `watch`, `explain`). The repository
-is the authoritative state. Code and tests are final at commit `0cb2399`; the commit after it
-only changes Markdown and text files (README, this file, the checkpoint and the manifest).
-Phase 6 (security hardening) is done: five weaknesses were reproduced and fixed, several other
-areas were assessed and left alone, and each decision is recorded in section 7. Phases 7 to 13
-are not done (section 11). The tool is **not** declared production ready: it was tested on Linux
-only, there is no CI, and the `Script[...]` line is still unverified against a real server.
+server logs written by the crashdetect plugin (`analyze`, `watch`, `explain`, `recommend` / `suggest`).
+Phase 6 security hardening is complete at the original implementation baseline `72175b2`.
+A follow-up adds offline, rule-based recommendations; see section 12 for its limits and the
+verification performed. No automatic source editing is implemented. The tool is **not** declared
+production ready: the security work was tested on Linux only, CI has not been verified on the
+remote repository, and the `Script[...]` line is still unverified against a real server.
 
 ## 2. Verify the state before trusting this file
 
@@ -23,9 +22,9 @@ git status --short                         # expect no output
 git log --oneline | head -12               # compare with section 10
 python -m venv .venv && . .venv/bin/activate
 python -m pip install -e ".[dev]"
-pytest                                     # 1763 passed, 1 skipped when run as root
-ruff check . && ruff format --check .      # both clean
-mypy                                       # no issues in 46 source files
+pytest                                     # see section 12 for current verification limits
+ruff check . && ruff format --check .      # previously clean at Phase 6; rerun after changes
+mypy                                       # previously clean at Phase 6; rerun after changes
 python scripts/mutation_check.py --check   # 203 mutants, every specification matches
 ```
 
@@ -42,6 +41,7 @@ file | .gz | stdin
   -> aggregate.Aggregator   signature -> Group, with caps on groups, frames, line numbers
   -> analysis.build_report  filters, baseline, source snippets -> Report
   -> render.render_report   text | markdown | json
+  -> recommendation        offline rule catalog -> advisory code patterns / actions
   -> cli._write_output      stdout, or output.write_text_file for -o
 
 watch: follow.LogFollower yields lines (and None when idle) into the same parser and
@@ -56,6 +56,7 @@ aggregator and announces each new group once. cli.py wires everything and owns e
 | `aggregate.py` | `canonical_signature`, `signature_id`, `Aggregator`, `Group`, caps |
 | `analysis.py` | `analyze_logs` (one parser per file), `build_report`, notes |
 | `render.py` | Three formats, argument hiding, sanitising of every log-derived string |
+| `recommendation.py` | Offline, rule-based advice; outputs code patterns but never modifies `.pwn` / `.inc` files |
 | `source.py` | `SourceIndex`: index of real files, lookup by name. `_checked_path` resolves a path and records its device and inode; `_open_verified` opens it without following links and checks it again with `fstat` |
 | `baseline.py` | Atomic save; bounded, strict load (ids only are used) |
 | `output.py` | `write_text_file`: the writer behind `-o` (refuses symlinks and multiply linked files) |
@@ -63,7 +64,7 @@ aggregator and announces each new group once. cli.py wires everything and owns e
 | `textutil.py` | `sanitize`, `inline_code`, `basename` |
 | `amxerrors.py` | Error code names and hints (names copied from crashdetect) |
 | `errors.py` | `AmxTriageError` and its subclasses (`BaselineError`, `SourceError`, `OutputError`, ...) |
-| `cli.py` | argparse, `analyze`, `watch`, `explain`, exit codes 0, 1, 2, 130, the internal error boundary |
+| `cli.py` | argparse, `analyze`, `watch`, `explain`, `recommend` / `suggest`, exit codes 0, 1, 2, 130, the internal error boundary |
 
 Limits (constants in the modules): line 8192 bytes, chunk 1 MiB, groups 5000, AMX frames 48
 and native frames 16 per event, line numbers 64 per group, stored arguments 401 characters
@@ -497,3 +498,47 @@ python scripts/mutation_check.py --check  # does the catalogue still match the s
 python scripts/mutation_check.py S12 S13  # run a few; the whole catalogue takes about 35 minutes
 python scripts/make_synthetic_log.py big.log --lines 1000000 --seed 1
 ```
+
+
+## 12. Follow-up: offline code recommendations
+
+A later continuation added `amxtriage recommend LOG` and the alias `amxtriage suggest LOG`.
+It uses an offline rule catalog for selected AMX runtime errors, crashes, and long callbacks.
+With `--source-dir`, matching source context is included. Output formats are text, Markdown, and
+JSON. JSON uses a separate schema with `mode: rule-based-recommendations` and explicitly reports
+that no automatic changes were applied. The code remains standard-library-only and does not make
+network requests.
+
+Examples for array bounds and divide-by-zero are templates with placeholder identifiers, not
+copy/paste fixes. Their confidence describes how well the playbook matches the error category; it
+does not establish the exact root cause. No compiler warning parser and no automatic source repair
+are implemented. Do not claim that warning analysis or autonomous repair is supported.
+
+### Verification for this follow-up
+
+- On Python 3.13.5 / Linux, the 4 new recommendation tests pass, as do the targeted CLI tests.
+- The new recommendation CLI was manually exercised against `examples/sample_server_log.txt` in
+  Markdown and JSON modes. It produced five recommendations and confirmed `automatic_changes_applied: false`.
+- `python -m compileall -q src tests` passed.
+- A full pytest attempt encountered an environment-specific failure in
+  `test_the_tool_does_not_import_any_networking_modules`: even a clean `python -c` process before
+  importing `amxtriage` already has `http`, `requests`, `socket`, `ssl`, and `urllib.request` in
+  `sys.modules` in this runtime. Several all-suite runs also stalled in a subprocess-based watch
+  test while the same watch tests passed when run as a focused module. Therefore a clean full-suite
+  pass is **not claimed** for this follow-up.
+- Ruff, mypy, build, and twine were not available locally and could not be installed because DNS /
+  network access was unavailable. Phase 6 results in earlier sections are historical and are not
+  evidence that those tools passed after this change.
+
+### Remaining feature work
+
+1. Add parsing for Pawn compiler warning/error output. The present parser understands crashdetect
+   runtime logs, not compiler warning diagnostics.
+2. Expand recommendation rules only when examples are backed by documented compiler/runtime
+   behaviour and regression tests.
+3. For automatic repair, build an opt-in provider interface that proposes a structured diff, refuses
+   paths outside `--source-dir`, verifies the exact old text before writing, makes backups, and
+   runs a configured Pawn compiler / test command. Default to dry-run and require explicit consent
+   before applying. Roll back on validation failure. Do not turn generated source into a live
+   SA-MP server plugin.
+4. Verify full tests / Ruff / mypy / packaging in CI and test Windows and macOS separately.

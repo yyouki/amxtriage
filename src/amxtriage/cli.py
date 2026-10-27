@@ -28,6 +28,7 @@ from amxtriage.follow import (
 from amxtriage.model import REPORTED_KINDS, Event, EventKind
 from amxtriage.output import write_text_file
 from amxtriage.reader import STDIN_NAME, display_name
+from amxtriage.recommendation import render_recommendations
 from amxtriage.render import (
     FORMATS,
     render_error_list,
@@ -194,6 +195,48 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_context_arguments(watch)
 
+    recommend = commands.add_parser(
+        "recommend",
+        aliases=["suggest"],
+        help="recommend debugging steps and illustrative Pawn patterns for log problems",
+        description=(
+            "Generate offline, rule-based remediation advice. This command never edits source "
+            "files; examples are templates that must be adapted and tested."
+        ),
+    )
+    recommend.add_argument("logs", nargs="+", metavar="LOG", help="log file(s) to analyze")
+    recommend.add_argument(
+        "--format", choices=("text", "markdown", "json"), default="text"
+    )
+    recommend.add_argument("-o", "--output", metavar="FILE", help="write recommendations to FILE")
+    recommend.add_argument(
+        "--top",
+        type=_bounded_int(1),
+        default=DEFAULT_TOP,
+        metavar="N",
+        help=f"maximum problems to recommend for (default {DEFAULT_TOP})",
+    )
+    recommend.add_argument(
+        "--min-count", type=_bounded_int(1), default=1, metavar="N",
+        help="hide problems that occurred fewer than N times",
+    )
+    recommend.add_argument(
+        "--max-input-bytes", type=_size, default=0, metavar="SIZE",
+        help="stop if an input exceeds SIZE after decompression (0 means no limit)",
+    )
+    recommend.add_argument(
+        "--source-dir",
+        metavar="DIR",
+        help="folder with your .pwn/.inc files; adds matching source context",
+    )
+    recommend.add_argument(
+        "--context",
+        type=_bounded_int(0, MAX_CONTEXT_RADIUS),
+        default=DEFAULT_CONTEXT,
+        metavar="N",
+        help=f"source lines shown above and below the problem line (default {DEFAULT_CONTEXT})",
+    )
+
     explain = commands.add_parser(
         "explain",
         help="explain an AMX runtime error code (no code lists all known codes)",
@@ -330,6 +373,20 @@ def _run_watch(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _run_recommend(args: argparse.Namespace) -> int:
+    source_index = SourceIndex(args.source_dir) if args.source_dir else None
+    result = analyze_logs(expand_paths(args.logs), max_input_bytes=args.max_input_bytes or None)
+    report = build_report(
+        result,
+        top=args.top,
+        min_count=args.min_count,
+        source_index=source_index,
+        context_radius=args.context,
+    )
+    _write_output(render_recommendations(report, args.format), args.output)
+    return EXIT_OK
+
+
 def _run_explain(args: argparse.Namespace) -> int:
     if args.code is None:
         _write_output(render_error_list(), None)
@@ -378,6 +435,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_analyze(args)
         if args.command == "watch":
             return _run_watch(args)
+        if args.command in ("recommend", "suggest"):
+            return _run_recommend(args)
         return _run_explain(args)
     except AmxTriageError as error:
         print(f"error: {sanitize(str(error), MESSAGE_LIMIT)}", file=sys.stderr)
