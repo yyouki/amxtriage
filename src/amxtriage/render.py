@@ -3,8 +3,8 @@ import json
 from amxtriage import __version__
 from amxtriage.amxerrors import AmxError, all_errors, causes_for
 from amxtriage.analysis import Report
-from amxtriage.model import ARGS_DISPLAY_LIMIT, Frame, Group, NativeFrame, Occurrence
 from amxtriage.localization import translate as tr
+from amxtriage.model import ARGS_DISPLAY_LIMIT, Frame, Group, NativeFrame, Occurrence
 from amxtriage.source import Snippet
 from amxtriage.textutil import inline_code, sanitize
 
@@ -121,7 +121,10 @@ def render_group_text(
         lines.append(f"{PAD}{tr(language, 'script_label')} {sanitize(group.script, 200)}")
     lines.append(f"{PAD}{tr(language, 'seen_label')} {format_seen(group, language)}")
     details = group.sample.details
-    lines.extend(f"{PAD}{tr(language, 'detail_label')} {sanitize(detail, 200)}" for detail in details[:MAX_DETAIL_LINES])
+    lines.extend(
+        f"{PAD}{tr(language, 'detail_label')} {sanitize(detail, 200)}"
+        for detail in details[:MAX_DETAIL_LINES]
+    )
     if len(details) > MAX_DETAIL_LINES:
         lines.append(f"{PAD}{tr(language, 'detail_label')} ... {len(details) - MAX_DETAIL_LINES} more")
     frames = group.sample.frames
@@ -142,20 +145,29 @@ def render_group_text(
     if snippet is not None:
         lines.append(f"{PAD}{tr(language, 'source_label')} {sanitize(snippet.path, 200)}")
         lines.extend(f"{PAD}  {row}" for row in _snippet_lines(snippet))
-    lines.extend(f"{PAD}{tr(language, 'hint_label')} {hint}" for hint in _hint_lines(group, language))
+    lines.extend(
+        f"{PAD}{tr(language, 'hint_label')} {hint}"
+        for hint in _hint_lines(group, language)
+    )
     return lines
 
 
 def _summary(report: Report, language: str = "en") -> str:
     if report.baseline_used:
-        label = tr(language, "new_problem_one" if report.matching_groups == 1 else "new_problem_many")
+        label = tr(
+            language, "new_problem_one" if report.matching_groups == 1 else "new_problem_many"
+        )
         hidden = tr(language, "known_hidden").format(count=_count(report.known_hidden))
-        text = tr(language, "summary_baseline").format(count=_count(report.matching_groups), label=label, hidden=hidden)
+        text = tr(language, "summary_baseline").format(
+            count=_count(report.matching_groups), label=label, hidden=hidden
+        )
     elif report.matching_groups == 0:
         text = tr(language, "no_problems")
     else:
         label = tr(language, "distinct_one" if report.matching_groups == 1 else "distinct_many")
-        text = tr(language, "summary_distinct").format(count=_count(report.matching_groups), label=label)
+        text = tr(language, "summary_distinct").format(
+            count=_count(report.matching_groups), label=label
+        )
     return tr(language, "summary_total").format(text=text, events=_count(report.total_events))
 
 
@@ -164,7 +176,7 @@ def render_text(report: Report, *, show_args: bool = False, language: str = "en"
     lines = [
         f"amxtriage {__version__}",
         f"{tr(language, 'input_label')} {sources} ({_count(report.lines_read)} lines)",
-        f"{tr(language, 'result_label')} { _summary(report, language)}",
+        f"{tr(language, 'result_label')} {_summary(report, language)}",
         "",
     ]
     for number, group in enumerate(report.groups, start=1):
@@ -194,7 +206,9 @@ def _fenced(rows: list[str]) -> list[str]:
     return ["```text", *body, "```"]
 
 
-def _markdown_group(number: int, group: Group, report: Report, show_args: bool, language: str = "en") -> list[str]:
+def _markdown_group(
+    number: int, group: Group, report: Report, show_args: bool, language: str = "en"
+) -> list[str]:
     snippet = report.contexts.get(group.signature_id)
     out = [f"## {number}. {inline_code(group_title(group, language), 220)}", ""]
     badge = f" ({tr(language, 'md_new')})" if report.baseline_used else ""

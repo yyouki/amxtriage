@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from typing import Literal
 
 from amxtriage.analysis import Report
-from amxtriage.model import Group
 from amxtriage.localization import translate as tr
+from amxtriage.model import Group
 from amxtriage.render import format_where
 from amxtriage.source import Snippet
 from amxtriage.textutil import inline_code, sanitize
@@ -317,7 +317,8 @@ def render_recommendations(report: Report, output_format: str, *, language: str 
         lines.extend(
             [
                 heading,
-                f"{tr(language, 'severity')}: {tr(language, item.severity)}; {tr(language, 'confidence')}: {tr(language, item.confidence)}; "
+                f"{tr(language, 'severity')}: {tr(language, item.severity)}; "
+                f"{tr(language, 'confidence')}: {tr(language, item.confidence)}; "
                 f"{tr(language, 'occurrences')}: {item.occurrences}",
                 f"{tr(language, 'signature')}: {item.signature_id}",
             ]
@@ -325,7 +326,9 @@ def render_recommendations(report: Report, output_format: str, *, language: str 
         if item.where:
             where = inline_code(item.where, 300) if markdown else sanitize(item.where, 300)
             lines.append(f"{tr(language, 'where')}: {where}")
-        lines.extend([tr(language, "diagnosis"), item.diagnosis, tr(language, "recommended_checks")])
+        lines.extend(
+            [tr(language, "diagnosis"), item.diagnosis, tr(language, "recommended_checks")]
+        )
         lines.extend(f"- {action}" for action in item.actions)
         if item.example:
             lines.extend([tr(language, "pawn_pattern"), "```pawn", item.example, "```"])
@@ -334,7 +337,12 @@ def render_recommendations(report: Report, output_format: str, *, language: str 
                 inline_code(item.source.path, 200) if markdown else sanitize(item.source.path, 200)
             )
             lines.extend(
-                [f"{tr(language, 'source_context')}: {source_path}", "```text", _snippet_text(item.source), "```"]
+                [
+                    f"{tr(language, 'source_context')}: {source_path}",
+                    "```text",
+                    _snippet_text(item.source),
+                    "```",
+                ]
             )
         lines.extend([tr(language, "automatic_unavailable"), ""])
     if not items:

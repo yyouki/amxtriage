@@ -25,8 +25,9 @@ from amxtriage.follow import (
     LogFollower,
     interruptible_sleep,
 )
+from amxtriage.localization import SUPPORTED_LANGUAGES
+from amxtriage.localization import translate as tr
 from amxtriage.model import REPORTED_KINDS, Event, EventKind
-from amxtriage.localization import SUPPORTED_LANGUAGES, translate as tr
 from amxtriage.output import write_text_file
 from amxtriage.reader import STDIN_NAME, display_name
 from amxtriage.recommendation import render_recommendations
@@ -301,7 +302,10 @@ def _run_analyze(args: argparse.Namespace) -> int:
         source_index=source_index,
         context_radius=args.context,
     )
-    _write_output(render_report(report, args.format, show_args=args.show_args, language=args.language), args.output)
+    _write_output(
+        render_report(report, args.format, show_args=args.show_args, language=args.language),
+        args.output,
+    )
     if args.save_baseline:
         saved = save_baseline(args.save_baseline, result.aggregator.sorted_groups())
         target = sanitize(args.save_baseline, MESSAGE_LIMIT)
@@ -344,7 +348,9 @@ def _announce_new_problem(
     snippet = None
     if source_index is not None and args.context > 0:
         snippet = snippet_for(group, source_index, args.context)
-    lines = render_group_text(group, show_args=args.show_args, snippet=snippet, new=True, language=args.language)
+    lines = render_group_text(
+        group, show_args=args.show_args, snippet=snippet, new=True, language=args.language
+    )
     print("\n".join(lines) + "\n", flush=True)
 
 
@@ -390,7 +396,8 @@ def _run_watch(args: argparse.Namespace) -> int:
         source_index=source_index,
         context_radius=0,
     )
-    _write_output(tr(args.language, "watch_summary") + "\n" + render_report(report, "text", show_args=args.show_args, language=args.language), None)
+    summary = render_report(report, "text", show_args=args.show_args, language=args.language)
+    _write_output(tr(args.language, "watch_summary") + "\n" + summary, None)
     return EXIT_OK
 
 
