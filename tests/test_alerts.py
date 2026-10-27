@@ -105,9 +105,7 @@ def test_alert_prefix_cannot_contain_control_characters() -> None:
 
 
 def test_untrusted_log_text_is_sanitized_before_becoming_alert_data() -> None:
-    event = build_alert_event(
-        make_group(message="bad\n[BLUE] message", file="rp.pwn\n[RED]:999")
-    )
+    event = build_alert_event(make_group(message="bad\n[BLUE] message", file="rp.pwn\n[RED]:999"))
     source = event["source"]
     assert isinstance(source, dict)
     assert "\n" not in str(source["file"])
