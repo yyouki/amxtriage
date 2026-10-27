@@ -135,7 +135,6 @@ def test_alert_export_failure_does_not_stop_log_following(
     assert "watch summary" in out
 
 
-
 def test_watch_exports_pawn_bridge_record_for_filterscript(
     run_watch: RunWatch, tmp_path: Path
 ) -> None:
@@ -166,12 +165,13 @@ def test_watch_exports_pawn_bridge_record_for_filterscript(
 def test_alert_template_requires_jsonl_output(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(
-        cli,
-        "LogFollower",
-        lambda *args, **kwargs: pytest.fail("invalid configuration must fail before watching"),
+    def unexpected_follower(*args: object, **kwargs: object) -> None:
+        pytest.fail("invalid configuration must fail before watching")
+
+    monkeypatch.setattr(cli, "LogFollower", unexpected_follower)
+    code = cli.main(
+        ["watch", "server_log.txt", "--alert-template", "{prefix}: {message}"]
     )
-    code = cli.main(["watch", "server_log.txt", "--alert-template", "{prefix}: {message}"])
     captured = capsys.readouterr()
     assert code == 2
     assert captured.out == ""
