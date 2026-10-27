@@ -226,7 +226,8 @@ counts, as in most JSON readers. A named pipe is read like a file, up to the siz
 ```text
 amxtriage watch [--from-start] [--poll-interval SECONDS] [--source-dir DIR]
                 [--context N] [--show-args] [--baseline FILE]
-                [--alert-jsonl FILE] [--alert-prefix TEXT] [--alert-template TEMPLATE] LOG
+                [--alert-jsonl FILE] [--alert-pawn-file FILE]
+                [--alert-prefix TEXT] [--alert-template TEMPLATE] LOG
 ```
 
 Follows a growing log, like `tail -f`. Each new problem is printed once, the first time it
@@ -264,9 +265,21 @@ amxtriage watch server_log.txt --alert-jsonl alerts.jsonl \\
   --alert-prefix OWNER --alert-template "{prefix} {severity}: {message}"
 ```
 
-This is **not an in-game chat sender**. It creates a local structured event stream; a separate, authenticated SA-MP/open.mp bridge still needs to consume it and implement the server-specific chat API. The template changes the summary text only. Structured `source.file` and `source.line` fields remain separate and cannot be set by template text. The event includes target presentation metadata (file red, line blue); a bridge must apply actual API color codes. The exporter refuses unsafe link/non-regular-file targets and disables only alert export after a write failure, leaving log following active. No player argument/backtrace values are sent by default.
+The JSONL option is a local event stream, not itself an in-game sender. For a local SA-MP/open.mp chat bridge, use the optional Pawn filterscript below. The JSONL template changes summary text only; structured `source.file` and `source.line` fields remain separate and cannot be set by template text. The event includes target presentation metadata (file red, line blue). Unsafe link/non-regular-file targets are refused, and a write failure disables only alert export while log following continues. Player arguments/backtraces are not sent by default.
 
 Template fields are restricted to `{prefix}`, `{severity}`, `{kind}`, `{message}`, `{file}`, `{line}`, `{code}`, `{signature}`, and `{count}`. Newlines, unknown fields, attribute access, conversions and format specifications are rejected.
+
+#### Optional Pawn in-game chat bridge
+
+The source is at [`integrations/pawn/amxtriage_bridge.pwn`](integrations/pawn/amxtriage_bridge.pwn); setup and caveats are in [the bridge README](integrations/pawn/README.md).
+
+```bash
+amxtriage watch server_log.txt --alert-pawn-file ./scriptfiles/amxtriage-alerts.txt
+```
+
+Compile the filterscript using the [pinned Pawn compiler](https://github.com/pawn-lang/compiler/releases/tag/v3.10.10) and the standard includes documented in the bridge guide, then copy the resulting `.amx` to `filterscripts/` and load it explicitly through the server's normal configuration. The bridge polls once per second and processes at most five records per tick. By default, only RCON-authenticated admins receive the message. The file path is shown in red and the source line in blue. Run the watcher and server with compatible file permissions; on POSIX, newly created alert files use mode `0600`.
+
+**Verification status:** the Pawn source compiles in GitHub Actions, but has not yet been end-to-end tested on a live SA-MP/open.mp staging server. Compilation does not prove runtime compatibility or unchanged ping. The bridge is a diagnostic alert channel—not DDoS mitigation or anti-cheat, and it does not ban players or alter the game state.
 
 ### explain
 
