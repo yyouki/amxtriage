@@ -12,8 +12,8 @@ from pathlib import Path
 from types import FrameType
 
 from amxtriage import __version__
-from amxtriage.alerts import DEFAULT_ALERT_PREFIX, DEFAULT_ALERT_TEMPLATE, JsonlAlertSink
 from amxtriage.aggregate import Aggregator
+from amxtriage.alerts import DEFAULT_ALERT_PREFIX, DEFAULT_ALERT_TEMPLATE, JsonlAlertSink
 from amxtriage.amxerrors import lookup
 from amxtriage.analysis import AnalysisResult, analyze_logs, build_report, snippet_for
 from amxtriage.baseline import load_baseline, save_baseline
@@ -216,7 +216,10 @@ def build_parser() -> argparse.ArgumentParser:
     watch.add_argument(
         "--alert-jsonl",
         metavar="FILE",
-        help="append structured local JSONL alerts for a separate bridge; does not send in-game messages",
+        help=(
+            "append structured local JSONL alerts for a separate bridge; "
+            "does not send in-game messages"
+        ),
     )
     watch.add_argument(
         "--alert-prefix",
@@ -228,7 +231,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--alert-template",
         default=DEFAULT_ALERT_TEMPLATE,
         metavar="TEMPLATE",
-        help="single-line alert template using safe fields such as {prefix}, {severity}, {file}, {line}, {message}",
+        help=(
+            "single-line alert template using safe fields such as {prefix}, {severity}, "
+            "{file}, {line}, {message}"
+        ),
     )
     watch.add_argument(
         "--poll-interval",
