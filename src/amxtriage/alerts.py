@@ -288,7 +288,12 @@ def serialize_pawn_bridge_record(
     return record
 
 
-def append_pawn_bridge_record(path: str, group: Group, *, prefix: str = DEFAULT_ALERT_PREFIX) -> None:
+def append_pawn_bridge_record(
+    path: str,
+    group: Group,
+    *,
+    prefix: str = DEFAULT_ALERT_PREFIX,
+) -> None:
     """Append one protocol record for the Pawn filterscript using the same safe file checks."""
     data = serialize_pawn_bridge_record(group, prefix=prefix).encode("utf-8")
     descriptor = _open_append(path)
@@ -314,11 +319,7 @@ class PawnBridgeAlertSink:
     """Optional local file sink consumed by integrations/pawn/amxtriage_bridge.pwn."""
 
     def __init__(self, path: str, *, prefix: str = DEFAULT_ALERT_PREFIX) -> None:
-        serialize_prefix = prefix
-        if (
-            len(serialize_prefix) > MAX_PREFIX_LENGTH
-            or sanitize(serialize_prefix, MAX_PREFIX_LENGTH + 1) != serialize_prefix
-        ):
+        if len(prefix) > MAX_PREFIX_LENGTH or sanitize(prefix, MAX_PREFIX_LENGTH + 1) != prefix:
             raise InputError(
                 f"alert prefix must be a single line of at most {MAX_PREFIX_LENGTH} characters"
             )
