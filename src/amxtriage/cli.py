@@ -35,6 +35,12 @@ from amxtriage.localization import SUPPORTED_LANGUAGES
 from amxtriage.localization import translate as tr
 from amxtriage.model import REPORTED_KINDS, Event, EventKind
 from amxtriage.output import write_text_file
+from amxtriage.plugin_catalog import (
+    STATUSES,
+    filter_catalog_entries,
+    load_catalog,
+    render_catalog_report,
+)
 from amxtriage.reader import STDIN_NAME, display_name
 from amxtriage.recommendation import render_recommendations
 from amxtriage.render import (
@@ -327,6 +333,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_language_argument(explain)
     explain.add_argument("code", nargs="?", type=_bounded_int(0), metavar="CODE")
+
+    catalog = commands.add_parser(
+        "catalog",
+        aliases=["plugins"],
+        help="list plugins/components with upstream compatibility evidence",
+        description=(
+            "List the bundled offline compatibility snapshot. No network calls, downloads, or 
+            "binary execution are performed. Documented does not mean runtime-tested."
+        ),
+    )
+    _add_language_argument(catalog)
+    catalog.add_argument(
+        "--server",
+        choices=("all", "open.mp", "sa-mp"),
+        default="all",
+        help="filter the exact target server (default: all)",
+    )
+    catalog.add_argument("--status", choices=STATUSES, help="filter by evidence status")
+    catalog.add_argument("--format", choices=("text", "markdown", "json"), default="text")
+    catalog.add_argument("-o", "--output", metavar="FILE", help="write the catalog report to FILE")
     return parser
 
 
@@ -505,8 +531,22 @@ def _run_diagnose(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _run_explain(args: argparse.Namespace) -> int:
-    if args.code is None:
+def _run_catalog(args: argparse.Namespace) -> int:
+    snapshot = load_catalog()
+    entries = filter_catalog_entries(snapshot.entries, server=args.server, status=args.status)
+    report = render_catalog_report(
+        snapshot,
+        entries,
+        output_format=args.format,
+        server=args.server,
+        status=args.status,
+        language=args.language,
+    )
+    _write_output(report, args.output)
+    return EXIT_OK
+
+
+def _run_explain(args: argparse.Namespace) -> int:    if args.code is None:
         _write_output(render_error_list(args.language), None)
         return EXIT_OK
     error = lookup(args.code)
@@ -555,6 +595,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_recommend(args)
         if args.command in ("diagnose", "compiler"):
             return _run_diagnose(args)
+        if args.command in ("catalog", "plugins"):
+            return _run_catalog(args)
         return _run_explain(args)
     except AmxTriageError as error:
         print(f"error: {sanitize(str(error), MESSAGE_LIMIT)}", file=sys.stderr)
