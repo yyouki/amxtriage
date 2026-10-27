@@ -26,6 +26,7 @@
 #define AMXTRIAGE_FIELD_SIZE (512)
 #define AMXTRIAGE_FIELD_COUNT (8)
 #define AMXTRIAGE_CHAT_SIZE (144)
+#define AMXTRIAGE_RAW_CHAT_SIZE (512)
 
 new g_AmxTriageReadOffset = 0;
 new g_AmxTriageTimer = 0;
@@ -276,6 +277,31 @@ stock CopyTail(const source[], target[], maxLength)
     return 1;
 }
 
+stock EscapeFormatPercents(const input[], output[], maxLength)
+{
+    new sourceIndex = 0;
+    new targetIndex = 0;
+    while (input[sourceIndex] != EOS && targetIndex < maxLength - 1)
+    {
+        if (input[sourceIndex] == '%')
+        {
+            if (targetIndex + 2 >= maxLength)
+            {
+                break;
+            }
+            output[targetIndex++] = '%';
+            output[targetIndex++] = '%';
+            sourceIndex++;
+        }
+        else
+        {
+            output[targetIndex++] = input[sourceIndex++];
+        }
+    }
+    output[targetIndex] = EOS;
+    return targetIndex;
+}
+
 stock SendAdminAlert(fields[AMXTRIAGE_FIELD_COUNT][AMXTRIAGE_FIELD_SIZE])
 {
     new prefixRaw[AMXTRIAGE_FIELD_SIZE];
@@ -286,7 +312,8 @@ stock SendAdminAlert(fields[AMXTRIAGE_FIELD_COUNT][AMXTRIAGE_FIELD_SIZE])
     new lineText[16];
     new message[AMXTRIAGE_FIELD_SIZE];
     new messageWithCount[AMXTRIAGE_FIELD_SIZE];
-    new output[AMXTRIAGE_CHAT_SIZE];
+    new output[AMXTRIAGE_RAW_CHAT_SIZE];
+    new safeOutput[AMXTRIAGE_CHAT_SIZE];
 
     DecodeBridgeField(fields[2], prefixRaw, sizeof(prefixRaw));
     DecodeBridgeField(fields[3], fileRaw, sizeof(fileRaw));
@@ -325,12 +352,13 @@ stock SendAdminAlert(fields[AMXTRIAGE_FIELD_COUNT][AMXTRIAGE_FIELD_SIZE])
         messageWithCount
     );
 
-    // Percent signs in the inserted strings are data; format() has already run.
+    // SendClientMessage treats the final string as a format string. Preserve literal %% and cap the escaped result to 143 characters.
+    EscapeFormatPercents(output, safeOutput, sizeof(safeOutput));
     for (new playerid = 0; playerid < MAX_PLAYERS; playerid++)
     {
         if (IsPlayerConnected(playerid) && IsAmxTriageAdmin(playerid))
         {
-            SendClientMessage(playerid, 0xFFFFFFFF, output);
+            SendClientMessage(playerid, 0xFFFFFFFF, safeOutput);
         }
     }
     return 1;
