@@ -12,7 +12,7 @@ from amxtriage.alerts import (
     serialize_alert_event,
 )
 from amxtriage.aggregate import Aggregator
-from amxtriage.errors import InputError
+from amxtriage.errors import InputError, OutputError
 from amxtriage.model import Event, EventKind, Frame, Group
 
 
@@ -135,7 +135,7 @@ def test_append_refuses_symlink_without_modifying_its_target(tmp_path: Path) -> 
         link.symlink_to(target)
     except (OSError, NotImplementedError):
         pytest.skip("symbolic links are unavailable on this runner")
-    with pytest.raises(Exception, match="symbolic link"):
+    with pytest.raises(OutputError, match="symbolic link"):
         append_alert_event(str(link), make_group())
     assert target.read_text(encoding="utf-8") == "keep\n"
 
@@ -148,7 +148,7 @@ def test_append_refuses_hard_link_without_modifying_file(tmp_path: Path) -> None
         os.link(target, link)
     except OSError:
         pytest.skip("hard links are unavailable on this runner")
-    with pytest.raises(Exception, match="hard links"):
+    with pytest.raises(OutputError, match="hard links"):
         append_alert_event(str(target), make_group())
     assert target.read_text(encoding="utf-8") == "keep\n"
 
