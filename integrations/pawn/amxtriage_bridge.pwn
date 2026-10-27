@@ -21,6 +21,7 @@
 #define AMXTRIAGE_ALERT_FILE "amxtriage-alerts.txt"
 #define AMXTRIAGE_POLL_MS (1000)
 #define AMXTRIAGE_MAX_RECORDS_PER_TICK (5)
+#define AMXTRIAGE_MAX_RECORD_BYTES (4096)
 #define AMXTRIAGE_BUFFER_SIZE (8192)
 #define AMXTRIAGE_FIELD_SIZE (512)
 #define AMXTRIAGE_FIELD_COUNT (8)
@@ -54,7 +55,8 @@ public OnFilterScriptInit()
         print("[amxtriage] waiting for scriptfiles/amxtriage-alerts.txt");
     }
 
-    g_AmxTriageTimer = SetTimer("AmxTriagePollAlerts", AMXTRIAGE_POLL_MS, true);
+    new pollCallback[] = "AmxTriagePollAlerts";
+    g_AmxTriageTimer = SetTimer(pollCallback, AMXTRIAGE_POLL_MS, true);
     if (!g_AmxTriageTimer)
     {
         print("[amxtriage] ERROR: failed to start alert polling timer");
@@ -119,7 +121,7 @@ public AmxTriagePollAlerts()
         new recordEnd = recordStart + rawLength + 1;
         StripLineEnding(g_AmxTriageLine);
 
-        if (rawLength >= MAX_PAWN_BRIDGE_BYTES)
+        if (rawLength >= AMXTRIAGE_MAX_RECORD_BYTES)
         {
             // The producer caps each serialized row; ignore malformed oversized rows.
             g_AmxTriageReadOffset = recordEnd;
