@@ -54,14 +54,30 @@ amxtriage plugins --format json -o plugin-catalog.json
 
 Las entradas actuales son `documented` a partir de la guía oficial de instalación de open.mp; no son pruebas de compatibilidad en tiempo de ejecución. Los campos de sistema operativo/versiones vacíos indican que la fuente no los especifica. El comando no descarga ni ejecuta binarios.
 
-## Exportación local de alertas
+## Alertas locales y avisos en el chat de administradores
 
-`amxtriage watch server_log.txt --alert-jsonl alerts.jsonl` exporta eventos nuevos a un archivo local JSONL para que un puente independiente los procese. **No envía mensajes al chat del juego por sí mismo.** La ruta y la línea permanecen como campos estructurados separados del texto configurable; los metadatos de color indican ruta roja y línea azul, pero el puente debe aplicar los códigos reales de la API. Los fallos de exportación no deben detener el seguimiento del log.
+Para exportar eventos estructurados sin integración con el juego, usa JSONL:
+
+```bash
+amxtriage watch server_log.txt --alert-jsonl alerts.jsonl
+```
+
+Para enviar avisos mediante el filterscript Pawn opcional, utiliza un archivo de protocolo local:
+
+```bash
+amxtriage watch server_log.txt --alert-pawn-file ./scriptfiles/amxtriage-alerts.txt
+```
+
+El source está en [`amxtriage_bridge.pwn`](../integrations/pawn/amxtriage_bridge.pwn) y las instrucciones en [integrations/pawn/README.md](../integrations/pawn/README.md). El propietario debe compilar y cargar el filterscript de forma explícita; amxtriage no modifica la configuración del servidor.
+
+Por defecto, el bridge envía mensajes solo a administradores autenticados por RCON, procesa como máximo cinco registros por segundo y muestra la ruta del archivo en rojo y el número de línea en azul. La ubicación procede de campos de diagnóstico estructurados y no puede ser sobrescrita por una plantilla de texto. El watcher y el servidor deben tener permisos de archivo compatibles; en POSIX, los archivos de alertas nuevos se crean con permisos `0600`.
+
+**Estado de las pruebas:** el source Pawn se compila en GitHub Actions con el compilador e includes fijados. El envío de mensajes aún no se ha probado de extremo a extremo en un servidor staging real de SA-MP/open.mp. Compilar no demuestra compatibilidad en tiempo de ejecución ni garantiza que el ping no cambie. Este bridge solo informa de problemas de diagnóstico; no es un sistema anti-cheat ni mitiga DDoS.
 
 ## Límites y seguridad
 
 La versión actual lee archivos locales; los comandos `catalog` y `watch --alert-jsonl` no inician conexiones de red. Las recomendaciones siguen siendo sugerencias, no correcciones automáticas.
 
-Actualmente amxtriage **no** es una defensa DDoS, no es un anti-cheat, no envía avisos directamente al chat de administradores dentro del juego y no aplica parches automáticamente. El seguimiento de logs puede ayudar a detectar síntomas, pero detener un DDoS requiere mitigación de red/proveedor. El anti-cheat debe validarse en el servidor y evitar baneos automáticos basados en una única señal débil.
+Actualmente amxtriage **no** es una defensa DDoS ni un anti-cheat y no tiene modos automáticos de patch/apply. La exportación de alertas y el source del bridge Pawn están disponibles y el bridge compila en CI, pero el envío al chat del juego todavía no se ha verificado en un servidor staging real. El seguimiento de logs puede ayudar a detectar síntomas, pero detener un DDoS requiere mitigación de red/proveedor. El anti-cheat debe validarse en el servidor y evitar baneos automáticos basados en una única señal débil.
 
 Consulta la [hoja de ruta en español](PHASE7_MULTILANGUAGE.es.md) y el [progreso del proyecto](PROGRESS.md) para ver los límites y los siguientes pasos.
