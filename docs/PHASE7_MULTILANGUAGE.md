@@ -18,7 +18,7 @@ The intended end state is broader than the current log triager. Track progress b
 | Existing SA-MP/open.mp log triage | Implemented for its documented input formats; real-server format coverage still has gaps | 100% of current v0.1 scope |
 | CI, architecture and safety documentation | Foundation being added; CI must pass before calling it validated | In progress |
 | Compiler and runtime adapters for multiple languages | Not implemented | 0% |
-| User-facing CLI/report localization | Not implemented; this repo now has translated Markdown guides only | 0% |
+| User-facing CLI/report localization | Report labels and explain headings support en/id/es; remediation advice and argparse help are still English | First slice implemented |
 | Evidence-backed plugin/dependency compatibility catalog | Not implemented | 0% |
 | In-game admin warning bridge | Not implemented | 0% |
 | Actual network-layer DDoS mitigation / server-side anti-cheat integration | Not implemented | 0% |
@@ -43,9 +43,9 @@ Do not add Tree-sitter or any other parser until an adapter has a demonstrated n
 
 ## Localization
 
-Planned CLI/report languages: English (`en`) and Indonesian (`id`) first, then Spanish (`es`) and further translations through external message catalogs. The README has language links now, but translated guides do not mean the CLI is localized yet.
+CLI/report labels currently support English (`en`), Indonesian (`id`) and Spanish (`es`) through `--language/--lang`. This is a first slice, not full translation: parser help and curated remediation instructions remain English; raw log/compiler text is intentionally not translated. The README language links select translated documentation.
 
-- Add explicit `--language/--lang` selection with a documented default and unknown-locale behaviour.
+- Extend the current explicit `--language/--lang` selection to translated parser help, complete remediation rule catalogs and all user-facing error messages, with documented fallback behaviour.
 - Translate help, messages, report labels and diagnostics written by amxtriage.
 - Do not translate compiler output, source code, file names, plugin names, native names or diagnostic codes.
 - Keep JSON field names and schema identical across locales; localize only human-readable values.

@@ -251,6 +251,15 @@ def test_stdin_is_analyzed_when_dash_is_given(sample_log, monkeypatch, capsys):
     assert "5 distinct problems" in out
 
 
+def test_language_option_is_available_before_and_after_subcommand(sample_log, capsys):
+    code, out, _ = run(["--language", "id", "analyze", str(sample_log)], capsys)
+    assert code == 0
+    assert "masukan:" in out
+    code, out, _ = run(["analyze", str(sample_log), "--lang", "es"], capsys)
+    assert code == 0
+    assert "entrada:" in out
+
+
 def test_explain_known_code(capsys):
     code, out, _ = run(["explain", "4"], capsys)
     assert code == 0

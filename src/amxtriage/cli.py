@@ -26,6 +26,7 @@ from amxtriage.follow import (
     interruptible_sleep,
 )
 from amxtriage.model import REPORTED_KINDS, Event, EventKind
+from amxtriage.localization import SUPPORTED_LANGUAGES, translate as tr
 from amxtriage.output import write_text_file
 from amxtriage.reader import STDIN_NAME, display_name
 from amxtriage.recommendation import render_recommendations
@@ -119,6 +120,13 @@ def _add_context_arguments(command: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_language_argument(command: argparse.ArgumentParser) -> None:
+    command.add_argument(
+        "--language", "--lang", choices=SUPPORTED_LANGUAGES, default=argparse.SUPPRESS,
+        help=tr("en", "language_help"),
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="amxtriage",
@@ -126,6 +134,10 @@ def build_parser() -> argparse.ArgumentParser:
         "crashes and slow callbacks reported by the crashdetect plugin.",
     )
     parser.add_argument("--version", action="version", version=f"amxtriage {__version__}")
+    parser.add_argument(
+        "--language", "--lang", choices=SUPPORTED_LANGUAGES, default="en",
+        help=tr("en", "language_help"),
+    )
     commands = parser.add_subparsers(dest="command", required=True, metavar="command")
 
     analyze = commands.add_parser(
@@ -134,6 +146,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Analyze log files (plain text or .gz; use '-' for stdin). "
         "Pass rotated files oldest first.",
     )
+    _add_language_argument(analyze)
     analyze.add_argument("logs", nargs="+", metavar="LOG", help="log file(s) to analyze")
     analyze.add_argument("--format", choices=FORMATS, default="text", help="report format")
     analyze.add_argument("-o", "--output", metavar="FILE", help="write the report to FILE (UTF-8)")
@@ -184,6 +197,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Follow a growing log file. Each new problem signature is printed once; "
         "a summary is printed when you press Ctrl+C.",
     )
+    _add_language_argument(watch)
     watch.add_argument("log", metavar="LOG", help="log file to follow")
     watch.add_argument("--from-start", action="store_true", help="read the existing content first")
     watch.add_argument(
@@ -204,6 +218,7 @@ def build_parser() -> argparse.ArgumentParser:
             "files; examples are templates that must be adapted and tested."
         ),
     )
+    _add_language_argument(recommend)
     recommend.add_argument("logs", nargs="+", metavar="LOG", help="log file(s) to analyze")
     recommend.add_argument("--format", choices=("text", "markdown", "json"), default="text")
     recommend.add_argument("-o", "--output", metavar="FILE", help="write recommendations to FILE")
@@ -245,6 +260,7 @@ def build_parser() -> argparse.ArgumentParser:
         "explain",
         help="explain an AMX runtime error code (no code lists all known codes)",
     )
+    _add_language_argument(explain)
     explain.add_argument("code", nargs="?", type=_bounded_int(0), metavar="CODE")
     return parser
 
@@ -285,7 +301,7 @@ def _run_analyze(args: argparse.Namespace) -> int:
         source_index=source_index,
         context_radius=args.context,
     )
-    _write_output(render_report(report, args.format, show_args=args.show_args), args.output)
+    _write_output(render_report(report, args.format, show_args=args.show_args, language=args.language), args.output)
     if args.save_baseline:
         saved = save_baseline(args.save_baseline, result.aggregator.sorted_groups())
         target = sanitize(args.save_baseline, MESSAGE_LIMIT)
@@ -328,7 +344,7 @@ def _announce_new_problem(
     snippet = None
     if source_index is not None and args.context > 0:
         snippet = snippet_for(group, source_index, args.context)
-    lines = render_group_text(group, show_args=args.show_args, snippet=snippet, new=True)
+    lines = render_group_text(group, show_args=args.show_args, snippet=snippet, new=True, language=args.language)
     print("\n".join(lines) + "\n", flush=True)
 
 
@@ -348,8 +364,9 @@ def _run_watch(args: argparse.Namespace) -> int:
     label = display_name(args.log)
     restore_signal = _install_sigterm(stop)
     print(
-        f"watching {sanitize(label, MESSAGE_LIMIT)}, checking every {args.poll_interval:g}s;"
-        " press Ctrl+C to stop",
+        tr(args.language, "watching").format(
+            label=sanitize(label, MESSAGE_LIMIT), interval=f"{args.poll_interval:g}"
+        ),
         file=sys.stderr,
         flush=True,
     )
@@ -373,7 +390,7 @@ def _run_watch(args: argparse.Namespace) -> int:
         source_index=source_index,
         context_radius=0,
     )
-    _write_output("watch summary\n" + render_report(report, "text", show_args=args.show_args), None)
+    _write_output(tr(args.language, "watch_summary") + "\n" + render_report(report, "text", show_args=args.show_args, language=args.language), None)
     return EXIT_OK
 
 
@@ -387,20 +404,20 @@ def _run_recommend(args: argparse.Namespace) -> int:
         source_index=source_index,
         context_radius=args.context,
     )
-    _write_output(render_recommendations(report, args.format), args.output)
+    _write_output(render_recommendations(report, args.format, language=args.language), args.output)
     return EXIT_OK
 
 
 def _run_explain(args: argparse.Namespace) -> int:
     if args.code is None:
-        _write_output(render_error_list(), None)
+        _write_output(render_error_list(args.language), None)
         return EXIT_OK
     error = lookup(args.code)
     if error is None:
         raise AmxTriageError(
-            f"unknown AMX error code {args.code}; run 'amxtriage explain' to list known codes"
+            tr(args.language, "unknown_code").format(code=args.code)
         )
-    _write_output(render_explain(error), None)
+    _write_output(render_explain(error, args.language), None)
     return EXIT_OK
 
 

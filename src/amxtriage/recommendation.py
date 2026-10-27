@@ -9,6 +9,7 @@ from typing import Literal
 
 from amxtriage.analysis import Report
 from amxtriage.model import Group
+from amxtriage.localization import translate as tr
 from amxtriage.render import format_where
 from amxtriage.source import Snippet
 from amxtriage.textutil import inline_code, sanitize
@@ -256,7 +257,7 @@ def _snippet_text(snippet: Snippet) -> str:
     return "\n".join(rows)
 
 
-def render_recommendations(report: Report, output_format: str) -> str:
+def render_recommendations(report: Report, output_format: str, *, language: str = "en") -> str:
     items = recommendations_for_report(report)
     if output_format == "json":
         import json
@@ -292,24 +293,23 @@ def render_recommendations(report: Report, output_format: str) -> str:
                 for item in items
             ],
             "notes": [
-                "No source files were modified.",
-                "Examples are templates, not drop-in fixes; adapt and test them before use.",
+                tr(language, "no_source_modified"),
+                tr(language, "reco_notes"),
             ],
         }
         return json.dumps(payload, indent=2) + "\n"
 
     markdown = output_format == "markdown"
     heading = (
-        "# amxtriage recommendations"
+        f"# {tr(language, 'reco_title')}"
         if markdown
-        else f"amxtriage recommendations ({len(items)} issue(s))"
+        else tr(language, "reco_count").format(count=len(items))
     )
     lines = [
         heading,
         "",
-        "These are offline, rule-based suggestions. No source files were modified.",
-        "Examples are templates, not drop-in fixes; adapt them to your actual variables and game "
-        "logic.",
+        tr(language, "reco_preface"),
+        tr(language, "reco_example_note"),
         "",
     ]
     for number, item in enumerate(items, start=1):
@@ -317,26 +317,26 @@ def render_recommendations(report: Report, output_format: str) -> str:
         lines.extend(
             [
                 heading,
-                f"Severity: {item.severity}; confidence: {item.confidence}; "
-                f"occurrences: {item.occurrences}",
-                f"Signature: {item.signature_id}",
+                f"{tr(language, 'severity')}: {tr(language, item.severity)}; {tr(language, 'confidence')}: {tr(language, item.confidence)}; "
+                f"{tr(language, 'occurrences')}: {item.occurrences}",
+                f"{tr(language, 'signature')}: {item.signature_id}",
             ]
         )
         if item.where:
             where = inline_code(item.where, 300) if markdown else sanitize(item.where, 300)
-            lines.append(f"Where: {where}")
-        lines.extend(["Diagnosis:", item.diagnosis, "Recommended checks:"])
+            lines.append(f"{tr(language, 'where')}: {where}")
+        lines.extend([tr(language, "diagnosis"), item.diagnosis, tr(language, "recommended_checks")])
         lines.extend(f"- {action}" for action in item.actions)
         if item.example:
-            lines.extend(["Illustrative Pawn pattern:", "```pawn", item.example, "```"])
+            lines.extend([tr(language, "pawn_pattern"), "```pawn", item.example, "```"])
         if item.source:
             source_path = (
                 inline_code(item.source.path, 200) if markdown else sanitize(item.source.path, 200)
             )
             lines.extend(
-                [f"Source context: {source_path}", "```text", _snippet_text(item.source), "```"]
+                [f"{tr(language, 'source_context')}: {source_path}", "```text", _snippet_text(item.source), "```"]
             )
-        lines.extend(["Automatic fix: unavailable for this rule; no changes were applied.", ""])
+        lines.extend([tr(language, "automatic_unavailable"), ""])
     if not items:
-        lines.append("No reportable AMX errors, crashes, or long callbacks were found.")
+        lines.append(tr(language, "no_recommendations"))
     return "\n".join(lines).rstrip() + "\n"

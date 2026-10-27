@@ -4,6 +4,7 @@ from amxtriage import __version__
 from amxtriage.amxerrors import AmxError, all_errors, causes_for
 from amxtriage.analysis import Report
 from amxtriage.model import ARGS_DISPLAY_LIMIT, Frame, Group, NativeFrame, Occurrence
+from amxtriage.localization import translate as tr
 from amxtriage.source import Snippet
 from amxtriage.textutil import inline_code, sanitize
 
@@ -21,14 +22,15 @@ def _count(value: int) -> str:
     return f"{value:,}"
 
 
-def group_title(group: Group) -> str:
+def group_title(group: Group, language: str = "en") -> str:
     if group.kind == "crash":
-        script = f" while executing {sanitize(group.script, 200)}" if group.script else ""
-        return f"CRASH{script}"
+        if group.script:
+            return tr(language, "crash_while").format(script=sanitize(group.script, 200))
+        return tr(language, "crash")
     if group.kind == "long_call":
-        return "LONG CALLBACK (hang or performance issue)"
-    message = sanitize(group.message or "unknown error", 200)
-    return f"RUNTIME ERROR {group.code}: {message}"
+        return tr(language, "long_callback")
+    message = sanitize(group.message or tr(language, "unknown_error"), 200)
+    return tr(language, "runtime_error").format(code=group.code, message=message)
 
 
 def format_frame(frame: Frame, show_args: bool) -> str:
@@ -55,19 +57,21 @@ def format_occurrence(occurrence: Occurrence) -> str:
     return f"{sanitize(occurrence.source, 120)}:{occurrence.line_number}{stamp}"
 
 
-def format_seen(group: Group) -> str:
+def format_seen(group: Group, language: str = "en") -> str:
     if group.count == 1:
-        return f"at {format_occurrence(group.first)}"
-    return f"first {format_occurrence(group.first)}, last {format_occurrence(group.last)}"
+        return tr(language, "at").format(first=format_occurrence(group.first))
+    return tr(language, "first_last").format(
+        first=format_occurrence(group.first), last=format_occurrence(group.last)
+    )
 
 
-def format_where(group: Group) -> str | None:
+def format_where(group: Group, language: str = "en") -> str | None:
     if group.function is None:
         return None
     text = sanitize(group.function, 128)
     ranked = group.top_lines(3)
     if group.file is None or not ranked:
-        return f"{text}  (no file:line information; compile the script with -d3)"
+        return f"{text}  {tr(language, 'no_file_line')}"
     show_counts = len(group.line_counts) > 1
     pieces: list[str] = []
     for position, (line, count) in enumerate(ranked):
@@ -86,13 +90,13 @@ def _snippet_lines(snippet: Snippet) -> list[str]:
     return rows
 
 
-def _hint_lines(group: Group) -> list[str]:
+def _hint_lines(group: Group, language: str = "en") -> list[str]:
     causes = causes_for(group.kind, group.code)
     if not causes:
         return []
     text = causes[0]
     if group.kind == "runtime_error" and group.code is not None and len(causes) > 1:
-        text += f" (more: amxtriage explain {group.code})"
+        text += f" {tr(language, 'more_explain').format(code=group.code)}"
     return [text]
 
 
@@ -103,25 +107,26 @@ def render_group_text(
     snippet: Snippet | None = None,
     new: bool = False,
     index: int | None = None,
+    language: str = "en",
 ) -> list[str]:
     label = f"[{index}] " if index is not None else ""
     badge = "NEW  " if new else ""
     lines = [
-        f"{label}{badge}{group_title(group)}   x{_count(group.count)}   id={group.signature_id}"
+        f"{label}{badge}{group_title(group, language)}   x{_count(group.count)}   id={group.signature_id}"
     ]
-    where = format_where(group)
+    where = format_where(group, language)
     if where is not None:
-        lines.append(f"{PAD}where  : {where}")
+        lines.append(f"{PAD}{tr(language, 'where_label')} {where}")
     if group.kind == "runtime_error" and group.script:
-        lines.append(f"{PAD}script : {sanitize(group.script, 200)}")
-    lines.append(f"{PAD}seen   : {format_seen(group)}")
+        lines.append(f"{PAD}{tr(language, 'script_label')} {sanitize(group.script, 200)}")
+    lines.append(f"{PAD}{tr(language, 'seen_label')} {format_seen(group, language)}")
     details = group.sample.details
-    lines.extend(f"{PAD}detail : {sanitize(detail, 200)}" for detail in details[:MAX_DETAIL_LINES])
+    lines.extend(f"{PAD}{tr(language, 'detail_label')} {sanitize(detail, 200)}" for detail in details[:MAX_DETAIL_LINES])
     if len(details) > MAX_DETAIL_LINES:
-        lines.append(f"{PAD}detail : ... {len(details) - MAX_DETAIL_LINES} more")
+        lines.append(f"{PAD}{tr(language, 'detail_label')} ... {len(details) - MAX_DETAIL_LINES} more")
     frames = group.sample.frames
     if frames:
-        lines.append(f"{PAD}trace  :")
+        lines.append(f"{PAD}{tr(language, 'trace_label')}")
         lines.extend(
             f"{PAD}  {format_frame(frame, show_args)}" for frame in frames[:MAX_TRACE_FRAMES]
         )
@@ -129,39 +134,37 @@ def render_group_text(
             lines.append(f"{PAD}  ... {len(frames) - MAX_TRACE_FRAMES} more frame(s)")
     native_frames = group.sample.native_frames
     if group.kind == "crash" and native_frames:
-        lines.append(f"{PAD}native :")
+        lines.append(f"{PAD}{tr(language, 'native_label')}")
         lines.extend(
             f"{PAD}  {format_native_frame(frame)}"
             for frame in native_frames[:MAX_NATIVE_TRACE_FRAMES]
         )
     if snippet is not None:
-        lines.append(f"{PAD}source : {sanitize(snippet.path, 200)}")
+        lines.append(f"{PAD}{tr(language, 'source_label')} {sanitize(snippet.path, 200)}")
         lines.extend(f"{PAD}  {row}" for row in _snippet_lines(snippet))
-    lines.extend(f"{PAD}hint   : {hint}" for hint in _hint_lines(group))
+    lines.extend(f"{PAD}{tr(language, 'hint_label')} {hint}" for hint in _hint_lines(group, language))
     return lines
 
 
-def _summary(report: Report) -> str:
+def _summary(report: Report, language: str = "en") -> str:
     if report.baseline_used:
-        label = "new problem" if report.matching_groups == 1 else "new problems"
-        text = (
-            f"{_count(report.matching_groups)} {label} "
-            f"({_count(report.known_hidden)} known problem(s) hidden by baseline)"
-        )
+        label = tr(language, "new_problem_one" if report.matching_groups == 1 else "new_problem_many")
+        hidden = tr(language, "known_hidden").format(count=_count(report.known_hidden))
+        text = tr(language, "summary_baseline").format(count=_count(report.matching_groups), label=label, hidden=hidden)
     elif report.matching_groups == 0:
-        text = "no runtime errors, crashes or long callbacks found"
+        text = tr(language, "no_problems")
     else:
-        label = "distinct problem" if report.matching_groups == 1 else "distinct problems"
-        text = f"{_count(report.matching_groups)} {label}"
-    return f"{text}; {_count(report.total_events)} event(s) seen in total"
+        label = tr(language, "distinct_one" if report.matching_groups == 1 else "distinct_many")
+        text = tr(language, "summary_distinct").format(count=_count(report.matching_groups), label=label)
+    return tr(language, "summary_total").format(text=text, events=_count(report.total_events))
 
 
-def render_text(report: Report, *, show_args: bool = False) -> str:
+def render_text(report: Report, *, show_args: bool = False, language: str = "en") -> str:
     sources = ", ".join(sanitize(source, 120) for source in report.sources)
     lines = [
         f"amxtriage {__version__}",
-        f"input  : {sources} ({_count(report.lines_read)} lines)",
-        f"result : {_summary(report)}",
+        f"{tr(language, 'input_label')} {sources} ({_count(report.lines_read)} lines)",
+        f"{tr(language, 'result_label')} { _summary(report, language)}",
         "",
     ]
     for number, group in enumerate(report.groups, start=1):
@@ -172,14 +175,15 @@ def render_text(report: Report, *, show_args: bool = False) -> str:
                 snippet=report.contexts.get(group.signature_id),
                 new=report.baseline_used,
                 index=number,
+                language=language,
             )
         )
         lines.append("")
     if report.omitted_groups:
-        lines.append(f"... {_count(report.omitted_groups)} more problem(s) not shown (use --top)")
+        lines.append(tr(language, "omitted").format(count=_count(report.omitted_groups)))
         lines.append("")
     if report.notes:
-        lines.append("notes:")
+        lines.append(tr(language, "notes_label"))
         lines.extend(f"  - {note}" for note in report.notes)
         lines.append("")
     return "\n".join(lines).rstrip("\n") + "\n"
@@ -190,60 +194,60 @@ def _fenced(rows: list[str]) -> list[str]:
     return ["```text", *body, "```"]
 
 
-def _markdown_group(number: int, group: Group, report: Report, show_args: bool) -> list[str]:
+def _markdown_group(number: int, group: Group, report: Report, show_args: bool, language: str = "en") -> list[str]:
     snippet = report.contexts.get(group.signature_id)
-    out = [f"## {number}. {inline_code(group_title(group), 220)}", ""]
-    badge = " (new)" if report.baseline_used else ""
-    out.append(f"- **Count:** {_count(group.count)}{badge}")
-    out.append(f"- **Signature:** `{group.signature_id}`")
-    where = format_where(group)
+    out = [f"## {number}. {inline_code(group_title(group, language), 220)}", ""]
+    badge = f" ({tr(language, 'md_new')})" if report.baseline_used else ""
+    out.append(f"- **{tr(language, 'md_count')}:** {_count(group.count)}{badge}")
+    out.append(f"- **{tr(language, 'md_signature')}:** `{group.signature_id}`")
+    where = format_where(group, language)
     if where is not None:
-        out.append(f"- **Where:** {inline_code(where, 300)}")
+        out.append(f"- **{tr(language, 'md_where')}:** {inline_code(where, 300)}")
     if group.kind == "runtime_error" and group.script:
-        out.append(f"- **Script:** {inline_code(group.script, 200)}")
-    out.append(f"- **Seen:** {inline_code(format_seen(group), 300)}")
+        out.append(f"- **{tr(language, 'md_script')}:** {inline_code(group.script, 200)}")
+    out.append(f"- **{tr(language, 'md_seen')}:** {inline_code(format_seen(group, language), 300)}")
     for detail in group.sample.details[:MAX_DETAIL_LINES]:
-        out.append(f"- **Detail:** {inline_code(detail, 200)}")
-    for hint in _hint_lines(group):
-        out.append(f"- **Hint:** {sanitize(hint, 400)}")
+        out.append(f"- **{tr(language, 'md_detail')}:** {inline_code(detail, 200)}")
+    for hint in _hint_lines(group, language):
+        out.append(f"- **{tr(language, 'md_hint')}:** {sanitize(hint, 400)}")
     out.append("")
     frames = group.sample.frames[:MAX_TRACE_FRAMES]
     if frames:
-        out.append("Backtrace:")
+        out.append(f"{tr(language, 'md_backtrace')}:")
         out.append("")
         out.extend(_fenced([format_frame(frame, show_args) for frame in frames]))
         out.append("")
     if group.kind == "crash" and group.sample.native_frames:
         native = group.sample.native_frames[:MAX_NATIVE_TRACE_FRAMES]
-        out.append("Native backtrace:")
+        out.append(f"{tr(language, 'md_native_backtrace')}:")
         out.append("")
         out.extend(_fenced([format_native_frame(frame) for frame in native]))
         out.append("")
     if snippet is not None:
-        out.append(f"Source: {inline_code(snippet.path, 200)}")
+        out.append(f"{tr(language, 'md_source')}: {inline_code(snippet.path, 200)}")
         out.append("")
         out.extend(_fenced(_snippet_lines(snippet)))
         out.append("")
     return out
 
 
-def render_markdown(report: Report, *, show_args: bool = False) -> str:
+def render_markdown(report: Report, *, show_args: bool = False, language: str = "en") -> str:
     sources = ", ".join(inline_code(source, 120) for source in report.sources)
     out = [
-        "# amxtriage report",
+        tr(language, "md_report_title"),
         "",
-        f"- **Input:** {sources} ({_count(report.lines_read)} lines)",
-        f"- **Result:** {_summary(report)}",
-        f"- **Tool:** amxtriage {__version__}",
+        f"- **{tr(language, 'md_input')}:** {sources} ({_count(report.lines_read)} lines)",
+        f"- **{tr(language, 'md_result')}:** {_summary(report, language)}",
+        f"- **{tr(language, 'md_tool')}:** amxtriage {__version__}",
         "",
     ]
     for number, group in enumerate(report.groups, start=1):
-        out.extend(_markdown_group(number, group, report, show_args))
+        out.extend(_markdown_group(number, group, report, show_args, language))
     if report.omitted_groups:
-        out.append(f"_{_count(report.omitted_groups)} more problem(s) not shown._")
+        out.append(tr(language, "md_omitted").format(count=_count(report.omitted_groups)))
         out.append("")
     if report.notes:
-        out.append("**Notes**")
+        out.append(tr(language, "md_notes"))
         out.append("")
         out.extend(f"- {note}" for note in report.notes)
         out.append("")
@@ -354,29 +358,29 @@ def render_json(report: Report, *, show_args: bool = False) -> str:
     return json.dumps(payload, indent=2) + "\n"
 
 
-def render_report(report: Report, output_format: str, *, show_args: bool = False) -> str:
+def render_report(
+    report: Report, output_format: str, *, show_args: bool = False, language: str = "en"
+) -> str:
     if output_format == "json":
         return render_json(report, show_args=show_args)
     if output_format == "markdown":
-        return render_markdown(report, show_args=show_args)
-    return render_text(report, show_args=show_args)
+        return render_markdown(report, show_args=show_args, language=language)
+    return render_text(report, show_args=show_args, language=language)
 
 
-def render_explain(error: AmxError) -> str:
-    lines = [f"AMX error {error.code}: {error.name}", ""]
+def render_explain(error: AmxError, language: str = "en") -> str:
+    lines = [tr(language, "explain_title").format(code=error.code, name=error.name), ""]
     if error.causes:
-        lines.append("Common causes and checks:")
+        lines.append(tr(language, "common_causes"))
         lines.extend(f"  - {cause}" for cause in error.causes)
     else:
-        lines.append("No extra guidance is available for this code.")
+        lines.append(tr(language, "no_guidance"))
     lines.append("")
-    lines.append(
-        "These are common causes, not a diagnosis. The backtrace in the log is the evidence."
-    )
+    lines.append(tr(language, "explain_uncertainty"))
     return "\n".join(lines) + "\n"
 
 
-def render_error_list() -> str:
-    lines = ["AMX error codes (use 'amxtriage explain CODE' for details):", ""]
+def render_error_list(language: str = "en") -> str:
+    lines = [tr(language, "error_list_title"), ""]
     lines.extend(f"  {error.code:>2}  {error.name}" for error in all_errors() if error.code != 0)
     return "\n".join(lines) + "\n"

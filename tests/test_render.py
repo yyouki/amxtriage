@@ -248,6 +248,20 @@ def test_hostile_log_content_is_sanitized_in_every_format(tmp_path):
     json.loads(render_json(report, show_args=True))
 
 
+def test_localized_reports_translate_labels_but_keep_json_schema_stable(sample_log):
+    report = sample_report(sample_log)
+    indonesian = render_report(report, "text", language="id")
+    spanish = render_report(report, "markdown", language="es")
+    payload = json.loads(render_report(report, "json", language="id"))
+
+    assert "masukan:" in indonesian
+    assert "KESALAHAN RUNTIME 4: Array index out of bounds" in indonesian
+    assert "# informe de amxtriage" in spanish
+    assert "**Ubicación:**" in spanish
+    assert payload["schema_version"] == 1
+    assert payload["problems"][1]["kind"] == "runtime_error"
+
+
 def test_render_report_dispatches_by_format(sample_log):
     report = sample_report(sample_log)
     assert render_report(report, "json").lstrip().startswith("{")
@@ -265,6 +279,14 @@ def test_explain_output_for_known_and_guidance_free_codes():
     assert "Common causes and checks:" in known
     bare = render_explain(undocumented)
     assert "No extra guidance" in bare
+
+
+def test_localized_explain_and_error_list(sample_log):
+    error = lookup(4)
+    assert error is not None
+    assert render_explain(error, "id").startswith("Error AMX 4: Array index out of bounds")
+    assert "Penyebab umum" in render_explain(error, "id")
+    assert "Kode error AMX" in render_error_list("id")
 
 
 def test_error_list_contains_every_code_but_zero():
