@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from amxtriage.aggregate import Aggregator
 from amxtriage.alerts import (
     DEFAULT_ALERT_TEMPLATE,
     JsonlAlertSink,
@@ -11,7 +12,6 @@ from amxtriage.alerts import (
     build_alert_event,
     serialize_alert_event,
 )
-from amxtriage.aggregate import Aggregator
 from amxtriage.errors import InputError, OutputError
 from amxtriage.model import Event, EventKind, Frame, Group
 
