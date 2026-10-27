@@ -142,3 +142,12 @@ def test_pawn_bridge_refuses_hard_links_without_modifying_target(tmp_path: Path)
     with pytest.raises(OutputError, match="hard links"):
         append_pawn_bridge_record(str(target), make_group())
     assert target.read_text(encoding="utf-8") == "keep\n"
+
+def test_pawn_bridge_encoded_fields_fit_fixed_pawn_buffers() -> None:
+    record = serialize_pawn_bridge_record(
+        make_group(message="{" * 500, file="%" * 500)
+    )
+    fields = record.rstrip("\n").split("|")
+    assert len(fields) == 8
+    assert len(fields[3]) <= 480
+    assert len(fields[5]) <= 480
