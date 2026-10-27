@@ -80,11 +80,14 @@ def test_pawn_bridge_rejects_unsafe_prefix(prefix: str) -> None:
         serialize_pawn_bridge_record(make_group(), prefix=prefix)
 
 
-@pytest.mark.parametrize(("kind", "severity"), [
-    ("crash", "CRITICAL"),
-    ("runtime_error", "HIGH"),
-    ("long_call", "MEDIUM"),
-])
+@pytest.mark.parametrize(
+    ("kind", "severity"),
+    [
+        ("crash", "CRITICAL"),
+        ("runtime_error", "HIGH"),
+        ("long_call", "MEDIUM"),
+    ],
+)
 def test_pawn_bridge_maps_severity(kind: EventKind, severity: str) -> None:
     fields = serialize_pawn_bridge_record(make_group(kind=kind)).rstrip("\n").split("|")
     assert fields[1] == severity
