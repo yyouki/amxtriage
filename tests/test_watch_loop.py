@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable, Iterator
 from typing import Any
 
@@ -96,4 +97,37 @@ def test_new_lines_restart_the_wait_for_a_pending_block(
 def test_the_final_summary_includes_a_block_that_was_still_pending(run_watch: RunWatch) -> None:
     _, out, _ = run_watch([*BLOCK])
     assert out.count("NEW  RUNTIME ERROR 4") == 1
+    assert "watch summary" in out
+
+
+
+def test_watch_exports_structured_jsonl_alert_with_protected_location(
+    run_watch: RunWatch, tmp_path
+) -> None:
+    target = tmp_path / "alerts.jsonl"
+    code, out, err = run_watch(
+        [*BLOCK, None, None],
+        "--alert-jsonl",
+        str(target),
+        "--alert-prefix",
+        "OWNER",
+        "--alert-template",
+        "{prefix} {severity}: {message}",
+    )
+    assert code == 0
+    assert "warning: local alert export disabled" not in err
+    assert "NEW  RUNTIME ERROR 4" in out
+    lines = target.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1
+    event = json.loads(lines[0])
+    assert event["summary"] == "OWNER HIGH: Array index out of bounds"
+    assert event["source"] == {"file": "gamemodes/rp.pwn", "line": 30}
+    assert event["presentation"] == {"file_color": "red", "line_color": "blue"}
+
+
+def test_alert_export_failure_does_not_stop_log_following(run_watch: RunWatch, tmp_path) -> None:
+    code, out, err = run_watch([*BLOCK, None, None], "--alert-jsonl", str(tmp_path))
+    assert code == 0
+    assert "warning: local alert export disabled" in err
+    assert "NEW  RUNTIME ERROR 4" in out
     assert "watch summary" in out
