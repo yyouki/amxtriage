@@ -333,10 +333,7 @@ def parse_compiler_lines(
                 compatible = (
                     source_language == "auto"
                     or source_language == eslint_language
-                    or (
-                        source_language == "javascript"
-                        and eslint_language == "javascript"
-                    )
+                    or (source_language == "javascript" and eslint_language == "javascript")
                 )
                 if compatible:
                     emit(
@@ -355,11 +352,7 @@ def parse_compiler_lines(
         pawn_match = _PAWN.match(line_text)
         if pawn_match and source_language in {"auto", "pawn"}:
             pawn_language = _extension_language(pawn_match.group("file"))
-            if (
-                source_language == "pawn"
-                or pawn_language == "pawn"
-                or pawn_match.group("code")
-            ):
+            if source_language == "pawn" or pawn_language == "pawn" or pawn_match.group("code"):
                 emit(
                     _make_diagnostic(
                         requested_language="pawn",
@@ -385,8 +378,7 @@ def parse_compiler_lines(
                 else file_language
             )
             compatible = (
-                source_language == "auto"
-                and paren_language in {"typescript", "csharp"}
+                source_language == "auto" and paren_language in {"typescript", "csharp"}
             ) or source_language == paren_language
             if compatible:
                 emit(
@@ -425,11 +417,7 @@ def parse_compiler_lines(
             colon_language = _extension_language(file)
             has_severity = colon_match.group("severity") is not None
             compatible = (
-                (
-                    source_language == "auto"
-                    and colon_language == "c_cpp"
-                    and has_severity
-                )
+                (source_language == "auto" and colon_language == "c_cpp" and has_severity)
                 or (source_language == "c_cpp" and has_severity)
                 or (source_language == "auto" and colon_language == "go")
                 or source_language == "go"
