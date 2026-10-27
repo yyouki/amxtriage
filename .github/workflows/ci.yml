@@ -65,6 +65,7 @@ jobs:
       - name: Download pinned Pawn compiler
         env:
           PAWN_COMPILER_VERSION: "v3.10.10"
+          SAMP_STDLIB_REVISION: "8ffb055624308b25521665b60e78b5e6e6b3717f"
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/pawn-compiler" "$RUNNER_TEMP/pawn-compiler-source" "$RUNNER_TEMP/samp-stdlib"
@@ -77,7 +78,7 @@ jobs:
             --output "$RUNNER_TEMP/pawn-compiler-source.tar.gz"
           tar -xzf "$RUNNER_TEMP/pawn-compiler-source.tar.gz" -C "$RUNNER_TEMP/pawn-compiler-source"
           curl --fail --silent --show-error --location --retry 3 \
-            "https://github.com/pawn-lang/samp-stdlib/archive/refs/tags/0.3.7-R2-2-1.tar.gz" \
+            "https://github.com/pawn-lang/samp-stdlib/archive/${SAMP_STDLIB_REVISION}.tar.gz" \
             --output "$RUNNER_TEMP/samp-stdlib.tar.gz"
           tar -xzf "$RUNNER_TEMP/samp-stdlib.tar.gz" -C "$RUNNER_TEMP/samp-stdlib"
           PAWNCC="$(find "$RUNNER_TEMP/pawn-compiler" -type f -name pawncc -print -quit)"
