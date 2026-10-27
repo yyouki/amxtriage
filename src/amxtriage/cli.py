@@ -13,7 +13,12 @@ from types import FrameType
 
 from amxtriage import __version__
 from amxtriage.aggregate import Aggregator
-from amxtriage.alerts import DEFAULT_ALERT_PREFIX, DEFAULT_ALERT_TEMPLATE, JsonlAlertSink
+from amxtriage.alerts import (
+    DEFAULT_ALERT_PREFIX,
+    DEFAULT_ALERT_TEMPLATE,
+    JsonlAlertSink,
+    PawnBridgeAlertSink,
+)
 from amxtriage.amxerrors import lookup
 from amxtriage.analysis import AnalysisResult, analyze_logs, build_report, snippet_for
 from amxtriage.baseline import load_baseline, save_baseline
@@ -228,18 +233,26 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     watch.add_argument(
+        "--alert-pawn-file",
+        metavar="FILE",
+        help=(
+            "append records for integrations/pawn/amxtriage_bridge.pwn; "
+            "use the server scriptfiles path and load the filterscript separately"
+        ),
+    )
+    watch.add_argument(
         "--alert-prefix",
         default=DEFAULT_ALERT_PREFIX,
         metavar="TEXT",
-        help="prefix for structured alert summaries (requires --alert-jsonl)",
+        help="prefix for alert summaries (requires --alert-jsonl or --alert-pawn-file)",
     )
     watch.add_argument(
         "--alert-template",
         default=DEFAULT_ALERT_TEMPLATE,
         metavar="TEMPLATE",
         help=(
-            "single-line alert template using safe fields such as {prefix}, {severity}, "
-            "{file}, {line}, {message}"
+            "single-line JSONL alert template using safe fields such as {prefix}, {severity}, "
+            "{file}, {line}, {message}; requires --alert-jsonl"
         ),
     )
     watch.add_argument(
@@ -428,7 +441,7 @@ def _announce_new_problem(
     baseline: frozenset[str] | None,
     source_index: SourceIndex | None,
     args: argparse.Namespace,
-    alert_sink: JsonlAlertSink | None = None,
+    alert_sinks: Sequence[JsonlAlertSink | PawnBridgeAlertSink] = (),
 ) -> None:
     added = aggregator.add(event, label)
     group = added.group
@@ -436,10 +449,11 @@ def _announce_new_problem(
         return
     if baseline is not None and group.signature_id in baseline:
         return
-    if alert_sink is not None and not alert_sink.emit(group) and not alert_sink.warning_emitted:
-        detail = alert_sink.failure_reason or "write failed"
-        print(f"warning: local alert export disabled: {detail}", file=sys.stderr, flush=True)
-        alert_sink.warning_emitted = True
+    for alert_sink in alert_sinks:
+        if not alert_sink.emit(group) and not alert_sink.warning_emitted:
+            detail = alert_sink.failure_reason or "write failed"
+            print(f"warning: local alert export disabled: {detail}", file=sys.stderr, flush=True)
+            alert_sink.warning_emitted = True
     snippet = None
     if source_index is not None and args.context > 0:
         snippet = snippet_for(group, source_index, args.context)
@@ -452,15 +466,19 @@ def _announce_new_problem(
 def _run_watch(args: argparse.Namespace) -> int:
     baseline = load_baseline(args.baseline) if args.baseline else None
     source_index = SourceIndex(args.source_dir) if args.source_dir else None
-    alert_sink = (
-        JsonlAlertSink(
-            args.alert_jsonl,
-            prefix=args.alert_prefix,
-            template=args.alert_template,
+    if args.alert_template != DEFAULT_ALERT_TEMPLATE and not args.alert_jsonl:
+        raise InputError("--alert-template requires --alert-jsonl")
+    alert_sinks: list[JsonlAlertSink | PawnBridgeAlertSink] = []
+    if args.alert_jsonl:
+        alert_sinks.append(
+            JsonlAlertSink(
+                args.alert_jsonl,
+                prefix=args.alert_prefix,
+                template=args.alert_template,
+            )
         )
-        if args.alert_jsonl
-        else None
-    )
+    if args.alert_pawn_file:
+        alert_sinks.append(PawnBridgeAlertSink(args.alert_pawn_file, prefix=args.alert_prefix))
     stop = threading.Event()
     follower = LogFollower(
         args.log,
@@ -485,7 +503,7 @@ def _run_watch(args: argparse.Namespace) -> int:
             events = parser.idle() if item is None else parser.feed(item)
             for event in events:
                 _announce_new_problem(
-                    event, aggregator, label, baseline, source_index, args, alert_sink
+                    event, aggregator, label, baseline, source_index, args, alert_sinks
                 )
     except KeyboardInterrupt:
         pass
