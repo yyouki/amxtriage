@@ -1,6 +1,6 @@
 # amxtriage Pawn alert bridge
 
-**Status:** the bridge source and protocol are implemented, and the source compiles in GitHub Actions. End-to-end chat delivery still needs to be tested on a staging SA-MP/open.mp server before runtime verification.
+**Status:** bridge source and protocol are implemented; Pawn source compiles in GitHub Actions with the pinned toolchain. End-to-end chat delivery still needs staging-server verification.
 
 This optional filterscript reads a local append-only file produced by `amxtriage watch --alert-pawn-file`. It does not open a network port or use RCON for delivery.
 
@@ -9,6 +9,7 @@ This optional filterscript reads a local append-only file produced by `amxtriage
 - `amxtriage_bridge.pwn` — filterscript source.
 - Compiler used by CI: Pawn compiler `v3.10.10`.
 - Standard API headers used by CI: `pawn-lang/samp-stdlib` commit [`8ffb055624308b25521665b60e78b5e6e6b3717f`](https://github.com/pawn-lang/samp-stdlib/commit/8ffb055624308b25521665b60e78b5e6e6b3717f), pinned in `.github/workflows/ci.yml`.
+- A successful compiler run validates the Pawn source against these headers; it does not replace a live staging test against the exact server distribution.
 - The binary `.amx` is built by CI as an artifact; it is not committed to this repository.
 
 ## Installation
@@ -31,7 +32,7 @@ This optional filterscript reads a local append-only file produced by `amxtriage
 - Displays the source file path in red and source line in blue, when the diagnostic contains both fields.
 - Keeps file path and line number in structured fields; configurable human-readable message templates apply to the JSONL sink and cannot replace the protected location fields.
 - Polls once per second and processes at most five records per tick to cap work per timer callback.
-- Skips malformed records, limits field sizes, encodes delimiters and braces from log-derived text, and escapes percent signs before handing a message to the chat API.
+- Skips malformed records, limits field sizes, and encodes delimiters and braces from log-derived text so player-controlled text cannot inject inline color tags. Percent signs in message text are retained as text.
 - Starts at the file's current end if it exists when the filterscript loads, so old records are not replayed. If the file does not yet exist, the bridge waits for it and starts reading at byte offset zero.
 - Does not issue bans, modify player state, or mitigate DDoS traffic. It is a diagnostic notice channel only.
 
