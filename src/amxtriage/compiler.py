@@ -329,16 +329,19 @@ def parse_compiler_lines(
                 continue
             eslint_match = _ESLINT_LINE.match(line_text)
             if eslint_match and eslint_file:
-                inferred = _extension_language(eslint_file) or source_language
+                eslint_language = _extension_language(eslint_file) or source_language
                 compatible = (
                     source_language == "auto"
-                    or source_language == inferred
-                    or (source_language == "javascript" and inferred == "javascript")
+                    or source_language == eslint_language
+                    or (
+                        source_language == "javascript"
+                        and eslint_language == "javascript"
+                    )
                 )
                 if compatible:
                     emit(
                         _make_diagnostic(
-                            requested_language=inferred,
+                            requested_language=eslint_language,
                             file=eslint_file,
                             line=int(eslint_match.group("line")),
                             column=int(eslint_match.group("column")),
@@ -351,8 +354,12 @@ def parse_compiler_lines(
 
         pawn_match = _PAWN.match(line_text)
         if pawn_match and source_language in {"auto", "pawn"}:
-            inferred = _extension_language(pawn_match.group("file"))
-            if source_language == "pawn" or inferred == "pawn" or pawn_match.group("code"):
+            pawn_language = _extension_language(pawn_match.group("file"))
+            if (
+                source_language == "pawn"
+                or pawn_language == "pawn"
+                or pawn_match.group("code")
+            ):
                 emit(
                     _make_diagnostic(
                         requested_language="pawn",
@@ -370,7 +377,7 @@ def parse_compiler_lines(
         if paren_match and source_language in {"auto", "typescript", "csharp"}:
             file_language = _extension_language(paren_match.group("file"))
             code = paren_match.group("code")
-            inferred = (
+            paren_language = (
                 "typescript"
                 if code and code.upper().startswith("TS")
                 else "csharp"
@@ -378,12 +385,13 @@ def parse_compiler_lines(
                 else file_language
             )
             compatible = (
-                source_language == "auto" and inferred in {"typescript", "csharp"}
-            ) or source_language == inferred
+                source_language == "auto"
+                and paren_language in {"typescript", "csharp"}
+            ) or source_language == paren_language
             if compatible:
                 emit(
                     _make_diagnostic(
-                        requested_language=inferred or source_language,
+                        requested_language=paren_language or source_language,
                         file=paren_match.group("file"),
                         line=int(paren_match.group("line")),
                         column=int(paren_match.group("column"))
@@ -414,19 +422,19 @@ def parse_compiler_lines(
         colon_match = _COLON.match(line_text)
         if colon_match:
             file = colon_match.group("file")
-            inferred = _extension_language(file)
+            colon_language = _extension_language(file)
             has_severity = colon_match.group("severity") is not None
             compatible = (
-                (source_language == "auto" and inferred == "c_cpp" and has_severity)
+                (source_language == "auto" and colon_language == "c_cpp" and has_severity)
                 or (source_language == "c_cpp" and has_severity)
-                or (source_language == "auto" and inferred == "go")
+                or (source_language == "auto" and colon_language == "go")
                 or source_language == "go"
             )
             if compatible:
                 severity = colon_match.group("severity") or "error"
                 emit(
                     _make_diagnostic(
-                        requested_language=inferred or source_language,
+                        requested_language=colon_language or source_language,
                         file=file,
                         line=int(colon_match.group("line")),
                         column=int(colon_match.group("column")),
@@ -522,6 +530,11 @@ def render_compiler_report(
     language: str = "en",
 ) -> str:
     if output_format == "json":
+        notes = (
+            [tr(language, "compiler_no_findings_note")]
+            if not report.diagnostics
+            else []
+        )
         payload: dict[str, object] = {
             "schema_version": 1,
             "tool": {"name": "amxtriage", "version": __version__},
@@ -533,9 +546,8 @@ def render_compiler_report(
             "diagnostic_count": len(report.diagnostics),
             "dropped_diagnostics": report.dropped_diagnostics,
             "diagnostics": [_diagnostic_dict(item, language) for item in report.diagnostics],
-            "notes": [tr(language, "compiler_no_findings_note") if not report.diagnostics else ""],
+            "notes": notes,
         }
-        payload["notes"] = [note for note in payload["notes"] if note]
         return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
 
     title = tr(language, "compiler_title")
