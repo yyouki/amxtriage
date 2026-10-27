@@ -1,6 +1,6 @@
 # amxtriage Pawn alert bridge
 
-**Status:** source and protocol are implemented; the bridge still needs to compile in CI and be tested on a staging SA-MP/open.mp server before it can be considered runtime-verified.
+**Status:** the bridge source and protocol are implemented, and the source compiles in GitHub Actions. End-to-end chat delivery still needs to be tested on a staging SA-MP/open.mp server before runtime verification.
 
 This optional filterscript reads a local append-only file produced by `amxtriage watch --alert-pawn-file`. It does not open a network port or use RCON for delivery.
 
@@ -8,13 +8,13 @@ This optional filterscript reads a local append-only file produced by `amxtriage
 
 - `amxtriage_bridge.pwn` — filterscript source.
 - Compiler used by CI: Pawn compiler `v3.10.10`.
-- Standard API headers used by CI: `pawn-lang/samp-stdlib` tag `0.3.7-R2-2-1`.
+- Standard API headers used by CI: `pawn-lang/samp-stdlib` commit [`8ffb055624308b25521665b60e78b5e6e6b3717f`](https://github.com/pawn-lang/samp-stdlib/commit/8ffb055624308b25521665b60e78b5e6e6b3717f), pinned in `.github/workflows/ci.yml`.
 - The binary `.amx` is built by CI as an artifact; it is not committed to this repository.
 
 ## Installation
 
 1. Install Python 3.10+ and install amxtriage from this checkout or package.
-2. Compile `amxtriage_bridge.pwn` with the Pawn compiler and the standard SA-MP includes for the target environment. CI uses the pinned versions above; the compiler itself must be obtained from the [official Pawn compiler release](https://github.com/pawn-lang/compiler/releases/tag/v3.10.10). The includes come from the [official samp-stdlib repository](https://github.com/pawn-lang/samp-stdlib).
+2. Compile `amxtriage_bridge.pwn` with the Pawn compiler and the standard SA-MP includes for the target environment. CI uses Pawn compiler `v3.10.10` and the pinned `samp-stdlib` commit above; obtain them from the [official Pawn compiler release](https://github.com/pawn-lang/compiler/releases/tag/v3.10.10) and [official samp-stdlib repository](https://github.com/pawn-lang/samp-stdlib). The headers used in CI are for compile validation; check the includes and server API against the exact server distribution you operate.
 3. Copy the resulting `amxtriage_bridge.amx` to the server's `filterscripts/` directory.
 4. Add `amxtriage_bridge` to the server's configured filterscript list, or load it through the server's normal administration procedure. The bridge does not edit server configuration automatically.
 5. Start the monitor from the server working directory so the output is inside the server's `scriptfiles/` directory:
