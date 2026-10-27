@@ -1,3 +1,6 @@
+**Language / Bahasa / Idioma:** [English](README.md) · [Bahasa Indonesia](docs/README.id.md) · [Español](docs/README.es.md)  
+**Roadmap:** [Multi-language diagnostics and safe remediation](docs/PHASE7_MULTILANGUAGE.md)
+
 # amxtriage
 
 Triage tool for SA-MP and open.mp server logs. It reads the log, finds the problems that

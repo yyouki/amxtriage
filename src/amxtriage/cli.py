@@ -205,9 +205,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     recommend.add_argument("logs", nargs="+", metavar="LOG", help="log file(s) to analyze")
-    recommend.add_argument(
-        "--format", choices=("text", "markdown", "json"), default="text"
-    )
+    recommend.add_argument("--format", choices=("text", "markdown", "json"), default="text")
     recommend.add_argument("-o", "--output", metavar="FILE", help="write recommendations to FILE")
     recommend.add_argument(
         "--top",
@@ -217,11 +215,17 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"maximum problems to recommend for (default {DEFAULT_TOP})",
     )
     recommend.add_argument(
-        "--min-count", type=_bounded_int(1), default=1, metavar="N",
+        "--min-count",
+        type=_bounded_int(1),
+        default=1,
+        metavar="N",
         help="hide problems that occurred fewer than N times",
     )
     recommend.add_argument(
-        "--max-input-bytes", type=_size, default=0, metavar="SIZE",
+        "--max-input-bytes",
+        type=_size,
+        default=0,
+        metavar="SIZE",
         help="stop if an input exceeds SIZE after decompression (0 means no limit)",
     )
     recommend.add_argument(

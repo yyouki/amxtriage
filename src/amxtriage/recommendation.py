@@ -331,9 +331,7 @@ def render_recommendations(report: Report, output_format: str) -> str:
             lines.extend(["Illustrative Pawn pattern:", "```pawn", item.example, "```"])
         if item.source:
             source_path = (
-                inline_code(item.source.path, 200)
-                if markdown
-                else sanitize(item.source.path, 200)
+                inline_code(item.source.path, 200) if markdown else sanitize(item.source.path, 200)
             )
             lines.extend(
                 [f"Source context: {source_path}", "```text", _snippet_text(item.source), "```"]
