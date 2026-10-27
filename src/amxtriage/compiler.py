@@ -522,11 +522,7 @@ def render_compiler_report(
     language: str = "en",
 ) -> str:
     if output_format == "json":
-        notes = (
-            [tr(language, "compiler_no_findings_note")]
-            if not report.diagnostics
-            else []
-        )
+        notes = [tr(language, "compiler_no_findings_note")] if not report.diagnostics else []
         payload: dict[str, object] = {
             "schema_version": 1,
             "tool": {"name": "amxtriage", "version": __version__},
