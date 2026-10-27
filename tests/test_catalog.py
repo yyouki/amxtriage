@@ -29,25 +29,36 @@ def raw_catalog(snapshot: CatalogSnapshot) -> dict[str, object]:
     )
 
 
-def test_packaged_catalog_has_evidence_for_every_documented_entry() -> None:
+def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> None:
     snapshot = load_catalog()
-    assert len(snapshot.entries) == 5
-    assert all(entry.status == "documented" for entry in snapshot.entries)
+    assert len(snapshot.entries) == 6
+    documented = [entry for entry in snapshot.entries if entry.status == "documented"]
+    unknown = [entry for entry in snapshot.entries if entry.status == "unknown"]
+    assert len(documented) == 5
+    assert len(unknown) == 1
     assert all(entry.target_server == "open.mp" for entry in snapshot.entries)
     assert all(entry.evidence for entry in snapshot.entries)
     assert all(
         evidence.url == "https://open.mp/docs/server/Installation"
-        for entry in snapshot.entries
+        for entry in documented
         for evidence in entry.evidence
+    )
+    newer_sampvoice = unknown[0]
+    assert newer_sampvoice.id == "sampvoice-openmp-3.2.0-omp"
+    assert newer_sampvoice.version == "v3.2.0-omp"
+    assert any(
+        evidence.url == "https://github.com/AmyrAhmady/sampvoice/releases"
+        for evidence in newer_sampvoice.evidence
     )
     assert all(not entry.server_versions and not entry.platforms for entry in snapshot.entries)
 
 
 def test_server_and_status_filters_are_exact() -> None:
     snapshot = load_catalog()
-    assert len(filter_catalog_entries(snapshot.entries, server="open.mp")) == 5
+    assert len(filter_catalog_entries(snapshot.entries, server="open.mp")) == 6
     assert filter_catalog_entries(snapshot.entries, server="sa-mp") == []
     assert len(filter_catalog_entries(snapshot.entries, server="all", status="documented")) == 5
+    assert len(filter_catalog_entries(snapshot.entries, status="unknown")) == 1
     assert filter_catalog_entries(snapshot.entries, status="verified") == []
 
 
@@ -57,7 +68,7 @@ def test_json_report_has_stable_schema_and_honest_limit_notes() -> None:
     raw = render_catalog_report(snapshot, entries, output_format="json", server="open.mp")
     payload = json.loads(raw)
     assert payload["schema_version"] == 1
-    assert payload["entry_count"] == 5
+    assert payload["entry_count"] == 6
     assert payload["filters"] == {"server": "open.mp", "status": None}
     assert "runtime compatibility" in " ".join(payload["notes"])
     assert payload["entries"][0]["evidence"][0]["url"] == (
