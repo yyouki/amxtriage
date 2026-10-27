@@ -3,6 +3,7 @@ import json
 from amxtriage.amxerrors import lookup
 from amxtriage.analysis import analyze_logs, build_report
 from amxtriage.parser import parse_frame
+from amxtriage.localization import SUPPORTED_LANGUAGES, _MESSAGES
 from amxtriage.render import (
     format_frame,
     group_title,
@@ -246,6 +247,22 @@ def test_hostile_log_content_is_sanitized_in_every_format(tmp_path):
             assert_no_control_characters(output)
             assert "\u202e" not in output
     json.loads(render_json(report, show_args=True))
+
+
+def test_locale_catalogs_have_matching_keys_and_placeholders():
+    from string import Formatter
+
+    expected_keys = set(_MESSAGES["en"])
+    for language in SUPPORTED_LANGUAGES:
+        assert set(_MESSAGES[language]) == expected_keys
+    expected_fields = {
+        key: {field for _, field, _, _ in Formatter().parse(template) if field}
+        for key, template in _MESSAGES["en"].items()
+    }
+    for language in SUPPORTED_LANGUAGES:
+        for key, template in _MESSAGES[language].items():
+            fields = {field for _, field, _, _ in Formatter().parse(template) if field}
+            assert fields == expected_fields[key], (language, key, fields, expected_fields[key])
 
 
 def test_localized_reports_translate_labels_but_keep_json_schema_stable(sample_log):

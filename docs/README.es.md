@@ -31,7 +31,15 @@ Desde el repositorio sin instalar:
 PYTHONPATH=src python -m amxtriage analyze examples/sample_server_log.txt
 ```
 
-Usa `amxtriage --help` o `amxtriage <command> --help` para ver las opciones. La selección de idioma para la salida CLI todavía está en la hoja de ruta; estas páginas multilingües solo traducen la documentación.
+Las etiquetas de los informes CLI admiten inglés (`en`, predeterminado), indonesio (`id`) y español (`es`). El idioma se puede indicar antes o después del subcomando:
+
+```bash
+amxtriage --language es analyze server_log.txt
+amxtriage analyze server_log.txt --lang es
+amxtriage recommend server_log.txt --language id
+```
+
+La traducción del CLI es gradual: las etiquetas y los títulos del informe están traducidos, pero las recomendaciones diagnósticas detalladas, algunos mensajes de ayuda y el texto original de los logs/compiladores pueden seguir en inglés. Las claves JSON permanecen en inglés y estables para no romper la automatización. Usa `amxtriage --help` o `amxtriage <command> --help` para ver otras opciones.
 
 ## Límites y seguridad
 

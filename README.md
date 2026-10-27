@@ -87,7 +87,7 @@ Without installing anything:
 PYTHONPATH=src python -m amxtriage analyze server_log.txt
 ```
 
-The command is `amxtriage`, or `python -m amxtriage`.
+The command is `amxtriage`, or `python -m amxtriage`. Human-readable report labels support English (default), Indonesian and Spanish. The detailed diagnostic explanations remain based on the original log/compiler message, and JSON keys stay stable in English.
 
 ## What it understands
 
@@ -144,6 +144,7 @@ is expanded by amxtriage itself. It is an error if nothing matches.
 | Option | Meaning |
 |---|---|
 | `--format text\|markdown\|json` | Report format. Default `text`. |
+| `--language en\|id\|es`, `--lang` | Human-readable report label language: English, Indonesian or Spanish. Default `en`. Works before or after the subcommand. |
 | `-o FILE`, `--output FILE` | Write the report to FILE (UTF-8) instead of the terminal. A symbolic link, or a file with more than one hard link, is refused (see "Security and privacy"). |
 | `--top N` | Show at most N problems. Default 20. |
 | `--min-count N` | Hide problems that happened fewer than N times. |

@@ -31,7 +31,15 @@ Dari checkout tanpa instalasi:
 PYTHONPATH=src python -m amxtriage analyze examples/sample_server_log.txt
 ```
 
-Jalankan `amxtriage --help` atau `amxtriage <command> --help` untuk opsi yang tersedia. Opsi bahasa untuk output CLI masih dalam roadmap; halaman README multibahasa ini hanya menerjemahkan dokumentasi.
+Label laporan CLI mendukung English (`en`, default), Bahasa Indonesia (`id`), dan Español (`es`). Pilih bahasa sebelum atau sesudah subperintah:
+
+```bash
+amxtriage --language id analyze server_log.txt
+amxtriage analyze server_log.txt --lang id
+amxtriage recommend server_log.txt --language es
+```
+
+Terjemahan CLI masih bertahap: label dan judul laporan telah diterjemahkan, tetapi saran diagnosis yang mendetail, beberapa pesan bantuan, dan teks asli dari log/compiler dapat tetap berbahasa Inggris. Kunci JSON tetap berbahasa Inggris dan stabil agar skrip otomatisasi tidak rusak. Gunakan `amxtriage --help` atau `amxtriage <command> --help` untuk opsi lain.
 
 ## Batas kemampuan dan keamanan
 
