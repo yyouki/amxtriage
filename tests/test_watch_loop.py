@@ -1,5 +1,6 @@
 import json
 from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -101,7 +102,7 @@ def test_the_final_summary_includes_a_block_that_was_still_pending(run_watch: Ru
 
 
 def test_watch_exports_structured_jsonl_alert_with_protected_location(
-    run_watch: RunWatch, tmp_path
+    run_watch: RunWatch, tmp_path: Path
 ) -> None:
     target = tmp_path / "alerts.jsonl"
     code, out, err = run_watch(
@@ -124,7 +125,9 @@ def test_watch_exports_structured_jsonl_alert_with_protected_location(
     assert event["presentation"] == {"file_color": "red", "line_color": "blue"}
 
 
-def test_alert_export_failure_does_not_stop_log_following(run_watch: RunWatch, tmp_path) -> None:
+def test_alert_export_failure_does_not_stop_log_following(
+    run_watch: RunWatch, tmp_path: Path
+) -> None:
     code, out, err = run_watch([*BLOCK, None, None], "--alert-jsonl", str(tmp_path))
     assert code == 0
     assert "warning: local alert export disabled" in err
