@@ -2,8 +2,8 @@
 
 **Snapshot:** 28 Oktober 2026  
 **Branch target:** `main`  
-**Main yang diperiksa sebelum pembaruan status ini:** `8cc8a035b833c2b0ddd7f41d1696ed305415fb60`  
-**CI:** [Run 40557952282 lulus](https://github.com/yyouki/amxtriage/actions/runs/40557952282), mencakup tes Python 3.10–3.13, quality/package checks, dan kompilasi filterscript Pawn. Run test yang sama mencatat 1.828 tes lulus pada Python 3.10. Tidak ada tes live pada server game dalam CI.
+**Kode `main` yang terakhir diuji:** `523cc856a3af3933fb8855d9a249b74fd4d1bbf8`  
+**CI:** [Run 40558293760 lulus](https://github.com/yyouki/amxtriage/actions/runs/40558293760) pada kode `523cc856`; tes Python 3.10–3.13, quality/package checks, dan kompilasi filterscript Pawn berhasil. Suite mencatat 1.828 tes lulus pada Python 3.10. CI tidak menguji chat delivery pada server game live.
 
 **Bahasa / Language / Idioma:** [English README](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
 
