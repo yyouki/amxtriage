@@ -1,5 +1,7 @@
 # amxtriage — Multi-language diagnostics and safe server operations
 
+**Language / Bahasa / Idioma:** [English](PHASE7_MULTILANGUAGE.md) · [Bahasa Indonesia](PHASE7_MULTILANGUAGE.id.md) · [Español](PHASE7_MULTILANGUAGE.es.md)
+
 **Status snapshot:** 2026-10-27. This document is a roadmap and design contract. Unless a feature is listed under “Implemented today”, do not assume it exists in the shipped CLI.
 
 ## Implemented today
