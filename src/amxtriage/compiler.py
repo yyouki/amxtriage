@@ -501,9 +501,7 @@ def _severity_label(severity: str, language: str) -> str:
     return tr(language, key)
 
 
-def _diagnostic_dict(
-    diagnostic: CompilerDiagnostic, language: str
-) -> dict[str, object]:
+def _diagnostic_dict(diagnostic: CompilerDiagnostic, language: str) -> dict[str, object]:
     return {
         "diagnostic_id": diagnostic.diagnostic_id,
         "source_language": diagnostic.source_language,
@@ -596,7 +594,7 @@ def render_compiler_report(
                 f"[{item.source_language}] {sanitize(location, 600)}",
                 f"    {tr(language, 'compiler_code')}: {item.code or '-'}",
                 f"    {tr(language, 'compiler_message')}: {item.message}",
-                f"    {tr(language, 'compiler_hint')}: {item.hint}",
+                f"    {tr(language, 'compiler_hint')}: {tr(language, item.hint_key)}",
                 f"    ID: {item.diagnostic_id}",
                 "",
             ]
