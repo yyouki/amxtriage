@@ -17,11 +17,11 @@
 | Fitur | Status |
 |---|---|
 | Analisis log SA-MP/open.mp | Dasar tersedia; format dari server nyata masih perlu diverifikasi lebih luas |
-| CI, paket, dan pemeriksaan keselamatan | Fondasi tersedia; harus menunggu semua job CI lulus |
+| CI, paket, dan pemeriksaan keselamatan | Tes lintas Python, pemeriksaan statis, packaging, serta kompilasi bridge Pawn lulus di GitHub Actions; perilaku runtime game tetap menunggu staging test |
 | Diagnostik compiler multi-bahasa | Parser awal dan tes format umum tersedia; cakupan versi belum lengkap |
 | Lokalisasi CLI dan Markdown | Label laporan dan dokumentasi tersedia dalam en/id/es; sebagian bantuan dan rekomendasi detail masih English |
 | Katalog kompatibilitas plugin/dependensi | Snapshot offline dengan 5 entri component open.mp yang terdokumentasi; validasi runtime dan cakupan OS/versi belum ada |
-| Notifikasi in-game untuk admin/owner | Skema event dan ekspor JSONL lokal tersedia; bridge chat game belum dibuat |
+| Notifikasi in-game untuk admin/owner | Ekspor JSONL/`--alert-pawn-file`, source filterscript Pawn, dan kompilasi CI tersedia; pengiriman chat pada staging server belum diverifikasi |
 | Mitigasi DDoS jaringan dan integrasi anti-cheat server-side | Belum dibuat |
 | Patch, validasi compiler/test, dan rollback | Baru berupa saran; alur patch belum diimplementasikan |
 
@@ -75,7 +75,7 @@ Anti-cheat harus memvalidasi aturan game dan kejadian di sisi server. Heuristik 
 
 ## Format notifikasi chat admin/owner
 
-Skema event alert lokal dan ekspor JSONL sudah diimplementasikan melalui `amxtriage watch --alert-jsonl FILE`. Fitur ini memiliki field lokasi terstruktur yang dilindungi, template terbatas, metadata warna target, penanganan file lokal yang aman, dan perilaku fail-safe jika penulisan gagal. Namun ini **belum mengirim pesan ke chat in-game**. Pengiriman in-game masih membutuhkan filterscript/plugin SA-MP/open.mp atau bridge lokal terautentikasi yang diuji; CLI Python saat ini tidak dapat langsung menyiarkan pesan ke pemain.
+Skema event JSONL dan protokol `--alert-pawn-file FILE` sudah diimplementasikan. Filterscript opsional tersedia di [`integrations/pawn/amxtriage_bridge.pwn`](../integrations/pawn/amxtriage_bridge.pwn); bridge memeriksa record lokal, mengirim notifikasi hanya kepada admin yang terautentikasi RCON secara default, dan menerapkan warna path merah/baris biru. Kompilasi bridge lulus di GitHub Actions dengan versi compiler dan standard library yang dipatok. Lihat [panduan instalasi bridge](../integrations/pawn/README.md). **Pengiriman in-game end-to-end belum diuji di server staging SA-MP/open.mp nyata**, sehingga kompatibilitas runtime, izin file, rotasi log, dan dampak resource/ping masih belum terverifikasi.
 
 Contoh konseptual: `[AMXTRIAGE] [HIGH] gamemodes/rp.pwn:42 — Array index out of bounds`
 
@@ -101,7 +101,7 @@ Compiler sukses tidak menjamin gameplay benar. Perlu regression fixture, startup
 3. Tambahkan adapter compiler Pawn dengan fixture tool resmi.
 4. Lengkapi en/id/es dan tes kelengkapan terjemahan serta skema JSON.
 5. Perluas katalog plugin/dependensi hanya berdasarkan sumber resmi; tambah pemeriksaan entri yang kedaluwarsa.
-6. Buat bridge SA-MP/open.mp yang benar-benar diuji untuk membaca JSONL, menerapkan kode warna merah/biru, memeriksa izin admin, deduplikasi, dan rate limit. Jangan klaim siap sebelum staging test lulus.
+6. Uji bridge Pawn yang sudah dikompilasi pada server staging SA-MP/open.mp: verifikasi chat, filter admin RCON, warna merah/biru, izin file bersama, startup/rotasi/truncation, dan latensi alert. Tes kompilasi CI tidak sama dengan verifikasi runtime.
 7. Tambahkan bahasa lain hanya dengan fixture nyata dan toolchain validasi.
 8. Buat mode patch terlebih dahulu, lalu apply opt-in dengan checkpoint, compiler/test, dan rollback.
 9. Tambahkan integrasi DDoS/anti-cheat hanya setelah interface yang didukung dan review keamanan tersedia.
