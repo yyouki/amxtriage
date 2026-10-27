@@ -164,13 +164,15 @@ def test_watch_exports_pawn_bridge_record_for_filterscript(
 
 
 def test_alert_template_requires_jsonl_output(
-    run_watch: RunWatch,
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    code, out, err = run_watch(
-        [*BLOCK, None, None],
-        "--alert-template",
-        "{prefix}: {message}",
+    monkeypatch.setattr(
+        cli,
+        "LogFollower",
+        lambda *args, **kwargs: pytest.fail("invalid configuration must fail before watching"),
     )
+    code = cli.main(["watch", "server_log.txt", "--alert-template", "{prefix}: {message}"])
+    captured = capsys.readouterr()
     assert code == 2
-    assert out == ""
-    assert "--alert-template requires --alert-jsonl" in err
+    assert captured.out == ""
+    assert "--alert-template requires --alert-jsonl" in captured.err
