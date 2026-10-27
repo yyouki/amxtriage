@@ -89,6 +89,18 @@ PYTHONPATH=src python -m amxtriage analyze server_log.txt
 
 The command is `amxtriage`, or `python -m amxtriage`. Human-readable report labels support English (default), Indonesian and Spanish. The detailed diagnostic explanations remain based on the original log/compiler message, and JSON keys stay stable in English.
 
+## Saved compiler output
+
+The `diagnose` command parses common formats from Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go and Rust. It reads saved output only and does not run a compiler.
+
+```bash
+amxtriage diagnose compile.log --source-language auto
+amxtriage diagnose compile.log --source-language pawn --language id
+amxtriage diagnose compile.log --format json -o diagnostics.json
+```
+
+The detector is based on common text formats, not every compiler release. “No diagnostics recognized” does not prove that compilation succeeded. The JSON format preserves structured `file`, `line`, `column`, `severity` and `code` fields. The current command does not change source files.
+
 ## What it understands
 
 amxtriage recognises these lines. A timestamp such as `[13:46:01]` and up to three leading

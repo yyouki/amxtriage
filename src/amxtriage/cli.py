@@ -16,6 +16,11 @@ from amxtriage.aggregate import Aggregator
 from amxtriage.amxerrors import lookup
 from amxtriage.analysis import AnalysisResult, analyze_logs, build_report, snippet_for
 from amxtriage.baseline import load_baseline, save_baseline
+from amxtriage.compiler import (
+    COMPILER_LANGUAGES,
+    analyze_compiler_outputs,
+    render_compiler_report,
+)
 from amxtriage.errors import AmxTriageError, InputError
 from amxtriage.follow import (
     DEFAULT_POLL_INTERVAL,
@@ -263,6 +268,35 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"source lines shown above and below the problem line (default {DEFAULT_CONTEXT})",
     )
 
+    diagnose = commands.add_parser(
+        "diagnose",
+        aliases=["compiler"],
+        help="analyze saved compiler/linter output without executing tools",
+        description=(
+            "Parse common compiler output formats from Pawn, Python, JavaScript/TypeScript, "
+            "C/C++, Java, C#, Go and Rust. The command never launches a compiler."
+        ),
+    )
+    _add_language_argument(diagnose)
+    diagnose.add_argument(
+        "logs", nargs="+", metavar="LOG", help="saved compiler output file(s); use '-' for stdin"
+    )
+    diagnose.add_argument(
+        "--source-language",
+        choices=COMPILER_LANGUAGES,
+        default="auto",
+        help="programming language/tool output format (default: auto)",
+    )
+    diagnose.add_argument("--format", choices=FORMATS, default="text", help="report format")
+    diagnose.add_argument("-o", "--output", metavar="FILE", help="write the report to FILE")
+    diagnose.add_argument(
+        "--max-input-bytes",
+        type=_size,
+        default=0,
+        metavar="SIZE",
+        help="stop if an input exceeds SIZE after decompression (0 means no limit)",
+    )
+
     explain = commands.add_parser(
         "explain",
         help="explain an AMX runtime error code (no code lists all known codes)",
@@ -421,6 +455,18 @@ def _run_recommend(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _run_diagnose(args: argparse.Namespace) -> int:
+    report = analyze_compiler_outputs(
+        expand_paths(args.logs),
+        source_language=args.source_language,
+        max_input_bytes=args.max_input_bytes or None,
+    )
+    _write_output(
+        render_compiler_report(report, args.format, language=args.language), args.output
+    )
+    return EXIT_OK
+
+
 def _run_explain(args: argparse.Namespace) -> int:
     if args.code is None:
         _write_output(render_error_list(args.language), None)
@@ -469,6 +515,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_watch(args)
         if args.command in ("recommend", "suggest"):
             return _run_recommend(args)
+        if args.command in ("diagnose", "compiler"):
+            return _run_diagnose(args)
         return _run_explain(args)
     except AmxTriageError as error:
         print(f"error: {sanitize(str(error), MESSAGE_LIMIT)}", file=sys.stderr)

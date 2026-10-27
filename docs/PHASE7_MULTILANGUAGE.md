@@ -6,6 +6,7 @@
 
 - Python 3.10+ command-line tool for SA-MP/open.mp logs.
 - Groups recognized AMX runtime errors, crashes and slow callbacks; supports analysis, live log following, baselines, source context and offline rule-based recommendations.
+- The initial `diagnose` command parses common saved compiler/linter formats for Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go and Rust. It does not execute compilers and does not cover every tool/version.
 - Reads local files and does not initiate network connections or modify source files in its current mode.
 - Existing CLI recommendations are advisory. They are not proof of a correct fix.
 
@@ -17,7 +18,7 @@ The intended end state is broader than the current log triager. Track progress b
 |---|---|---:|
 | Existing SA-MP/open.mp log triage | Implemented for its documented input formats; real-server format coverage still has gaps | 100% of current v0.1 scope |
 | CI, architecture and safety documentation | Foundation being added; CI must pass before calling it validated | In progress |
-| Compiler and runtime adapters for multiple languages | Not implemented | 0% |
+| Compiler output adapters for common formats | Initial parsers/tests for common formats are implemented; real compiler-version coverage is incomplete | First slice implemented |
 | User-facing CLI/report localization | Report labels and explain headings support en/id/es; remediation advice and argparse help are still English | First slice implemented |
 | Evidence-backed plugin/dependency compatibility catalog | Not implemented | 0% |
 | In-game admin warning bridge | Not implemented | 0% |
