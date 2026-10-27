@@ -56,3 +56,46 @@ jobs:
           "$RUNNER_TEMP/amxtriage-smoke/bin/amxtriage" --help
           "$RUNNER_TEMP/amxtriage-smoke/bin/amxtriage" catalog --format json > "$RUNNER_TEMP/plugin-catalog.json"
           "$RUNNER_TEMP/amxtriage-smoke/bin/python" -c 'import json,sys; p=json.load(open(sys.argv[1], encoding="utf-8")); assert p["schema_version"] == 1 and p["entry_count"] == len(p["entries"])' "$RUNNER_TEMP/plugin-catalog.json"
+
+  pawn-bridge:
+    name: Compile Pawn admin alert bridge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download pinned Pawn compiler
+        env:
+          PAWN_COMPILER_VERSION: "v3.10.10"
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pawn-compiler" "$RUNNER_TEMP/samp-stdlib"
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/pawn-lang/compiler/releases/download/${PAWN_COMPILER_VERSION}/pawnc-3.10.10-linux.tar.gz" \
+            --output "$RUNNER_TEMP/pawn-compiler.tar.gz"
+          tar -xzf "$RUNNER_TEMP/pawn-compiler.tar.gz" -C "$RUNNER_TEMP/pawn-compiler"
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/pawn-lang/samp-stdlib/archive/refs/tags/0.3.7-R2-2-1.tar.gz" \
+            --output "$RUNNER_TEMP/samp-stdlib.tar.gz"
+          tar -xzf "$RUNNER_TEMP/samp-stdlib.tar.gz" -C "$RUNNER_TEMP/samp-stdlib"
+          PAWNCC="$(find "$RUNNER_TEMP/pawn-compiler" -type f -name pawncc -print -quit)"
+          CORE_INCLUDE="$(find "$RUNNER_TEMP/pawn-compiler" -type f -name core.inc -print -quit)"
+          SAMP_INCLUDE="$(find "$RUNNER_TEMP/samp-stdlib" -type f -name a_samp.inc -print -quit)"
+          test -n "$PAWNCC"
+          test -n "$CORE_INCLUDE"
+          test -n "$SAMP_INCLUDE"
+          chmod +x "$PAWNCC"
+          printf 'Pawn compiler: %s\n' "$PAWNCC"
+          printf 'Core include: %s\n' "$CORE_INCLUDE"
+          printf 'SA-MP include: %s\n' "$SAMP_INCLUDE"
+          "$PAWNCC" \
+            "-i$(dirname "$CORE_INCLUDE")" \
+            "-i$(dirname "$SAMP_INCLUDE")" \
+            "-o$RUNNER_TEMP/amxtriage_bridge.amx" \
+            "$GITHUB_WORKSPACE/integrations/pawn/amxtriage_bridge.pwn"
+          test -s "$RUNNER_TEMP/amxtriage_bridge.amx"
+      - name: Upload compiled bridge artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: amxtriage-pawn-bridge
+          path: ${{ runner.temp }}/amxtriage_bridge.amx
+          if-no-files-found: error
+          retention-days: 7
