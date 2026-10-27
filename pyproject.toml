@@ -48,6 +48,7 @@ packages = ["src/amxtriage"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "src/amxtriage/locales.json" = "amxtriage/locales.json"
+"src/amxtriage/plugin_catalog.json" = "amxtriage/plugin_catalog.json"
 
 [tool.hatch.build.targets.sdist]
 include = [
