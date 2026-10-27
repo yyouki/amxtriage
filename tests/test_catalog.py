@@ -3,6 +3,7 @@ from dataclasses import asdict
 
 import pytest
 
+from amxtriage.errors import InputError
 from amxtriage.plugin_catalog import (
     CatalogSnapshot,
     filter_catalog_entries,
@@ -10,7 +11,6 @@ from amxtriage.plugin_catalog import (
     parse_catalog,
     render_catalog_report,
 )
-from amxtriage.errors import InputError
 
 
 def raw_catalog(snapshot: CatalogSnapshot) -> dict[str, object]:
