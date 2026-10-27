@@ -73,7 +73,7 @@ Source filterscript: [`amxtriage_bridge.pwn`](../integrations/pawn/amxtriage_bri
 
 Bridge default hanya mengirim ke admin yang terautentikasi RCON, memeriksa maksimal lima record setiap detik, dan menampilkan path file dengan warna merah serta nomor baris dengan warna biru. Field lokasi diambil dari record diagnostik terstruktur, bukan dari template pesan yang dapat diubah. Jalankan watcher dan server dengan izin file yang sesuai; pada POSIX, file alert baru dibuat dengan mode `0600`, jadi menjalankan keduanya menggunakan akun OS yang sama biasanya paling mudah.
 
-**Status pengujian:** source Pawn berhasil dikompilasi di GitHub Actions dengan compiler dan include yang dipatok. Pengiriman pesan belum diuji end-to-end pada server staging SA-MP/open.mp nyata. Kompilasi tidak membuktikan kompatibilitas runtime, nor ping tidak berubah. Bridge ini hanya saluran pemberitahuan diagnostik—bukan anti-cheat atau mitigasi DDoS.
+**Status pengujian:** source Pawn berhasil dikompilasi di GitHub Actions dengan compiler dan include yang dipatok. Pengiriman pesan belum diuji end-to-end pada server staging SA-MP/open.mp nyata. Kompilasi tidak membuktikan kompatibilitas runtime atau bahwa ping tidak berubah. Bridge ini hanya saluran pemberitahuan diagnostik—bukan anti-cheat atau mitigasi DDoS.
 
 ## Batas kemampuan dan keamanan
 
