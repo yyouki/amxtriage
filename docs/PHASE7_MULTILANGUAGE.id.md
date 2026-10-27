@@ -20,8 +20,8 @@
 | CI, paket, dan pemeriksaan keselamatan | Fondasi tersedia; harus menunggu semua job CI lulus |
 | Diagnostik compiler multi-bahasa | Parser awal dan tes format umum tersedia; cakupan versi belum lengkap |
 | Lokalisasi CLI dan Markdown | Label laporan dan dokumentasi tersedia dalam en/id/es; sebagian bantuan dan rekomendasi detail masih English |
-| Katalog kompatibilitas plugin/dependensi | Belum dibuat |
-| Notifikasi in-game untuk admin/owner | Belum dibuat |
+| Katalog kompatibilitas plugin/dependensi | Snapshot offline dengan 5 entri component open.mp yang terdokumentasi; validasi runtime dan cakupan OS/versi belum ada |
+| Notifikasi in-game untuk admin/owner | Skema event dan ekspor JSONL lokal tersedia; bridge chat game belum dibuat |
 | Mitigasi DDoS jaringan dan integrasi anti-cheat server-side | Belum dibuat |
 | Patch, validasi compiler/test, dan rollback | Baru berupa saran; alur patch belum diimplementasikan |
 
@@ -52,7 +52,7 @@ Terjemahkan bantuan CLI, error yang dibuat amxtriage, dan rekomendasi. Jangan me
 
 Setiap entri harus memuat URL proyek kanonis, URL rilis/download resmi, sumber bukti dan tanggal pemeriksaan, versi, target server SA-MP/open.mp, OS, arsitektur CPU, ABI/bitness bila berlaku, dependensi, jenis pemasangan (`plugin` atau `component`), serta status `verified`, `documented`, `unknown`, atau `incompatible`.
 
-Link download bukan bukti kompatibilitas. Jangan mengarang link, mengunduh/menjalankan binary pihak ketiga secara otomatis, atau menyebut versi yang belum diketahui sebagai kompatibel. Gunakan dokumentasi upstream seperti [instalasi open.mp](https://open.mp/docs/server/Installation) dan [konfigurasi open.mp](https://open.mp/docs/server/config.json). Jika bukti kedaluwarsa atau bertentangan, tandai `unknown` dan jelaskan alasannya.
+Link download bukan bukti kompatibilitas. Jangan mengarang link, mengunduh/menjalankan binary pihak ketiga secara otomatis, atau menyebut versi yang belum diketahui sebagai kompatibel. Perintah offline `amxtriage catalog` saat ini berisi 5 rilis component open.mp yang tercantum dalam [panduan instalasi resmi](https://open.mp/docs/server/Installation); statusnya `documented`, bukan hasil uji runtime. Matriks OS dan versi server sengaja kosong bila sumber tidak menyebutkannya. Lihat juga [konfigurasi open.mp](https://open.mp/docs/server/config.json). Jika bukti kedaluwarsa atau bertentangan, tandai `unknown` dan jelaskan alasannya.
 
 ## Pemantauan ringan dan keamanan
 
@@ -75,7 +75,7 @@ Anti-cheat harus memvalidasi aturan game dan kejadian di sisi server. Heuristik 
 
 ## Format notifikasi chat admin/owner
 
-Spesifikasi ini **belum diimplementasikan**. Notifikasi di dalam game memerlukan filterscript/plugin SA-MP/open.mp yang teruji atau bridge lokal tepercaya. CLI Python saat ini tidak dapat langsung mengirim pesan ke pemain.
+Skema event alert lokal dan ekspor JSONL sudah diimplementasikan melalui `amxtriage watch --alert-jsonl FILE`. Fitur ini memiliki field lokasi terstruktur yang dilindungi, template terbatas, metadata warna target, penanganan file lokal yang aman, dan perilaku fail-safe jika penulisan gagal. Namun ini **belum mengirim pesan ke chat in-game**. Pengiriman in-game masih membutuhkan filterscript/plugin SA-MP/open.mp atau bridge lokal terautentikasi yang diuji; CLI Python saat ini tidak dapat langsung menyiarkan pesan ke pemain.
 
 Contoh konseptual: `[AMXTRIAGE] [HIGH] gamemodes/rp.pwn:42 — Array index out of bounds`
 
@@ -96,14 +96,14 @@ Compiler sukses tidak menjamin gameplay benar. Perlu regression fixture, startup
 
 ## Urutan implementasi
 
-1. Luluskan CI lintas Python, lint, format, type check, build paket, dan smoke test CLI.
+1. Jaga agar CI lintas versi Python, lint, format, type check, build paket, dan smoke test CLI tetap lulus; uji resource katalog dari wheel terinstal.
 2. Stabilkan parser dan kontrak adapter serta fixture regresi.
 3. Tambahkan adapter compiler Pawn dengan fixture tool resmi.
 4. Lengkapi en/id/es dan tes kelengkapan terjemahan serta skema JSON.
-5. Buat katalog plugin/dependensi berbasis bukti resmi.
-6. Tetapkan skema alert lokal dan tes integrasi tanpa jaringan sebelum mengirim pesan in-game.
+5. Perluas katalog plugin/dependensi hanya berdasarkan sumber resmi; tambah pemeriksaan entri yang kedaluwarsa.
+6. Buat bridge SA-MP/open.mp yang benar-benar diuji untuk membaca JSONL, menerapkan kode warna merah/biru, memeriksa izin admin, deduplikasi, dan rate limit. Jangan klaim siap sebelum staging test lulus.
 7. Tambahkan bahasa lain hanya dengan fixture nyata dan toolchain validasi.
-8. Buat mode patch terlebih dahulu, lalu apply opt-in dengan checkpoint, pengujian, dan rollback.
+8. Buat mode patch terlebih dahulu, lalu apply opt-in dengan checkpoint, compiler/test, dan rollback.
 9. Tambahkan integrasi DDoS/anti-cheat hanya setelah interface yang didukung dan review keamanan tersedia.
 
 CI adalah gerbang pemeriksaan, bukan jaminan. Jangan tandai milestone selesai sampai job dan tes perilakunya lulus.
