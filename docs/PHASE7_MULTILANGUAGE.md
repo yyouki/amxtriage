@@ -22,8 +22,8 @@ The intended end state is broader than the current log triager. Track progress b
 | CI, architecture and safety documentation | Foundation being added; CI must pass before calling it validated | In progress |
 | Compiler output adapters for common formats | Initial parsers/tests for common formats are implemented; real compiler-version coverage is incomplete | First slice implemented |
 | User-facing CLI/report localization | Report labels and explain headings support en/id/es; remediation advice and argparse help are still English | First slice implemented |
-| Evidence-backed plugin/dependency compatibility catalog | Not implemented | 0% |
-| In-game admin warning bridge | Not implemented | 0% |
+| Evidence-backed plugin/dependency compatibility catalog | Offline snapshot with 5 documented open.mp component entries; runtime verification and broader OS/version coverage are not implemented | First slice implemented |
+| In-game admin warning bridge | Local JSONL event schema/export is implemented; a real game-chat bridge is not implemented | First slice implemented |
 | Actual network-layer DDoS mitigation / server-side anti-cheat integration | Not implemented | 0% |
 | Patch generation, compile/test validation and rollback | Existing suggestions only; transactional patch workflow not implemented | Early design stage |
 
@@ -58,7 +58,7 @@ CLI/report labels currently support English (`en`), Indonesian (`id`) and Spanis
 
 Every compatibility entry needs the canonical project URL, official release/download URL, source of evidence and check date, release/version, target server (SA-MP or open.mp), OS, CPU architecture, ABI/bitness where applicable, dependency requirements, installation type (plugin versus component) and a status: `verified`, `documented`, `unknown` or `incompatible`.
 
-A download existing is not proof of compatibility. Never fabricate links, auto-download or execute third-party binaries, or label unknown versions as compatible. Prefer upstream documentation and official release pages. For open.mp, check its official installation and configuration documents: https://open.mp/docs/server/Installation and https://open.mp/docs/server/config.json. If the evidence is stale or contradictory, show `unknown` and explain why.
+A download existing is not proof of compatibility. Never fabricate links, auto-download or execute third-party binaries, or label unknown versions as compatible. Prefer upstream documentation and official release pages. The bundled `amxtriage catalog` command exposes an offline snapshot of five component releases listed by the official open.mp installation guide; each is `documented`, not runtime-verified. Its OS and server-version matrix is intentionally blank where the cited source does not specify it. Check the official installation and configuration documents: https://open.mp/docs/server/Installation and https://open.mp/docs/server/config.json. If evidence is stale or contradictory, show `unknown` and explain why.
 
 ## Lightweight monitoring and trust boundaries
 
@@ -81,7 +81,7 @@ Cheat detection needs server-side game rules and authoritative events. Heuristic
 
 ## Proposed admin chat/log alert contract
 
-This is a specification, **not an implemented feature yet**. In-game alerts need a separately tested SA-MP/open.mp filterscript/plugin or a trusted local bridge; the current Python CLI cannot directly broadcast a message to players.
+The local alert event schema and JSONL export are implemented via `amxtriage watch --alert-jsonl FILE`, including bounded template fields, protected structured source location, target file/line color metadata, safe local file handling, and fail-safe disablement on write errors. This is **not an in-game sender** yet. In-game delivery still needs a separately tested SA-MP/open.mp filterscript/plugin or authenticated local bridge; the current Python CLI cannot directly broadcast a message to players.
 
 Example conceptual layout:
 
@@ -111,14 +111,14 @@ A successful compiler run does not guarantee gameplay correctness. Regression fi
 
 ## CI and implementation sequence
 
-1. Add cross-version Python CI, static checks, package build and installed CLI smoke test.
+1. Keep cross-version Python CI, static checks, package build and installed CLI smoke test green; smoke-test the catalog resource from the installed wheel.
 2. Keep the current parser behaviour stable; introduce a documented diagnostic/adapter interface with regression fixtures.
 3. Add a Pawn compiler-output adapter and fixtures captured from official tool output.
-4. Implement `en`/`id` CLI localization with completeness tests and stable JSON.
-5. Build the upstream-evidence compatibility catalog and stale-entry checks.
-6. Define the local alert event schema and test a no-network integration before adding in-game delivery.
+4. Extend `en`/`id`/`es` localization to complete CLI help, error messages and remediation rules, with completeness tests and stable JSON.
+5. Expand the upstream-evidence compatibility catalog only with verified official sources; add stale-entry checks and compatibility filters.
+6. Add a tested SA-MP/open.mp alert bridge that consumes local JSONL safely, applies actual red file/blue line colors, checks admin authorization, deduplicates and rate-limits; only claim it works after staging-server tests.
 7. Add additional language adapters only as each has real compiler fixtures and validation support.
-8. Add deterministic patch mode first, then opt-in apply/checkpoint/rollback.
+8. Add deterministic patch mode first, then opt-in apply/checkpoint/rollback with compiler and regression validation.
 9. Add DDoS-provider and anti-cheat integrations only when an explicit supported interface and security review exist.
 
 The CI is a gate, not a guarantee. Do not mark a milestone complete until the relevant jobs and behaviour tests pass. Keep security-sensitive defaults conservative and show the project’s verified progress after every milestone.
