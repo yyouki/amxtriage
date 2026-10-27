@@ -54,7 +54,9 @@ def validate_alert_template(template: str) -> None:
         if field_name not in _ALLOWED_FIELDS:
             raise InputError(f"unsupported alert template field: {field_name}")
         if format_spec or conversion:
-            raise InputError("alert template format specifications and conversions are not supported")
+            raise InputError(
+                "alert template format specifications and conversions are not supported"
+            )
 
 
 def _clean_optional(text: str | None, limit: int = 300) -> str | None:
