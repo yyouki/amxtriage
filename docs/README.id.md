@@ -23,6 +23,7 @@ python -m pip install .
 amxtriage analyze server_log.txt
 amxtriage watch server_log.txt --poll-interval 1
 amxtriage recommend server_log.txt
+amxtriage catalog --server open.mp
 ```
 
 Dari checkout tanpa instalasi:
@@ -41,10 +42,33 @@ amxtriage recommend server_log.txt --language es
 
 Terjemahan CLI masih bertahap: label dan judul laporan telah diterjemahkan, tetapi saran diagnosis yang mendetail, beberapa pesan bantuan, dan teks asli dari log/compiler dapat tetap berbahasa Inggris. Kunci JSON tetap berbahasa Inggris dan stabil agar skrip otomatisasi tidak rusak. Gunakan `amxtriage --help` atau `amxtriage <command> --help` untuk opsi lain.
 
+## Katalog kompatibilitas plugin/component
+
+Katalog lokal menampilkan proyek dan rilis yang tercantum pada sumber resmi, target server, lokasi instalasi, tanggal pemeriksaan, serta status bukti. Contoh:
+
+```bash
+amxtriage catalog
+amxtriage catalog --server open.mp
+amxtriage catalog --server open.mp --format markdown -o katalog-plugin.md
+amxtriage plugins --format json -o katalog-plugin.json
+```
+
+Status `documented` berarti rilis tercantum pada dokumentasi upstream; status ini bukan bukti uji runtime. Katalog saat ini berisi beberapa component open.mp dari panduan instalasi resmi. Kolom versi/platform yang kosong berarti sumber tidak menentukannya. Perintah ini offline, tidak mengunduh binary, dan tidak melakukan pemasangan otomatis.
+
+## Ekspor alert lokal
+
+Mode `watch` bisa menulis event diagnostik terstruktur ke file JSONL agar bridge terpisah dapat memprosesnya:
+
+```bash
+amxtriage watch server_log.txt --alert-jsonl ./scriptfiles/amxtriage-alerts.jsonl
+```
+
+Ini **belum mengirim pesan ke chat in-game**. Bridge SA-MP/open.mp yang terpisah masih diperlukan dan harus diuji terhadap API server yang didukung. Field `source.file` dan `source.line` dipisahkan dari template sehingga isi template tidak dapat mengganti lokasi diagnostik. Metadata warna target adalah file merah dan nomor baris biru; kode warna sesungguhnya harus diterapkan oleh bridge. Jika file ekspor gagal ditulis, ekspor alert dinonaktifkan tanpa menghentikan pemantauan log.
+
 ## Batas kemampuan dan keamanan
 
 Versi saat ini membaca file lokal, tidak memulai koneksi jaringan, dan tidak mengubah source code. Rekomendasi bersifat saran, bukan perbaikan otomatis.
 
-Saat ini amxtriage **bukan** pelindung DDoS, bukan anti-cheat, belum mengirim notifikasi ke chat admin dalam game, dan belum menerapkan patch otomatis. Pemantauan log dapat membantu melihat gejala, tetapi penghentian DDoS memerlukan mitigasi jaringan/hosting. Sistem anti-cheat harus divalidasi di sisi server dan menghindari ban otomatis berdasarkan satu indikasi lemah.
+Saat ini amxtriage **bukan** pelindung DDoS, bukan anti-cheat, belum mengirim alert langsung ke chat admin in-game, dan belum menerapkan patch otomatis. Ekspor JSONL lokal sudah tersedia, tetapi perlu bridge yang terpisah untuk menampilkan pesan di dalam game. Pemantauan log dapat membantu melihat gejala; penghentian DDoS memerlukan mitigasi jaringan/hosting. Sistem anti-cheat harus divalidasi di sisi server dan menghindari ban otomatis berdasarkan satu indikasi lemah.
 
-Lihat [roadmap](PHASE7_MULTILANGUAGE.md) untuk rancangan integrasi notifikasi admin, pilihan bahasa, katalog kompatibilitas plugin, dan alur patch dengan validasi serta rollback.
+Lihat [roadmap](PHASE7_MULTILANGUAGE.id.md) dan [status progres](PROGRESS.md) untuk rincian batas kemampuan dan tahapan lanjutan.
