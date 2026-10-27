@@ -2,8 +2,8 @@ import json
 
 from amxtriage.amxerrors import lookup
 from amxtriage.analysis import analyze_logs, build_report
+from amxtriage.localization import _MESSAGES, SUPPORTED_LANGUAGES
 from amxtriage.parser import parse_frame
-from amxtriage.localization import SUPPORTED_LANGUAGES, _MESSAGES
 from amxtriage.render import (
     format_frame,
     group_title,
