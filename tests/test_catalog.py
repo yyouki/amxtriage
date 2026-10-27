@@ -43,9 +43,7 @@ def test_server_and_status_filters_are_exact() -> None:
     snapshot = load_catalog()
     assert len(filter_catalog_entries(snapshot.entries, server="open.mp")) == 5
     assert filter_catalog_entries(snapshot.entries, server="sa-mp") == []
-    assert len(
-        filter_catalog_entries(snapshot.entries, server="all", status="documented")
-    ) == 5
+    assert len(filter_catalog_entries(snapshot.entries, server="all", status="documented")) == 5
     assert filter_catalog_entries(snapshot.entries, status="verified") == []
 
 
