@@ -15,12 +15,13 @@
  * Compile with the Pawn compiler and SA-MP/open.mp standard includes installed for your server.
  */
 
+#define _console_included
 #include <a_samp>
 
 #define AMXTRIAGE_ALERT_FILE "amxtriage-alerts.txt"
 #define AMXTRIAGE_POLL_MS (1000)
 #define AMXTRIAGE_MAX_RECORDS_PER_TICK (5)
-#define AMXTRIAGE_BUFFER_SIZE (4096)
+#define AMXTRIAGE_BUFFER_SIZE (8192)
 #define AMXTRIAGE_FIELD_SIZE (512)
 #define AMXTRIAGE_FIELD_COUNT (8)
 #define AMXTRIAGE_CHAT_SIZE (144)
@@ -30,6 +31,12 @@ new g_AmxTriageReadOffset = 0;
 new g_AmxTriageTimer = 0;
 new g_AmxTriageLine[AMXTRIAGE_BUFFER_SIZE];
 new g_AmxTriageFields[AMXTRIAGE_FIELD_COUNT][AMXTRIAGE_FIELD_SIZE];
+
+forward AmxTriagePollAlerts();
+forward bool:SplitAlertRecord(const source[], fields[AMXTRIAGE_FIELD_COUNT][AMXTRIAGE_FIELD_SIZE]);
+forward bool:IsValidSeverity(const value[]);
+forward bool:IsUnsignedDecimal(const value[], maxDigits);
+forward bool:IsAmxTriageAdmin(playerid);
 
 public OnFilterScriptInit()
 {
@@ -93,24 +100,28 @@ public AmxTriagePollAlerts()
     new processed = 0;
     while (processed < AMXTRIAGE_MAX_RECORDS_PER_TICK)
     {
-        new recordStart = ftell(handle);
+        new recordStart = g_AmxTriageReadOffset;
         new readLength = fread(handle, g_AmxTriageLine, sizeof(g_AmxTriageLine));
         if (readLength <= 0)
         {
             break;
         }
 
-        new recordEnd = ftell(handle);
-        if (recordEnd <= recordStart)
+        new rawLength = strlen(g_AmxTriageLine);
+        if (recordStart + rawLength >= fileLength)
         {
+            // fread returns a line without its newline. A line that reaches EOF without
+            // a trailing newline may still be being appended; retry it on the next poll.
+            g_AmxTriageReadOffset = recordStart;
             break;
         }
 
+        new recordEnd = recordStart + rawLength + 1;
         StripLineEnding(g_AmxTriageLine);
 
-        if (readLength >= sizeof(g_AmxTriageLine) - 1)
+        if (rawLength >= MAX_PAWN_BRIDGE_BYTES)
         {
-            // The producer never emits records this large. Drop an oversized fragment.
+            // The producer caps each serialized row; ignore malformed oversized rows.
             g_AmxTriageReadOffset = recordEnd;
             processed++;
             continue;
@@ -118,13 +129,6 @@ public AmxTriagePollAlerts()
 
         if (!SplitAlertRecord(g_AmxTriageLine, g_AmxTriageFields))
         {
-            if (recordEnd >= fileLength)
-            {
-                // Likely a record being appended now. Retry it on the next poll.
-                g_AmxTriageReadOffset = recordStart;
-                break;
-            }
-
             // A malformed complete row is discarded, never executed.
             g_AmxTriageReadOffset = recordEnd;
             processed++;
@@ -363,5 +367,5 @@ stock bool:IsAmxTriageAdmin(playerid)
 {
     // Default policy: only players authenticated as RCON administrators receive alerts.
     // Owners using another ACL must replace this function with their server's trusted check.
-    return IsPlayerAdmin(playerid);
+    return IsPlayerAdmin(playerid) != 0;
 }
