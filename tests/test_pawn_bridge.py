@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 
+from amxtriage.aggregate import Aggregator
 from amxtriage.alerts import (
     PawnBridgeAlertSink,
     append_pawn_bridge_record,
     serialize_pawn_bridge_record,
 )
-from amxtriage.aggregate import Aggregator
 from amxtriage.errors import InputError, OutputError
 from amxtriage.model import Event, EventKind, Frame, Group
 
@@ -80,7 +80,7 @@ def test_pawn_bridge_rejects_unsafe_prefix(prefix: str) -> None:
         serialize_pawn_bridge_record(make_group(), prefix=prefix)
 
 
-@pytest.mark.parametrize("kind,severity", [
+@pytest.mark.parametrize(("kind", "severity"), [
     ("crash", "CRITICAL"),
     ("runtime_error", "HIGH"),
     ("long_call", "MEDIUM"),
