@@ -55,20 +55,30 @@ amxtriage plugins --format json -o katalog-plugin.json
 
 Status `documented` berarti rilis tercantum pada dokumentasi upstream; status ini bukan bukti uji runtime. Katalog saat ini berisi beberapa component open.mp dari panduan instalasi resmi. Kolom versi/platform yang kosong berarti sumber tidak menentukannya. Perintah ini offline, tidak mengunduh binary, dan tidak melakukan pemasangan otomatis.
 
-## Ekspor alert lokal
+## Alert lokal dan notifikasi chat admin
 
-Mode `watch` bisa menulis event diagnostik terstruktur ke file JSONL agar bridge terpisah dapat memprosesnya:
+Untuk mengekspor event terstruktur tanpa integrasi game, gunakan JSONL:
 
 ```bash
 amxtriage watch server_log.txt --alert-jsonl ./scriptfiles/amxtriage-alerts.jsonl
 ```
 
-Ini **belum mengirim pesan ke chat in-game**. Bridge SA-MP/open.mp yang terpisah masih diperlukan dan harus diuji terhadap API server yang didukung. Field `source.file` dan `source.line` dipisahkan dari template sehingga isi template tidak dapat mengganti lokasi diagnostik. Metadata warna target adalah file merah dan nomor baris biru; kode warna sesungguhnya harus diterapkan oleh bridge. Jika file ekspor gagal ditulis, ekspor alert dinonaktifkan tanpa menghentikan pemantauan log.
+Untuk mengirim notifikasi melalui filterscript Pawn opsional, gunakan file protokol lokal:
+
+```bash
+amxtriage watch server_log.txt --alert-pawn-file ./scriptfiles/amxtriage-alerts.txt
+```
+
+Source filterscript: [`amxtriage_bridge.pwn`](../integrations/pawn/amxtriage_bridge.pwn). Panduan instalasi: [integrations/pawn/README.md](../integrations/pawn/README.md). Filterscript harus dikompilasi dan dimuat secara eksplisit oleh pemilik server; amxtriage tidak mengubah konfigurasi server otomatis.
+
+Bridge default hanya mengirim ke admin yang terautentikasi RCON, memeriksa maksimal lima record setiap detik, dan menampilkan path file dengan warna merah serta nomor baris dengan warna biru. Field lokasi diambil dari record diagnostik terstruktur, bukan dari template pesan yang dapat diubah. Jalankan watcher dan server dengan izin file yang sesuai; pada POSIX, file alert baru dibuat dengan mode `0600`, jadi menjalankan keduanya menggunakan akun OS yang sama biasanya paling mudah.
+
+**Status pengujian:** source Pawn berhasil dikompilasi di GitHub Actions dengan compiler dan include yang dipatok. Pengiriman pesan belum diuji end-to-end pada server staging SA-MP/open.mp nyata. Kompilasi tidak membuktikan kompatibilitas runtime, nor ping tidak berubah. Bridge ini hanya saluran pemberitahuan diagnostik—bukan anti-cheat atau mitigasi DDoS.
 
 ## Batas kemampuan dan keamanan
 
 Versi saat ini membaca file lokal, tidak memulai koneksi jaringan, dan tidak mengubah source code. Rekomendasi bersifat saran, bukan perbaikan otomatis.
 
-Saat ini amxtriage **bukan** pelindung DDoS, bukan anti-cheat, belum mengirim alert langsung ke chat admin in-game, dan belum menerapkan patch otomatis. Ekspor JSONL lokal sudah tersedia, tetapi perlu bridge yang terpisah untuk menampilkan pesan di dalam game. Pemantauan log dapat membantu melihat gejala; penghentian DDoS memerlukan mitigasi jaringan/hosting. Sistem anti-cheat harus divalidasi di sisi server dan menghindari ban otomatis berdasarkan satu indikasi lemah.
+Saat ini amxtriage **bukan** pelindung DDoS atau anti-cheat dan belum memiliki mode patch/apply otomatis. Ekspor alert JSONL serta source bridge Pawn sudah tersedia dan bridge berhasil dikompilasi di CI, tetapi pengiriman chat in-game belum diverifikasi pada server staging nyata. Pemantauan log dapat membantu melihat gejala; penghentian DDoS memerlukan mitigasi jaringan/hosting. Sistem anti-cheat harus divalidasi di sisi server dan menghindari ban otomatis berdasarkan satu indikasi lemah.
 
 Lihat [roadmap](PHASE7_MULTILANGUAGE.id.md) dan [status progres](PROGRESS.md) untuk rincian batas kemampuan dan tahapan lanjutan.
