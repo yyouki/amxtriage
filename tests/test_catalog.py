@@ -3,7 +3,7 @@ from dataclasses import asdict
 
 import pytest
 
-from amxtriage.catalog import (  # type: ignore[import-not-found]
+from amxtriage.plugin_catalog import (
     CatalogSnapshot,
     filter_catalog_entries,
     load_catalog,
