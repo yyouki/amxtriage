@@ -112,7 +112,8 @@ def render_group_text(
     label = f"[{index}] " if index is not None else ""
     badge = "NEW  " if new else ""
     lines = [
-        f"{label}{badge}{group_title(group, language)}   x{_count(group.count)}   id={group.signature_id}"
+        f"{label}{badge}{group_title(group, language)}   x{_count(group.count)}"
+        f"   id={group.signature_id}"
     ]
     where = format_where(group, language)
     if where is not None:
@@ -126,7 +127,9 @@ def render_group_text(
         for detail in details[:MAX_DETAIL_LINES]
     )
     if len(details) > MAX_DETAIL_LINES:
-        lines.append(f"{PAD}{tr(language, 'detail_label')} ... {len(details) - MAX_DETAIL_LINES} more")
+        lines.append(
+            f"{PAD}{tr(language, 'detail_label')} ... {len(details) - MAX_DETAIL_LINES} more"
+        )
     frames = group.sample.frames
     if frames:
         lines.append(f"{PAD}{tr(language, 'trace_label')}")
