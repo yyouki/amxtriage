@@ -100,7 +100,6 @@ def test_the_final_summary_includes_a_block_that_was_still_pending(run_watch: Ru
     assert "watch summary" in out
 
 
-
 def test_watch_exports_structured_jsonl_alert_with_protected_location(
     run_watch: RunWatch, tmp_path
 ) -> None:
