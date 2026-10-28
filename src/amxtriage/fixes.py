@@ -32,7 +32,23 @@ _BLOCKED_START = re.compile(
     re.IGNORECASE,
 )
 _BAD_TRAILING_TOKENS = (
-    "=", "+", "-", "*", "/", "%", "&", "|", ".", ",", ":", "?", "(", "[", "\\", "<", ">"
+    "=",
+    "+",
+    "-",
+    "*",
+    "/",
+    "%",
+    "&",
+    "|",
+    ".",
+    ",",
+    ":",
+    "?",
+    "(",
+    "[",
+    "\\",
+    "<",
+    ">",
 )
 
 
@@ -193,9 +209,9 @@ def build_patch_preview(
             line=diagnostic.line,
             diagnostic_id=diagnostic.diagnostic_id,
         )
-    if len(previous_text) - len(previous_text.lstrip(" \t")) != len(
-        current_text
-    ) - len(current_text.lstrip(" \t")):
+    if len(previous_text) - len(previous_text.lstrip(" \t")) != len(current_text) - len(
+        current_text.lstrip(" \t")
+    ):
         return PatchPreview(
             "blocked",
             "The preceding statement has different indentation; no patch was generated.",

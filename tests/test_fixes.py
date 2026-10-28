@@ -8,7 +8,6 @@ from amxtriage.errors import SourceError
 from amxtriage.fixes import build_patch_preview, render_patch_preview
 from amxtriage.source import SourceIndex
 
-
 EXPECTED_MESSAGE = 'expected token: ";", but found "return"'
 
 
