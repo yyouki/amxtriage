@@ -391,7 +391,6 @@ def _safe_read_target(
         os.close(descriptor)
 
 
-
 def _set_descriptor_mode(descriptor: int, path: Path, mode: int) -> None:
     fchmod = getattr(os, "fchmod", None)
     if fchmod is not None:
