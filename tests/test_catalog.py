@@ -269,6 +269,32 @@ def test_catalog_dates_require_canonical_iso_and_cannot_exceed_snapshot() -> Non
         parse_catalog(raw)
 
 
+
+def test_catalog_rejects_blank_matrix_values_and_future_evidence_dates() -> None:
+    snapshot = load_catalog()
+    raw = raw_catalog(snapshot)
+    rows = raw["entries"]
+    assert isinstance(rows, list)
+    first = rows[0]
+    assert isinstance(first, dict)
+    first["platforms"] = [""]
+    with pytest.raises(InputError, match="must not contain empty values"):
+        parse_catalog(raw)
+
+    raw = raw_catalog(snapshot)
+    rows = raw["entries"]
+    assert isinstance(rows, list)
+    first = rows[0]
+    assert isinstance(first, dict)
+    evidence = first["evidence"]
+    assert isinstance(evidence, list)
+    item = evidence[0]
+    assert isinstance(item, dict)
+    item["checked_on"] = "2026-10-29"
+    with pytest.raises(InputError, match="evidence date is after snapshot_date"):
+        parse_catalog(raw)
+
+
 def test_verified_catalog_entry_requires_runtime_evidence_and_exact_matrix() -> None:
     snapshot = load_catalog()
     raw = raw_catalog(snapshot)
