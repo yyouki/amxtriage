@@ -82,7 +82,7 @@ class MetricsSampler:
             values = [int(value) for value in fields[1:]]
             if fields[0] != "cpu" or len(values) < 4:
                 return None
-            return sum(values), values[3] + (values[4] if len(values) > 4 else 0)
+            return sum(values[:8]), values[3] + (values[4] if len(values) > 4 else 0)
         except (OSError, ValueError, IndexError):
             return None
 
