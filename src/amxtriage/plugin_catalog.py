@@ -288,9 +288,7 @@ def render_catalog_report(
                             ", ".join(entry.server_versions)
                             or tr(language, "catalog_unknown_value")
                         ),
-                        _md(
-                            ", ".join(entry.platforms) or tr(language, "catalog_unknown_value")
-                        ),
+                        _md(", ".join(entry.platforms) or tr(language, "catalog_unknown_value")),
                         _md(
                             ", ".join(entry.architectures)
                             or tr(language, "catalog_unknown_value")

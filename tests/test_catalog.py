@@ -116,12 +116,11 @@ def test_markdown_report_links_official_release_and_evidence() -> None:
     assert "https://open.mp/docs/server/Installation" in report
     assert "https://github.com/ziggi/rustext/releases/tag/v2.0.11" in report
     assert "https://github.com/edgyaf/keylistener/releases/tag/1.1.2-pr" in report
-    assert "Dependencies" in report
+    assert "Dependensi" in report
     assert "documented" in report
     assert "Arsitektur CPU" in report
     assert "OS / platform" in report
     assert "Versi server" in report
-
 
 
 def test_markdown_catalog_column_headers_are_localized_for_all_supported_languages() -> None:

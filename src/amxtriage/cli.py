@@ -617,10 +617,7 @@ def _run_watch(args: argparse.Namespace) -> int:
     source_index = SourceIndex(args.source_dir) if args.source_dir else None
     if args.alert_template != DEFAULT_ALERT_TEMPLATE and not args.alert_jsonl:
         raise InputError("--alert-template requires --alert-jsonl")
-    if (
-        args.alert_message_template != DEFAULT_ALERT_MESSAGE_TEMPLATE
-        and not args.alert_pawn_file
-    ):
+    if args.alert_message_template != DEFAULT_ALERT_MESSAGE_TEMPLATE and not args.alert_pawn_file:
         raise InputError("--alert-message-template requires --alert-pawn-file")
     alert_sinks: list[JsonlAlertSink | PawnBridgeAlertSink] = []
     if args.alert_jsonl:
@@ -841,14 +838,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "analyze" and args.fail_on_new and not args.baseline:
         parser.error("--fail-on-new requires --baseline")
-    if args.command == "watch":
-        if args.alert_template != DEFAULT_ALERT_TEMPLATE and not args.alert_jsonl:
-            parser.error("--alert-template requires --alert-jsonl")
-        if (
-            args.alert_message_template != DEFAULT_ALERT_MESSAGE_TEMPLATE
-            and not args.alert_pawn_file
-        ):
-            parser.error("--alert-message-template requires --alert-pawn-file")
     try:
         if args.command == "analyze":
             return _run_analyze(args)

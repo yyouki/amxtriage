@@ -126,7 +126,6 @@ def validate_alert_template(template: str) -> None:
             )
 
 
-
 def validate_alert_message_template(template: str) -> None:
     """Validate the in-game message body template; source path and line are protected."""
     if len(template) > MAX_TEMPLATE_LENGTH:

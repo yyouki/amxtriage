@@ -221,7 +221,6 @@ def test_alert_throttle_rejects_unsafe_policy_values(
         )
 
 
-
 def test_pawn_message_template_cannot_change_location_fields() -> None:
     group = make_group(message="Array index out of bounds", file="gamemodes/rp.pwn", line=42)
     record = serialize_pawn_bridge_record(
