@@ -2,8 +2,8 @@
 
 **Snapshot:** 28 Oktober 2026  
 **Branch target:** `main`  
-**Kode yang diaudit:** `e161011c90e26750d810d5df66253c9c78258829`  
-**CI terverifikasi:** [Run 40651405029 lulus](https://github.com/yyouki/amxtriage/actions/runs/40651405029) pada commit `e161011`. Keenam job lulus: 1.879 tes pada masing-masing Python 3.10, 3.11, 3.12, dan 3.13; Ruff lint/format, mypy strict, wheel/sdist, validasi metadata, smoke test CLI/katalog, serta kompilasi filterscript Pawn. CI tidak menguji pengiriman chat pada server game live.
+**Kode yang diaudit:** `0686eac9bcd2ce39576459068a9127220539ad16`  
+**CI terverifikasi:** [Run 40651736804 lulus](https://github.com/yyouki/amxtriage/actions/runs/40651736804) pada commit `0686eac`. Keenam job lulus: 1.880 tes pada masing-masing Python 3.10, 3.11, 3.12, dan 3.13; Ruff lint/format, mypy strict, wheel/sdist, validasi metadata, smoke test CLI/katalog, serta kompilasi filterscript Pawn. CI tidak menguji pengiriman chat pada server game live.
 
 **Bahasa / Language / Idioma:** [English README](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
 
@@ -34,7 +34,7 @@ Nilai area tetap konservatif: dokumentasi bukan implementasi, kompilasi bukan bu
 - Alert JSONL dan protokol lokal `--alert-pawn-file`, template pesan terbatas, field path/baris terstruktur yang tidak dapat ditimpa template, file output lokal yang dibatasi, deduplikasi/cooldown, serta rate limit.
 - Filterscript Pawn `integrations/pawn/amxtriage_bridge.pwn` yang default-nya hanya memberi chat ke admin RCON, menampilkan path merah dan nomor baris biru, dan memproses paling banyak lima record per tick. Source bridge dikompilasi dengan toolchain Pawn yang dipatok di CI.
 - `patch-preview`/`fix-preview` menghasilkan unified diff tanpa mengubah source untuk satu aturan sintaks Pawn berkeyakinan tinggi: compiler error `001` untuk titik koma yang hilang tepat sebelum `return`, dengan baris sebelumnya berupa assignment/deklarasi sederhana.
-- `patch-apply`/`fix-apply` hanya menerapkan patch yang source-hash dan patch-hash-nya telah dikonfirmasi dari preview yang ditinjau. Ia memeriksa path/source, membuat checkpoint dengan izin terbatas, lalu menjalankan compiler Pawn lokal tepercaya. Operator wajib memilih `--test-executable` dengan argumen literal `--test-arg`, atau secara eksplisit memilih `--compile-only`. Perintah validasi berjalan tanpa shell dengan batas waktu/output; kegagalan compiler/test mencoba rollback hanya jika target masih identik dengan patch yang diterapkan. Jika test runner mengubah target, rollback diblokir untuk menjaga perubahan eksternal. Tes memakai compiler/test stub dan tidak membuktikan kebenaran gameplay.
+- `patch-apply`/`fix-apply` hanya menerapkan patch yang source-hash dan patch-hash-nya telah dikonfirmasi dari preview yang ditinjau. Ia memeriksa path/source, membuat checkpoint berizin `0600`, menyinkronkan entri direktori checkpoint sebelum mengganti source, lalu menjalankan compiler Pawn lokal tepercaya. Operator wajib memilih `--test-executable` dengan argumen literal `--test-arg`, atau secara eksplisit memilih `--compile-only`. Perintah validasi berjalan tanpa shell dengan batas waktu/output; kegagalan compiler/test mencoba rollback hanya jika target masih identik dengan patch yang diterapkan. Jika test runner mengubah target, rollback diblokir untuk menjaga perubahan eksternal. Tes memakai compiler/test stub dan tidak membuktikan kebenaran gameplay.
 
 ## Yang belum boleh diklaim selesai
 
