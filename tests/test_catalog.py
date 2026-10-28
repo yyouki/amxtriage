@@ -251,6 +251,52 @@ def test_empty_filter_does_not_claim_no_compatible_plugins_exist() -> None:
     assert "does not mean no compatible plugins" in report
 
 
+
+def test_catalog_dates_require_canonical_iso_and_cannot_exceed_snapshot() -> None:
+    snapshot = load_catalog()
+    raw = raw_catalog(snapshot)
+    raw["snapshot_date"] = "20261028"
+    with pytest.raises(InputError, match="YYYY-MM-DD"):
+        parse_catalog(raw)
+
+    raw = raw_catalog(snapshot)
+    rows = raw["entries"]
+    assert isinstance(rows, list)
+    first = rows[0]
+    assert isinstance(first, dict)
+    first["checked_on"] = "2026-10-29"
+    with pytest.raises(InputError, match="after snapshot_date"):
+        parse_catalog(raw)
+
+
+def test_verified_catalog_entry_requires_runtime_evidence_and_exact_matrix() -> None:
+    snapshot = load_catalog()
+    raw = raw_catalog(snapshot)
+    rows = raw["entries"]
+    assert isinstance(rows, list)
+    first = rows[0]
+    assert isinstance(first, dict)
+    first["status"] = "verified"
+
+    with pytest.raises(InputError, match="server_versions, platforms, and architectures"):
+        parse_catalog(raw)
+
+    first["server_versions"] = ["open.mp 1.2.0"]
+    first["platforms"] = ["Linux"]
+    first["architectures"] = ["x86_64"]
+    with pytest.raises(InputError, match="runtime verification evidence"):
+        parse_catalog(raw)
+
+    evidence = first["evidence"]
+    assert isinstance(evidence, list)
+    item = evidence[0]
+    assert isinstance(item, dict)
+    item["statement"] = "Runtime test passed on open.mp 1.2.0 / Linux / x86_64."
+    parsed = parse_catalog(raw)
+    assert parsed.entries[0].status == "verified"
+    assert parsed.entries[0].server_versions == ("open.mp 1.2.0",)
+
+
 def test_parse_rejects_boolean_schema_version() -> None:
     with pytest.raises(InputError, match="schema_version"):
         parse_catalog({"schema_version": True, "snapshot_date": "2026-10-27", "entries": []})
