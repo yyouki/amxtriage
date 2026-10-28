@@ -2,8 +2,8 @@
 
 **Snapshot:** 28 Oktober 2026  
 **Branch target:** `main`  
-**Kode yang diaudit:** `0686eac9bcd2ce39576459068a9127220539ad16`  
-**CI terverifikasi:** [Run 40651736804 lulus](https://github.com/yyouki/amxtriage/actions/runs/40651736804) pada commit `0686eac`. Keenam job lulus: 1.880 tes pada masing-masing Python 3.10, 3.11, 3.12, dan 3.13; Ruff lint/format, mypy strict, wheel/sdist, validasi metadata, smoke test CLI/katalog, serta kompilasi filterscript Pawn. CI tidak menguji pengiriman chat pada server game live.
+**Kode yang diaudit:** `03cc320c3dd52ea62dd0b9938f9c4bfcb98015b8`  
+**CI terverifikasi:** [Run 40655207311 lulus](https://github.com/yyouki/amxtriage/actions/runs/40655207311) pada commit `03cc320`. Keenam job lulus: tes pada Python 3.10, 3.11, 3.12, dan 3.13; Ruff lint/format, mypy strict, wheel/sdist, validasi metadata, smoke test CLI/katalog, serta kompilasi filterscript Pawn. CI tidak menguji pengiriman chat pada server game live.
 
 **Bahasa / Language / Idioma:** [English README](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
 
@@ -32,7 +32,7 @@ Nilai area tetap konservatif: dokumentasi bukan implementasi, kompilasi bukan bu
 - Label laporan dan dokumentasi English, Bahasa Indonesia, dan Español.
 - Katalog offline sembilan entri: lima rilis component yang didokumentasikan open.mp, dua plugin legacy open.mp, satu rilis Streamer Plugin `v2.9.6` untuk SA-MP dengan status `documented`, dan satu versi `sampvoice` lebih baru berstatus `unknown`. Filter CLI mendukung server, status bukti, versi server yang terdokumentasi secara persis, OS/platform, arsitektur CPU, dan jenis instalasi. Nilai hanya cocok jika tercantum pada bukti katalog; field kosong tidak pernah berarti kompatibel.
 - Alert JSONL dan protokol lokal `--alert-pawn-file`, template pesan terbatas, field path/baris terstruktur yang tidak dapat ditimpa template, file output lokal yang dibatasi, deduplikasi/cooldown, serta rate limit.
-- Filterscript Pawn `integrations/pawn/amxtriage_bridge.pwn` yang default-nya hanya memberi chat ke admin RCON, menampilkan path merah dan nomor baris biru, dan memproses paling banyak lima record per tick. Source bridge dikompilasi dengan toolchain Pawn yang dipatok di CI.
+- Filterscript Pawn `integrations/pawn/amxtriage_bridge.pwn` yang default-nya hanya memberi chat ke admin RCON, menampilkan path merah dan nomor baris biru, dan memproses paling banyak lima record per tick. Source bridge dikompilasi dengan toolchain Pawn yang dipatok di CI. Buffer pesan chat dibatasi 143 karakter terlihat; tanda `%` dikirim literal tanpa penggandaan yang tidak perlu.
 - `patch-preview`/`fix-preview` menghasilkan unified diff tanpa mengubah source untuk satu aturan sintaks Pawn berkeyakinan tinggi: compiler error `001` untuk titik koma yang hilang tepat sebelum `return`, dengan baris sebelumnya berupa assignment/deklarasi sederhana.
 - `patch-apply`/`fix-apply` hanya menerapkan patch yang source-hash dan patch-hash-nya telah dikonfirmasi dari preview yang ditinjau. Ia memeriksa path/source, membuat checkpoint berizin `0600`, menyinkronkan entri direktori checkpoint sebelum mengganti source, lalu menjalankan compiler Pawn lokal tepercaya. Operator wajib memilih `--test-executable` dengan argumen literal `--test-arg`, atau secara eksplisit memilih `--compile-only`. Perintah validasi berjalan tanpa shell dengan batas waktu/output; kegagalan compiler/test mencoba rollback hanya jika target masih identik dengan patch yang diterapkan. Jika test runner mengubah target, rollback diblokir untuk menjaga perubahan eksternal. Tes memakai compiler/test stub dan tidak membuktikan kebenaran gameplay.
 
