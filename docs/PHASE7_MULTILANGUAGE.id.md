@@ -65,7 +65,7 @@ Target kinerja harus diukur, bukan dijanjikan:
 - Gunakan antrean berbatas dan backpressure; overload tidak boleh menahan game loop.
 - Jaringan nonaktif secara default. Transport jarak jauh harus opt-in, terdokumentasi, terautentikasi, dan dibatasi laju.
 - Gunakan izin minimum; jangan kumpulkan password atau data pemain yang tidak diperlukan.
-- Ukur CPU, RAM, disk I/O, dan latensi alert pada log realistis. Tidak ada software yang dapat menjamin nol overhead atau ping selalu sama untuk semua server.
+- Ukur CPU, RAM, disk I/O, dan latensi alert pada log realistis. Tidak ada software yang dapat menjamin nol overhead atau ping selalu sama untuk semua server. Exporter opt-in khusus Linux melalui `watch --metrics-jsonl FILE --metrics-interval N` mencatat metrik host/proses dan waktu ekspor alert lokal. `scripts/benchmark_watch.py` mengukur trafik file sintetis lokal; smoke test CI bukan benchmark server game live atau ping pemain.
 
 ## Batas DDoS dan anti-cheat
 
