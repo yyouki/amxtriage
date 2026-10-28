@@ -184,6 +184,7 @@ def test_control_characters_in_diff_context_are_refused(tmp_path: Path) -> None:
     assert preview.patch is None
     assert source.read_bytes() == before
 
+
 def test_patch_preview_refuses_invalid_source_dir(tmp_path: Path) -> None:
     with pytest.raises(SourceError, match="source directory"):
         SourceIndex(str(tmp_path / "missing"))
