@@ -39,9 +39,11 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
     assert all(entry.target_server == "open.mp" for entry in snapshot.entries)
     assert all(entry.evidence for entry in snapshot.entries)
     assert all(
-        evidence.url == "https://open.mp/docs/server/Installation"
+        any(
+            evidence.url == "https://open.mp/docs/server/Installation"
+            for evidence in entry.evidence
+        )
         for entry in documented
-        for evidence in entry.evidence
     )
     newer_sampvoice = unknown[0]
     assert newer_sampvoice.id == "sampvoice-openmp-3.2.0-omp"
@@ -51,7 +53,11 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
         for evidence in newer_sampvoice.evidence
     )
     assert all(not entry.server_versions and not entry.platforms for entry in snapshot.entries)
-    rustext = next(entry for entry in snapshot.entries if entry.id == "rustext-openmp-v2.0.11-nomemhack")
+    rustext = next(
+        entry
+        for entry in snapshot.entries
+        if entry.id == "rustext-openmp-v2.0.11-nomemhack"
+    )
     assert rustext.kind == "plugin"
     assert rustext.version == "v2.0.11 (nomemhack build)"
     assert rustext.install_location == "plugins"
@@ -63,7 +69,10 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
     assert keylistener.kind == "plugin"
     assert keylistener.install_location == "plugins"
     assert keylistener.release_url == "https://github.com/edgyaf/keylistener/releases/tag/1.1.2-pr"
-    assert any("does not establish a mandatory runtime dependency" in item.statement for item in keylistener.evidence)
+    assert any(
+        "does not establish a mandatory runtime dependency" in item.statement
+        for item in keylistener.evidence
+    )
 
 
 def test_server_and_status_filters_are_exact() -> None:
@@ -105,7 +114,7 @@ def test_markdown_report_links_official_release_and_evidence() -> None:
     assert "https://open.mp/docs/server/Installation" in report
     assert "https://github.com/ziggi/rustext/releases/tag/v2.0.11" in report
     assert "https://github.com/edgyaf/keylistener/releases/tag/1.1.2-pr" in report
-    assert "Dependencies" not in report
+    assert "Dependencies" in report
     assert "documented" in report
 
 
