@@ -228,9 +228,10 @@ class JsonlMetricsSink:
         if self.disabled:
             return False
         try:
-            record = json.dumps(
-                sample, ensure_ascii=False, separators=(",", ":"), allow_nan=False
-            ) + "\n"
+            record = (
+                json.dumps(sample, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+                + "\n"
+            )
             data = record.encode("utf-8")
             if len(data) > MAX_METRICS_RECORD_BYTES:
                 raise OutputError("metrics record exceeds the configured size limit")
