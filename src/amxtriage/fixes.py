@@ -604,8 +604,8 @@ def apply_patch_preview(
         compiler_output = ""
         compiler_exit_code: int | None = None
         try:
-            with tempfile.TemporaryDirectory(prefix="amxtriage-compile-") as directory:
-                artifact = Path(directory) / "validation.amx"
+            with tempfile.TemporaryDirectory(prefix="amxtriage-compile-") as compile_directory:
+                artifact = Path(compile_directory) / "validation.amx"
                 command = [
                     str(compiler_path),
                     *(f"-i{item}" for item in resolved_include_dirs),
