@@ -80,6 +80,8 @@ def test_output_to_an_unwritable_location_is_a_clean_error(sample_log, tmp_path,
         ([], "required"),
     ],
 )
+
+
 def test_invalid_arguments_exit_with_status_two(argv, message, capsys):
     with pytest.raises(SystemExit) as raised:
         main(argv)
@@ -92,7 +94,6 @@ def test_fail_on_new_requires_a_baseline(sample_log, capsys):
         main(["analyze", str(sample_log), "--fail-on-new"])
     assert raised.value.code == 2
     assert "--fail-on-new requires --baseline" in capsys.readouterr().err
-
 
 
 def test_patch_apply_requires_test_command_or_explicit_compile_only(capsys):

@@ -253,8 +253,6 @@ def test_patch_apply_requires_matching_review_hashes_and_does_not_edit_on_mismat
 
 
 @pytest.mark.skipif(os.name == "nt", reason="executable test compiler uses a POSIX shebang")
-
-
 def test_patch_apply_creates_checkpoint_and_keeps_patch_only_after_compiler_success(
     tmp_path: Path,
 ) -> None:
@@ -284,8 +282,6 @@ def test_patch_apply_creates_checkpoint_and_keeps_patch_only_after_compiler_succ
 
 
 @pytest.mark.skipif(os.name == "nt", reason="executable test compiler uses a POSIX shebang")
-
-
 def test_patch_apply_rolls_back_exact_original_bytes_after_compiler_failure(
     tmp_path: Path,
 ) -> None:
@@ -312,8 +308,6 @@ def test_patch_apply_rolls_back_exact_original_bytes_after_compiler_failure(
 
 
 @pytest.mark.skipif(os.name == "nt", reason="test runner uses a POSIX shebang")
-
-
 def test_patch_apply_runs_explicit_test_command_and_keeps_patch_when_it_passes(
     tmp_path: Path,
 ) -> None:
@@ -343,8 +337,6 @@ def test_patch_apply_runs_explicit_test_command_and_keeps_patch_when_it_passes(
 
 
 @pytest.mark.skipif(os.name == "nt", reason="test runner uses a POSIX shebang")
-
-
 @pytest.mark.parametrize(
     ("mode", "timeout", "expected_message"),
     [
@@ -403,8 +395,6 @@ def test_patch_apply_requires_explicit_test_command_or_compile_only(tmp_path: Pa
 
 
 @pytest.mark.skipif(os.name == "nt", reason="test runner uses a POSIX shebang")
-
-
 def test_patch_apply_refuses_test_runner_that_changes_source(tmp_path: Path) -> None:
     source = make_source(tmp_path, "new value = 42\nreturn 1;\n")
     source_index = SourceIndex(str(tmp_path))
