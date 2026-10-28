@@ -34,7 +34,7 @@ The watcher also accepts `--alert-message-template` to customize the message bod
 - Displays the source file path in red and source line in blue, when the diagnostic contains both fields.
 - Keeps file path and line number in structured fields; configurable human-readable message templates apply to the JSONL sink and cannot replace the protected location fields.
 - Polls once per second and processes at most five records per tick to cap work per timer callback.
-- Skips malformed records, limits field sizes, and encodes delimiters and braces from log-derived text so player-controlled text cannot inject inline color tags. Percent signs in message text are retained as text.
+- Skips malformed records, limits field sizes, and encodes delimiters and braces from log-derived text so player-controlled text cannot inject inline color tags. Percent signs in message text are sent literally (not doubled); the final chat buffer is bounded to 143 visible characters.
 - Starts at the file's current end if it exists when the filterscript loads, so old records are not replayed. If the file does not yet exist, the bridge waits for it and starts reading at byte offset zero.
 - Does not issue bans, modify player state, or mitigate DDoS traffic. It is a diagnostic notice channel only.
 
