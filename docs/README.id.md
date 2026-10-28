@@ -69,7 +69,7 @@ Untuk mengirim notifikasi melalui filterscript Pawn opsional, gunakan file proto
 amxtriage watch server_log.txt --alert-pawn-file ./scriptfiles/amxtriage-alerts.txt
 ```
 
-Source filterscript: [`amxtriage_bridge.pwn`](../integrations/pawn/amxtriage_bridge.pwn). Panduan instalasi: [integrations/pawn/README.md](../integrations/pawn/README.md). Filterscript harus dikompilasi dan dimuat secara eksplisit oleh pemilik server; amxtriage tidak mengubah konfigurasi server otomatis.
+Source filterscript: [`amxtriage_bridge.pwn`](../integrations/pawn/amxtriage_bridge.pwn). Panduan instalasi dan uji staging manual: [integrations/pawn/README.md](../integrations/pawn/README.md); helper [`scripts/staging_bridge_probe.py`](../scripts/staging_bridge_probe.py) default-nya dry-run dan memerlukan `--send --confirm-staging` untuk menambahkan record sintetis. Filterscript harus dikompilasi dan dimuat secara eksplisit oleh pemilik server; amxtriage tidak mengubah konfigurasi server otomatis.
 
 Bridge default hanya mengirim ke admin yang terautentikasi RCON, memeriksa maksimal lima record setiap detik, dan menampilkan path file dengan warna merah serta nomor baris dengan warna biru. Field lokasi diambil dari record diagnostik terstruktur, bukan dari template pesan yang dapat diubah. Jalankan watcher dan server dengan izin file yang sesuai; pada POSIX, file alert baru dibuat dengan mode `0600`, jadi menjalankan keduanya menggunakan akun OS yang sama biasanya paling mudah.
 

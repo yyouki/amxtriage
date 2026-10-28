@@ -40,6 +40,25 @@ The watcher also accepts `--alert-message-template` to customize the message bod
 
 The display uses the server's inline color format and keeps messages within the chat API's 144-character limit. See the [official SendClientMessage documentation](https://open.mp/docs/scripting/functions/SendClientMessage) and [official color list](https://open.mp/docs/scripting/resources/colorslist).
 
+## Staging smoke test (manual visual confirmation)
+
+A helper appends one fixed, low-severity probe record to the exact file consumed by the bridge. It does not open a network connection and cannot observe the game chat; an operator must confirm delivery in the staging client.
+
+1. Compile and load the filterscript on a staging server. Connect one RCON-authenticated admin and one non-admin test account.
+2. Start the watcher with the same path that will be passed to the probe, for example `amxtriage watch server_log.txt --alert-pawn-file scriptfiles/amxtriage-alerts.txt`. Keep the bridge and watcher using compatible file permissions.
+3. From the repository checkout, run the dry run first, then explicitly append the test record:
+
+   ```bash
+   python scripts/staging_bridge_probe.py scriptfiles/amxtriage-alerts.txt
+   python scripts/staging_bridge_probe.py scriptfiles/amxtriage-alerts.txt --send --confirm-staging
+   ```
+
+   Run the command as an account allowed to write the alert file. The probe never truncates the file; on POSIX, a newly created file has mode `0600`.
+4. Verify that the RCON admin sees the `STAGING-PROBE` message, the path `staging/bridge_probe.pwn` is red, line `4242` is blue, and the non-admin receives no message. Check the server console for bridge errors.
+5. Verify normal startup/shutdown and read/write permissions. Do not rotate or truncate the alert file while either process is running. Keep the probe record in the append-only file until the watcher and bridge are stopped and the file can be handled according to your normal rotation procedure.
+
+This is a manual staging probe, not an automated end-to-end assertion and not a latency benchmark. The probe script exits after writing; a zero exit code does not prove in-game delivery. Do not run `--send` against a production alert path.
+
 ## Admin access
 
 By default the bridge uses `IsPlayerAdmin`, which restricts delivery to RCON-authenticated administrators. If the server has a different role/ACL system, replace `IsAmxTriageAdmin(playerid)` with that project's trusted server-side authorization check and recompile. Do not accept a client-supplied command, player name, chat text, or field from the alert record as proof of admin access.

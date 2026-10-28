@@ -114,6 +114,7 @@ module = [
     "test_monitoring",
     "test_security",
     "test_source",
+    "test_staging_bridge_probe",
     "test_textutil",
     "test_watch",
 ]

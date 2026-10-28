@@ -68,7 +68,7 @@ Para enviar avisos mediante el filterscript Pawn opcional, utiliza un archivo de
 amxtriage watch server_log.txt --alert-pawn-file ./scriptfiles/amxtriage-alerts.txt
 ```
 
-El source está en [`amxtriage_bridge.pwn`](../integrations/pawn/amxtriage_bridge.pwn) y las instrucciones en [integrations/pawn/README.md](../integrations/pawn/README.md). El propietario debe compilar y cargar el filterscript de forma explícita; amxtriage no modifica la configuración del servidor.
+El source está en [`amxtriage_bridge.pwn`](../integrations/pawn/amxtriage_bridge.pwn) y las instrucciones de instalación y prueba manual en staging están en [integrations/pawn/README.md](../integrations/pawn/README.md). El helper [`scripts/staging_bridge_probe.py`](../scripts/staging_bridge_probe.py) usa dry-run por defecto y requiere `--send --confirm-staging` para añadir un registro sintético. El propietario debe compilar y cargar el filterscript de forma explícita; amxtriage no modifica la configuración del servidor.
 
 Por defecto, el bridge envía mensajes solo a administradores autenticados por RCON, procesa como máximo cinco registros por segundo y muestra la ruta del archivo en rojo y el número de línea en azul. La ubicación procede de campos de diagnóstico estructurados y no puede ser sobrescrita por una plantilla de texto. El watcher y el servidor deben tener permisos de archivo compatibles; en POSIX, los archivos de alertas nuevos se crean con permisos `0600`.
 

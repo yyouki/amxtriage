@@ -288,7 +288,7 @@ Template fields are restricted to `{prefix}`, `{severity}`, `{kind}`, `{message}
 
 #### Optional Pawn in-game chat bridge
 
-The source is at [`integrations/pawn/amxtriage_bridge.pwn`](integrations/pawn/amxtriage_bridge.pwn); setup and caveats are in [the bridge README](integrations/pawn/README.md).
+The source is at [`integrations/pawn/amxtriage_bridge.pwn`](integrations/pawn/amxtriage_bridge.pwn); setup and caveats are in [the bridge README](integrations/pawn/README.md). For a manual staging-only visual check, use [`scripts/staging_bridge_probe.py`](scripts/staging_bridge_probe.py); it defaults to dry-run and requires both `--send` and `--confirm-staging` before appending a clearly labeled synthetic record.
 
 ```bash
 amxtriage watch server_log.txt --alert-pawn-file ./scriptfiles/amxtriage-alerts.txt
