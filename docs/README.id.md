@@ -53,7 +53,7 @@ amxtriage catalog --server open.mp --format markdown -o katalog-plugin.md
 amxtriage plugins --format json -o katalog-plugin.json
 ```
 
-Snapshot katalog memiliki lima rilis component open.mp yang terdokumentasi, dua plugin legacy yang disebut dalam panduan resmi (`rustext` v2.0.11 build `nomemhack` dan `keylistener` 1.1.2-pr), serta satu rilis `sampvoice` yang ditandai `unknown` karena rilis tersebut tidak tercantum pada panduan yang dikutip. Setiap entri memuat link proyek/rilis, lokasi instalasi, status, sumber bukti beserta tanggal, dan metadata dependensi. Status `documented` bukan bukti uji runtime. Kolom versi/platform yang kosong berarti sumber tidak menentukannya. Daftar dependensi kosong berarti katalog ini belum menemukan dependensi yang ditetapkan oleh bukti yang dikutip—bukan jaminan bahwa tidak ada dependensi. Perintah ini offline; tidak memeriksa rilis secara langsung, tidak mengunduh binary, dan tidak melakukan pemasangan otomatis.
+Snapshot katalog memiliki sembilan entri: lima rilis component open.mp yang terdokumentasi, dua plugin legacy open.mp (`rustext` v2.0.11 build `nomemhack` dan `keylistener` 1.1.2-pr), Streamer Plugin SA-MP `v2.9.6` yang didokumentasikan upstream, dan satu rilis `sampvoice` lebih baru berstatus `unknown` karena tidak tercantum pada panduan yang dikutip. Setiap entri memuat link proyek/rilis, lokasi instalasi, status, sumber bukti beserta tanggal, dan metadata dependensi. Status `documented` bukan bukti uji runtime. Kolom versi/platform yang kosong berarti sumber tidak menentukannya. Daftar dependensi kosong berarti katalog ini belum menemukan dependensi yang ditetapkan oleh bukti yang dikutip—bukan jaminan bahwa tidak ada dependensi. Perintah ini offline; tidak memeriksa rilis secara langsung, tidak mengunduh binary, dan tidak melakukan pemasangan otomatis.
 
 ## Alert lokal dan notifikasi chat admin
 
@@ -75,6 +75,16 @@ Bridge default hanya mengirim ke admin yang terautentikasi RCON, memeriksa maksi
 
 **Status pengujian:** source Pawn berhasil dikompilasi di GitHub Actions dengan compiler dan include yang dipatok. Pengiriman pesan belum diuji end-to-end pada server staging SA-MP/open.mp nyata. Kompilasi tidak membuktikan kompatibilitas runtime atau bahwa ping tidak berubah. Bridge ini hanya saluran pemberitahuan diagnostik—bukan anti-cheat atau mitigasi DDoS.
 
+## Monitoring metrik lokal (opt-in, Linux)
+
+Tambahkan opsi berikut bila ingin menyimpan metrik host dan proses watcher secara lokal:
+
+```bash
+amxtriage watch server_log.txt --alert-pawn-file ./scriptfiles/amxtriage-alerts.txt --metrics-jsonl ./amxtriage-metrics.jsonl --metrics-interval 5
+```
+
+Metrik mencakup CPU/RAM host, CPU/RSS proses amxtriage, I/O disk yang terlihat, serta waktu pemrosesan ekspor alert lokal. File metrik wajib terpisah dari log dan file alert. Waktu ekspor bukan latensi chat in-game; CI hanya menjalankan benchmark sintetis tiga alert, bukan mengukur dampak server game atau ping pemain. Backend ini saat ini hanya mendukung Linux.
+
 ## Pratinjau patch aman (hanya diff)
 
 Perintah `patch-preview` membuat diff untuk satu kasus Pawn yang sempit: error compiler `001` menyatakan titik koma hilang tepat sebelum `return`, dan baris sebelumnya merupakan assignment/deklarasi sederhana. File source harus bisa ditemukan secara unik dan aman di dalam `--source-dir`.
@@ -86,10 +96,14 @@ amxtriage patch-preview compile.log --source-dir . --format json -o pratinjau-pa
 
 Ini **bukan** perbaikan otomatis untuk semua error. Source tidak diubah, patch tidak diterapkan, dependensi tidak diunduh, dan compiler tidak dijalankan. Kasus yang ambigu atau belum didukung akan ditolak. Format `unified` menerima satu log compiler setelah ekspansi wildcard dan hanya mencetak diff; jika tidak ada kandidat aman, alasan dikirim ke stderr dan proses keluar dengan status `3`. Tinjau diff, kompilasi dengan compiler Pawn resmi, lalu jalankan tes regresi/gameplay sebelum menggunakannya.
 
+## Terapkan patch dengan persetujuan eksplisit
+
+`patch-apply`/`fix-apply` hanya mendukung aturan Pawn yang sama dan memerlukan hash source serta patch yang sudah ditinjau. Wajib memilih compiler Pawn lokal tepercaya dan test/linter tepercaya (`--test-executable` beserta `--test-arg`) atau menyatakan `--compile-only`. Tool membuat checkpoint privat, menyinkronkan entri direktorinya sebelum mengganti source, menjalankan validasi tanpa shell dengan batas waktu/output, dan melakukan rollback hanya jika target masih sama dengan patch yang diterapkan. Jika ada perubahan eksternal, rollback diblokir dan checkpoint dipertahankan. Tes CI memakai compiler Pawn v3.10.10 untuk satu aturan saja; ini tidak membuktikan logika gameplay benar.
+
 ## Batas kemampuan dan keamanan
 
-Versi saat ini membaca file lokal, tidak memulai koneksi jaringan, dan tidak mengubah source code. Rekomendasi bersifat saran, bukan perbaikan otomatis.
+Mode analisis/watch/katalog/preview normal bekerja offline dan tidak menjalankan program anak atau mengubah source. Metrik Linux bersifat opt-in. Hanya `patch-apply` eksplisit yang dapat mengubah satu perbaikan Pawn setelah hash konfirmasi, checkpoint, dan validasi yang dipilih operator; compiler/test lokal tepercaya dijalankan tanpa shell. Rekomendasi tetap bersifat saran, bukan jaminan perbaikan benar.
 
-Saat ini amxtriage **bukan** pelindung DDoS atau anti-cheat dan belum memiliki mode patch/apply otomatis. Ekspor alert JSONL serta source bridge Pawn sudah tersedia dan bridge berhasil dikompilasi di CI, tetapi pengiriman chat in-game belum diverifikasi pada server staging nyata. Pemantauan log dapat membantu melihat gejala; penghentian DDoS memerlukan mitigasi jaringan/hosting. Sistem anti-cheat harus divalidasi di sisi server dan menghindari ban otomatis berdasarkan satu indikasi lemah.
+Saat ini amxtriage **bukan** pelindung DDoS atau anti-cheat; `patch-apply` tersedia sebagai jalur opt-in yang sempit dan memerlukan persetujuan eksplisit, bukan auto-fix umum. Ekspor alert JSONL serta source bridge Pawn sudah tersedia dan bridge berhasil dikompilasi di CI, tetapi pengiriman chat in-game belum diverifikasi pada server staging nyata. Pemantauan log dapat membantu melihat gejala; penghentian DDoS memerlukan mitigasi jaringan/hosting. Sistem anti-cheat harus divalidasi di sisi server dan menghindari ban otomatis berdasarkan satu indikasi lemah.
 
 Lihat [roadmap](PHASE7_MULTILANGUAGE.id.md) dan [status progres](PROGRESS.md) untuk rincian batas kemampuan dan tahapan lanjutan.
