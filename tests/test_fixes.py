@@ -286,7 +286,7 @@ def test_patch_apply_creates_checkpoint_and_keeps_patch_only_after_compiler_succ
 def test_patch_apply_syncs_checkpoint_directory_before_replacing_source(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    source = make_source(tmp_path, "new value = 42\\nreturn 1;\\n")
+    source = make_source(tmp_path, "new value = 42\nreturn 1;\n")
     original = source.read_bytes()
     source_index = SourceIndex(str(tmp_path))
     preview = build_patch_preview([parse_pawn_diagnostic()], source_index)
@@ -312,7 +312,7 @@ def test_patch_apply_syncs_checkpoint_directory_before_replacing_source(
     assert result.status == "applied"
     assert calls
     assert calls[0] == original
-    assert source.read_bytes() == b"new value = 42;\\nreturn 1;\\n"
+    assert source.read_bytes() == b"new value = 42;\nreturn 1;\n"
     assert result.backup_file is not None
     assert (tmp_path / result.backup_file).read_bytes() == original
 
