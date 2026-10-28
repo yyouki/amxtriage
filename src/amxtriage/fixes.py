@@ -839,7 +839,7 @@ def apply_patch_preview(
             expected_replacement_sha256=replacement_hash,
         )
         if restored:
-            rollback_status = (
+            rollback_status: PatchApplyStatus = (
                 "compile_failed_rolled_back"
                 if failure_phase == "compile"
                 else "test_failed_rolled_back"
