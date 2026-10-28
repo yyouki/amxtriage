@@ -656,7 +656,9 @@ def apply_patch_preview(
             )
             failure_message = f"Compiler validation timed out after {timeout_seconds} seconds."
         except OSError as error:
-            failure_message = f"Compiler validation could not run: {error.strerror or type(error).__name__}"
+            failure_message = (
+                f"Compiler validation could not run: {error.strerror or type(error).__name__}"
+            )
         except KeyboardInterrupt:
             compiler_exit_code = None
             failure_message = "Compiler validation was interrupted by the user."
