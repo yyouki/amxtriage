@@ -2,8 +2,8 @@
 
 **Snapshot:** 28 Oktober 2026  
 **Branch target:** `main`  
-**Kode yang diaudit:** `03cc320c3dd52ea62dd0b9938f9c4bfcb98015b8`  
-**CI terverifikasi:** [Run 40655207311 lulus](https://github.com/yyouki/amxtriage/actions/runs/40655207311) pada commit `03cc320`. Keenam job lulus: tes pada Python 3.10, 3.11, 3.12, dan 3.13; Ruff lint/format, mypy strict, wheel/sdist, validasi metadata, smoke test CLI/katalog, serta kompilasi filterscript Pawn. CI tidak menguji pengiriman chat pada server game live.
+**Kode yang diaudit:** `689b143885964428ab443de4ff391b6bb4b753ab`  
+**CI terverifikasi:** [Run 40655638295 lulus](https://github.com/yyouki/amxtriage/actions/runs/40655638295) pada commit `689b143`. Keenam job lulus: 1.883 tes pada masing-masing Python 3.10, 3.11, 3.12, dan 3.13; Ruff lint/format, mypy strict, wheel/sdist, validasi metadata, smoke test CLI/katalog, serta kompilasi filterscript Pawn. CI tidak menguji pengiriman chat pada server game live.
 
 **Bahasa / Language / Idioma:** [English README](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
 
@@ -30,7 +30,7 @@ Nilai area tetap konservatif: dokumentasi bukan implementasi, kompilasi bukan bu
 - CLI Python untuk analisis log SA-MP/open.mp, pengelompokan masalah, `watch`, baseline, konteks source, dan rekomendasi offline.
 - Diagnostik teks compiler/linter untuk format umum Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go, dan Rust. Ini tidak mencakup semua versi tool; perintah `diagnose` tidak menjalankan compiler.
 - Label laporan dan dokumentasi English, Bahasa Indonesia, dan Español.
-- Katalog offline sembilan entri: lima rilis component yang didokumentasikan open.mp, dua plugin legacy open.mp, satu rilis Streamer Plugin `v2.9.6` untuk SA-MP dengan status `documented`, dan satu versi `sampvoice` lebih baru berstatus `unknown`. Filter CLI mendukung server, status bukti, versi server yang terdokumentasi secara persis, OS/platform, arsitektur CPU, dan jenis instalasi. Nilai hanya cocok jika tercantum pada bukti katalog; field kosong tidak pernah berarti kompatibel.
+- Katalog offline sembilan entri: lima rilis component yang didokumentasikan open.mp, dua plugin legacy open.mp, satu rilis Streamer Plugin `v2.9.6` untuk SA-MP dengan status `documented`, dan satu versi `sampvoice` lebih baru berstatus `unknown`. Filter CLI mendukung server, status bukti, versi server yang terdokumentasi secara persis, OS/platform, arsitektur CPU, dan jenis instalasi. Nilai hanya cocok jika tercantum pada bukti katalog; field kosong tidak pernah berarti kompatibel. Validator menolak tanggal nonkanonis/di luar snapshot, nilai matriks kosong, dan status `verified` tanpa matriks server/platform/arsitektur serta pernyataan bukti runtime yang eksplisit.
 - Alert JSONL dan protokol lokal `--alert-pawn-file`, template pesan terbatas, field path/baris terstruktur yang tidak dapat ditimpa template, file output lokal yang dibatasi, deduplikasi/cooldown, serta rate limit.
 - Filterscript Pawn `integrations/pawn/amxtriage_bridge.pwn` yang default-nya hanya memberi chat ke admin RCON, menampilkan path merah dan nomor baris biru, dan memproses paling banyak lima record per tick. Source bridge dikompilasi dengan toolchain Pawn yang dipatok di CI. Buffer pesan chat dibatasi 143 karakter terlihat; tanda `%` dikirim literal tanpa penggandaan yang tidak perlu.
 - `patch-preview`/`fix-preview` menghasilkan unified diff tanpa mengubah source untuk satu aturan sintaks Pawn berkeyakinan tinggi: compiler error `001` untuk titik koma yang hilang tepat sebelum `return`, dengan baris sebelumnya berupa assignment/deklarasi sederhana.
