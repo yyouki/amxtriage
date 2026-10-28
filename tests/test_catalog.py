@@ -46,9 +46,7 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
         for entry in documented
         if entry.target_server == "open.mp"
     )
-    samp_streamer = next(
-        entry for entry in snapshot.entries if entry.id == "streamer-samp-2.9.6"
-    )
+    samp_streamer = next(entry for entry in snapshot.entries if entry.id == "streamer-samp-2.9.6")
     assert samp_streamer.target_server == "SA-MP"
     assert samp_streamer.kind == "plugin"
     assert samp_streamer.version == "v2.9.6"
