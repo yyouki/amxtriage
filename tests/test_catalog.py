@@ -114,11 +114,14 @@ def test_version_platform_and_architecture_filters_require_explicit_metadata() -
     assert filter_catalog_entries(enriched.entries, architecture="arm64") == []
 
 
-@pytest.mark.parametrize("kwargs", [
-    {"server_version": " "},
-    {"platform": ""},
-    {"architecture": "  "},
-])
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"server_version": " "},
+        {"platform": ""},
+        {"architecture": "  "},
+    ],
+)
 def test_metadata_filters_reject_empty_values(kwargs: dict[str, str]) -> None:
     with pytest.raises(InputError, match="filter must not be empty"):
         filter_catalog_entries(load_catalog().entries, **kwargs)
