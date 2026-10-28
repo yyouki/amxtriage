@@ -50,7 +50,7 @@ def test_sampler_reports_cpu_memory_process_rss_and_disk_rates(tmp_path: Path) -
     assert nested(first, "process")["rss_bytes"] == 20 * 4096
 
     write_snapshot(
-        proc, sysroot, cpu="150 0 70 920 60 0 0 0 0 0",
+        proc, sysroot, cpu="150 0 70 920 60 0 0 0 40 10",
         ticks=(125, 75), rss_pages=30, read_sectors=150, write_sectors=240,
     )
     clock[0] += 5.0
