@@ -335,7 +335,10 @@ def build_parser() -> argparse.ArgumentParser:
         type=_metrics_interval,
         default=DEFAULT_METRICS_INTERVAL_SECONDS,
         metavar="SECONDS",
-        help="metrics sampling interval from 1 to 3600 seconds (default 5; requires --metrics-jsonl)",
+        help=(
+            "metrics sampling interval from 1 to 3600 seconds "
+            "(default 5; requires --metrics-jsonl)"
+        ),
     )
     _add_context_arguments(watch)
 
@@ -739,7 +742,9 @@ def _run_watch(args: argparse.Namespace) -> int:
             if path
         )
         if metrics_path in compared_paths:
-            raise InputError("metrics output must be a separate file from the log and alert outputs")
+            raise InputError(
+                "metrics output must be a separate file from the log and alert outputs"
+            )
         metrics_sampler = MetricsSampler(args.metrics_interval)
         metrics_sink = JsonlMetricsSink(args.metrics_jsonl)
     stop = threading.Event()
@@ -776,18 +781,20 @@ def _run_watch(args: argparse.Namespace) -> int:
                     alert_throttle,
                     metrics_sampler,
                 )
-            if metrics_sampler is not None and metrics_sink is not None and metrics_sampler.due():
-                if (
-                    not metrics_sink.emit(metrics_sampler.sample())
-                    and not metrics_sink.warning_emitted
-                ):
-                    detail = metrics_sink.failure_reason or "write failed"
-                    print(
-                        f"warning: metrics export disabled: {detail}",
-                        file=sys.stderr,
-                        flush=True,
-                    )
-                    metrics_sink.warning_emitted = True
+            if (
+                metrics_sampler is not None
+                and metrics_sink is not None
+                and metrics_sampler.due()
+                and not metrics_sink.emit(metrics_sampler.sample())
+                and not metrics_sink.warning_emitted
+            ):
+                detail = metrics_sink.failure_reason or "write failed"
+                print(
+                    f"warning: metrics export disabled: {detail}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                metrics_sink.warning_emitted = True
     except KeyboardInterrupt:
         pass
     finally:
@@ -810,18 +817,16 @@ def _run_watch(args: argparse.Namespace) -> int:
         and metrics_sink is not None
         and (not metrics_sampler.has_sampled or metrics_sampler.has_pending_alerts)
         and not metrics_sink.disabled
+        and not metrics_sink.emit(metrics_sampler.sample())
+        and not metrics_sink.warning_emitted
     ):
-        if (
-            not metrics_sink.emit(metrics_sampler.sample())
-            and not metrics_sink.warning_emitted
-        ):
-            detail = metrics_sink.failure_reason or "write failed"
-            print(
-                f"warning: metrics export disabled: {detail}",
-                file=sys.stderr,
-                flush=True,
-            )
-            metrics_sink.warning_emitted = True
+        detail = metrics_sink.failure_reason or "write failed"
+        print(
+            f"warning: metrics export disabled: {detail}",
+            file=sys.stderr,
+            flush=True,
+        )
+        metrics_sink.warning_emitted = True
     if alert_throttle is not None and alert_throttle.suppressed_count:
         print(
             "warning: suppressed "
