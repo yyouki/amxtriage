@@ -15,6 +15,9 @@ keywords = ["samp", "open.mp", "pawn", "amx", "crashdetect", "logs", "triage"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
     "Operating System :: OS Independent",
@@ -105,6 +108,7 @@ module = [
     "test_compiler",
     "test_follow",
     "test_fixes",
+    "test_gui",
     "test_fuzz",
     "test_hardening",
     "test_parser",

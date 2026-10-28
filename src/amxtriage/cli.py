@@ -32,6 +32,7 @@ from amxtriage.compiler import (
 )
 from amxtriage.errors import AmxTriageError, InputError
 from amxtriage.fixes import apply_patch_preview, build_patch_preview, render_patch_preview
+from amxtriage.gui import launch_gui
 from amxtriage.follow import (
     DEFAULT_POLL_INTERVAL,
     MAX_POLL_INTERVAL,
@@ -583,6 +584,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     catalog.add_argument("--format", choices=("text", "markdown", "json"), default="text")
     catalog.add_argument("-o", "--output", metavar="FILE", help="write the catalog report to FILE")
+
+    gui = commands.add_parser(
+        "gui",
+        help="open the beginner-friendly desktop interface",
+        description=(
+            "Open a local desktop GUI for selecting a log, choosing a report language, "
+            "optionally selecting Pawn sources, and saving a text report. Requires Tkinter."
+        ),
+    )
+    _add_language_argument(gui)
+    gui.add_argument("--start-dir", metavar="DIR", help="starting folder for file pickers")
     return parser
 
 
@@ -1009,6 +1021,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.metrics_interval != DEFAULT_METRICS_INTERVAL_SECONDS and not args.metrics_jsonl:
             parser.error("--metrics-interval requires --metrics-jsonl")
     try:
+        if args.command == "gui":
+            return launch_gui(language=args.language, start_dir=args.start_dir)
         if args.command == "analyze":
             return _run_analyze(args)
         if args.command == "watch":
