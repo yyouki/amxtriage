@@ -456,7 +456,6 @@ def _resolve_compiler_path(compiler: str) -> Path:
     return candidate
 
 
-
 def _fsync_directory(path: Path) -> None:
     """Best-effort durability for directory entry updates on platforms that support it."""
     if not hasattr(os, "O_DIRECTORY"):
@@ -487,10 +486,10 @@ def _temporary_rollback(
             return False
         temporary = _make_temporary_replacement(target, original, original_mode)
         latest, latest_info = _safe_read_target(target)
-        if (
-            (latest_info.st_dev, latest_info.st_ino) != (expected_device, expected_inode)
-            or hashlib.sha256(latest).hexdigest() != expected_replacement_sha256
-        ):
+        if (latest_info.st_dev, latest_info.st_ino) != (
+            expected_device,
+            expected_inode,
+        ) or hashlib.sha256(latest).hexdigest() != expected_replacement_sha256:
             temporary.unlink(missing_ok=True)
             return False
         os.replace(temporary, target)
@@ -593,10 +592,10 @@ def apply_patch_preview(
             target, replacement, stat.S_IMODE(original_info.st_mode)
         )
         latest, latest_info = _safe_read_target(target)
-        if (
-            (latest_info.st_dev, latest_info.st_ino) != (original_info.st_dev, original_info.st_ino)
-            or hashlib.sha256(latest).hexdigest() != source_hash
-        ):
+        if (latest_info.st_dev, latest_info.st_ino) != (
+            original_info.st_dev,
+            original_info.st_ino,
+        ) or hashlib.sha256(latest).hexdigest() != source_hash:
             raise OSError("the source changed during patch preparation; no patch was applied")
         replacement_info = temporary.stat(follow_symlinks=False)
         os.replace(temporary, target)
@@ -629,9 +628,7 @@ def apply_patch_preview(
                 compiler_exit_code = completed.returncode
                 compiler_output = sanitize(completed.stdout, MAX_COMPILER_OUTPUT_CHARS)
                 compile_ok = (
-                    completed.returncode == 0
-                    and artifact.is_file()
-                    and artifact.stat().st_size > 0
+                    completed.returncode == 0 and artifact.is_file() and artifact.stat().st_size > 0
                 )
                 if compile_ok:
                     return PatchApplyResult(
@@ -659,18 +656,13 @@ def apply_patch_preview(
             )
             failure_message = f"Compiler validation timed out after {timeout_seconds} seconds."
         except OSError as error:
-            failure_message = (
-                "Compiler validation could not run: "
-                f"{error.strerror or type(error).__name__}"
-            )
+            failure_message = f"Compiler validation could not run: {error.strerror or type(error).__name__}"
         except KeyboardInterrupt:
             compiler_exit_code = None
             failure_message = "Compiler validation was interrupted by the user."
         except Exception as error:
             compiler_exit_code = None
-            failure_message = (
-                "Compiler validation failed unexpectedly: " f"{type(error).__name__}."
-            )
+            failure_message = f"Compiler validation failed unexpectedly: {type(error).__name__}."
 
         if replacement_info is None:
             raise OSError("could not verify patched file before rollback")

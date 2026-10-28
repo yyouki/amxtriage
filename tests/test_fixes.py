@@ -190,7 +190,6 @@ def test_patch_preview_refuses_invalid_source_dir(tmp_path: Path) -> None:
         SourceIndex(str(tmp_path / "missing"))
 
 
-
 def make_fake_compiler(path: Path) -> Path:
     script = path / "pawncc-stub"
     script.write_text(
@@ -308,9 +307,7 @@ def test_patch_apply_refuses_source_that_changed_after_review(tmp_path: Path) ->
 
 def test_patch_preview_exposes_hashes_required_for_opt_in_apply(tmp_path: Path) -> None:
     make_source(tmp_path, "new value = 42\nreturn 1;\n")
-    preview = build_patch_preview(
-        [parse_pawn_diagnostic()], SourceIndex(str(tmp_path))
-    )
+    preview = build_patch_preview([parse_pawn_diagnostic()], SourceIndex(str(tmp_path)))
     rendered = render_patch_preview(preview, "json")
 
     assert preview.source_sha256 is not None

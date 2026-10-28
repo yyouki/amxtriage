@@ -169,7 +169,6 @@ def test_default_template_has_location_and_message_placeholders() -> None:
     assert "{message}" in DEFAULT_ALERT_TEMPLATE
 
 
-
 def test_alert_throttle_allows_repeat_after_cooldown() -> None:
     now = [0.0]
     throttle = AlertThrottle(

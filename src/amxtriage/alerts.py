@@ -41,7 +41,6 @@ _NOCTTY = getattr(os, "O_NOCTTY", 0)
 _BINARY = getattr(os, "O_BINARY", 0)
 
 
-
 MAX_ALERT_COOLDOWN_SECONDS = 86400
 MAX_ALERTS_PER_MINUTE = 10000
 MAX_TRACKED_ALERT_SIGNATURES = 4096
@@ -102,6 +101,7 @@ class AlertThrottle:
         while len(self._last_sent) > MAX_TRACKED_ALERT_SIGNATURES:
             self._last_sent.popitem(last=False)
         return True
+
 
 def validate_alert_template(template: str) -> None:
     """Validate a single-line template without evaluating expressions or attribute access."""
