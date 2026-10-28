@@ -28,6 +28,7 @@ from amxtriage.compiler import (
     render_compiler_report,
 )
 from amxtriage.errors import AmxTriageError, InputError
+from amxtriage.fixes import build_patch_preview, render_patch_preview
 from amxtriage.follow import (
     DEFAULT_POLL_INTERVAL,
     MAX_POLL_INTERVAL,
@@ -62,6 +63,7 @@ EXIT_OK = 0
 EXIT_NEW_PROBLEMS = 1
 EXIT_ERROR = 2
 EXIT_INTERRUPTED = 130
+EXIT_NO_PATCH = 3
 
 MESSAGE_LIMIT = 1000
 INTERNAL_ERROR_FRAMES = 5
@@ -340,6 +342,43 @@ def build_parser() -> argparse.ArgumentParser:
         help="stop if an input exceeds SIZE after decompression (0 means no limit)",
     )
 
+    patch_preview = commands.add_parser(
+        "patch-preview",
+        aliases=["fix-preview"],
+        help="preview a conservative source patch from supported Pawn compiler output",
+        description=(
+            "Generate a unified diff for a narrow, high-confidence Pawn fix rule. This command "
+            "never modifies source files or runs a compiler; uncertain cases are refused."
+        ),
+    )
+    _add_language_argument(patch_preview)
+    patch_preview.add_argument(
+        "logs",
+        nargs="+",
+        metavar="COMPILER_LOG",
+        help="saved Pawn compiler output file(s); use '-' for stdin",
+    )
+    patch_preview.add_argument(
+        "--source-dir",
+        required=True,
+        metavar="DIR",
+        help="root containing the Pawn source files; logged paths are used only for safe matching",
+    )
+    patch_preview.add_argument(
+        "--format",
+        choices=("text", "unified", "json"),
+        default="text",
+        help="text explanation, patch-only unified diff, or JSON result",
+    )
+    patch_preview.add_argument("-o", "--output", metavar="FILE", help="write preview/diff to FILE")
+    patch_preview.add_argument(
+        "--max-input-bytes",
+        type=_size,
+        default=0,
+        metavar="SIZE",
+        help="stop if a compiler log exceeds SIZE bytes after decompression (0 means no limit)",
+    )
+
     explain = commands.add_parser(
         "explain",
         help="explain an AMX runtime error code (no code lists all known codes)",
@@ -549,6 +588,24 @@ def _run_diagnose(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _run_patch_preview(args: argparse.Namespace) -> int:
+    if args.format == "unified" and len(args.logs) > 1:
+        raise InputError("patch-preview unified output accepts one compiler log at a time")
+    source_index = SourceIndex(args.source_dir)
+    report = analyze_compiler_outputs(
+        expand_paths(args.logs),
+        source_language="pawn",
+        max_input_bytes=args.max_input_bytes or None,
+    )
+    preview = build_patch_preview(report.diagnostics, source_index)
+    rendered = render_patch_preview(preview, args.format)
+    if preview.status != "ready" and args.format == "unified":
+        print(preview.message, file=sys.stderr, flush=True)
+        return EXIT_NO_PATCH
+    _write_output(rendered, args.output)
+    return EXIT_OK if preview.status == "ready" else EXIT_NO_PATCH
+
+
 def _run_catalog(args: argparse.Namespace) -> int:
     snapshot = load_catalog()
     entries = filter_catalog_entries(snapshot.entries, server=args.server, status=args.status)
@@ -614,6 +671,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_recommend(args)
         if args.command in ("diagnose", "compiler"):
             return _run_diagnose(args)
+        if args.command in ("patch-preview", "fix-preview"):
+            return _run_patch_preview(args)
         if args.command in ("catalog", "plugins"):
             return _run_catalog(args)
         return _run_explain(args)
