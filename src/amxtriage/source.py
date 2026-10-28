@@ -87,6 +87,27 @@ class SourceIndex:
         verified = self._locate(logged_path)
         return verified.path if verified is not None else None
 
+    def read_bytes(self, logged_path: str) -> tuple[str, bytes] | None:
+        """Read a bounded source file using the same verified, no-follow open as snippets.
+
+        The returned path is relative to the configured source root. A path from a log is
+        used only for matching against the pre-indexed root; it is never opened directly.
+        """
+        verified = self._locate(logged_path)
+        if verified is None:
+            return None
+        handle = self._open_verified(verified)
+        if handle is None:
+            return None
+        try:
+            with handle:
+                content = handle.read(MAX_SOURCE_BYTES + 1)
+        except OSError:
+            return None
+        if len(content) > MAX_SOURCE_BYTES:
+            return None
+        return "/".join(verified.parts), content
+
     def _locate(self, logged_path: str) -> _Verified | None:
         parts = path_components(logged_path)
         if not parts:
