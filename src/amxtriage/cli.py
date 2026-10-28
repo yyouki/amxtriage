@@ -1006,10 +1006,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             and not args.alert_pawn_file
         ):
             parser.error("--alert-message-template requires --alert-pawn-file")
-        if (
-            args.metrics_interval != DEFAULT_METRICS_INTERVAL_SECONDS
-            and not args.metrics_jsonl
-        ):
+        if args.metrics_interval != DEFAULT_METRICS_INTERVAL_SECONDS and not args.metrics_jsonl:
             parser.error("--metrics-interval requires --metrics-jsonl")
     try:
         if args.command == "analyze":
