@@ -66,7 +66,7 @@ def diagnostic_block(index: int) -> str:
             f"[{stamp}] [debug] AMX backtrace:",
             f"[{stamp}] [debug] #0 000a1b2c in public {function} (playerid=0) "
             f"at gamemodes/benchmark.pwn:{line}",
-            f'[{stamp}] Script[gamemodes/benchmark.amx]: Run time error 4: '
+            f"[{stamp}] Script[gamemodes/benchmark.amx]: Run time error 4: "
             '"Array index out of bounds"',
             "",
         )

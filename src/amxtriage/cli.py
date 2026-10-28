@@ -335,10 +335,8 @@ def build_parser() -> argparse.ArgumentParser:
         type=_metrics_interval,
         default=DEFAULT_METRICS_INTERVAL_SECONDS,
         metavar="SECONDS",
-        help=(
-            "metrics sampling interval from 1 to 3600 seconds "
-            "(default 5; requires --metrics-jsonl)"
-        ),
+        help="metrics sampling interval from 1 to 3600 seconds "
+        "(default 5; requires --metrics-jsonl)",
     )
     _add_context_arguments(watch)
 

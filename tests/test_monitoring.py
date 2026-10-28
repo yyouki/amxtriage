@@ -10,8 +10,14 @@ from amxtriage.monitoring import JsonlMetricsSink, MetricsSampler
 
 
 def write_snapshot(
-    proc: Path, sysroot: Path, *, cpu: str, ticks: tuple[int, int], rss_pages: int,
-    read_sectors: int = 100, write_sectors: int = 200,
+    proc: Path,
+    sysroot: Path,
+    *,
+    cpu: str,
+    ticks: tuple[int, int],
+    rss_pages: int,
+    read_sectors: int = 100,
+    write_sectors: int = 200,
 ) -> None:
     proc.mkdir(parents=True, exist_ok=True)
     (proc / "self").mkdir(exist_ok=True)
