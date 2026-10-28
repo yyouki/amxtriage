@@ -11,7 +11,7 @@ and shows where they happen, optionally with the surrounding lines of your `.pwn
 
 - Standard library only. No runtime dependencies. Python 3.10 or newer.
 - Reads plain text, `.gz` files and standard input. Never modifies the log.
-- Does not use the network and does not start other programs.
+- Normal analysis/watch/catalog/preview operation is offline and does not start child programs. Explicit `patch-apply` may launch only the locally trusted compiler and test command selected by the operator, without a shell. Opt-in Linux metrics read local `/proc` and `/sys` and write a separate JSONL file.
 - Status: 0.1.0, beta.
 
 ## The problem it solves
@@ -111,7 +111,11 @@ amxtriage patch-preview compile.log --source-dir . --format unified
 amxtriage patch-preview compile.log --source-dir . --format json -o patch-preview.json
 ```
 
-This is **not** a general automatic fixer. It never modifies source files, applies patches, downloads dependencies, or runs a compiler. Ambiguous or unsupported cases are refused. `--format unified` accepts one compiler log after wildcard expansion and prints only the diff; when no safe candidate is available, it prints the reason to standard error and exits with status `3`. A generated diff still needs review, compilation with the official Pawn compiler, and regression/gameplay tests before use.
+This is **not** a general automatic fixer. `patch-preview` is read-only: it never modifies source, applies a patch, downloads dependencies, or runs a compiler. Ambiguous or unsupported cases are refused. `--format unified` accepts one compiler log after wildcard expansion and prints only the diff; when no safe candidate is available, it prints the reason to standard error and exits with status `3`. Review every diff before considering the separate explicit apply command.
+
+## Safe patch apply (explicit opt-in)
+
+`patch-apply`/`fix-apply` can apply only the same narrow Pawn rule after you review the preview and provide both source and patch SHA-256 confirmations. It requires a trusted local Pawn compiler and either a trusted `--test-executable` (with literal `--test-arg` values) or explicit `--compile-only`. It creates a private checkpoint and syncs its directory entry before replacing the source, then validates without a shell using time/output limits. Failed validation rolls back only while the target still matches the applied patch; if another process changed it, rollback is blocked and the checkpoint is retained. CI smoke-tests this path with the pinned Pawn compiler v3.10.10, but compiler acceptance does not prove gameplay correctness.
 
 ## What it understands
 
@@ -239,7 +243,8 @@ counts, as in most JSON readers. A named pipe is read like a file, up to the siz
 amxtriage watch [--from-start] [--poll-interval SECONDS] [--source-dir DIR]
                 [--context N] [--show-args] [--baseline FILE]
                 [--alert-jsonl FILE] [--alert-pawn-file FILE]
-                [--alert-prefix TEXT] [--alert-template TEMPLATE] LOG
+                [--alert-prefix TEXT] [--alert-template TEMPLATE]
+                [--metrics-jsonl FILE] [--metrics-interval SECONDS] LOG
 ```
 
 Follows a growing log, like `tail -f`. Each new problem is printed once, the first time it
@@ -293,6 +298,18 @@ Compile the filterscript using the [pinned Pawn compiler](https://github.com/paw
 
 **Verification status:** the Pawn source compiles in GitHub Actions, but has not yet been end-to-end tested on a live SA-MP/open.mp staging server. Compilation does not prove runtime compatibility or unchanged ping. The bridge is a diagnostic alert channel—not DDoS mitigation or anti-cheat, and it does not ban players or alter the game state.
 
+#### Optional Linux metrics and local benchmark
+
+Use `--metrics-jsonl FILE` to opt in to periodic local metrics while watching:
+
+```bash
+amxtriage watch server_log.txt --alert-pawn-file ./scriptfiles/amxtriage-alerts.txt --metrics-jsonl ./amxtriage-metrics.jsonl --metrics-interval 5
+```
+
+Metrics output must be separate from the log and alert files. On Linux, samples include host CPU/RAM, amxtriage process CPU/RSS, visible block-device I/O and time spent processing local alert exports. That time is **not** end-to-end in-game chat latency. If a metrics write fails, only the metrics sink is disabled; log watching continues. Other operating systems are currently unsupported by this metrics backend.
+
+The local helper `python scripts/benchmark_watch.py --events 10 --timeout 60` measures alert-file latency and watcher process CPU/RSS/I/O using synthetic log events. CI smoke-tests three events; results do not measure live game-server overhead or player ping.
+
 ### explain
 
 ```text
@@ -321,7 +338,7 @@ amxtriage catalog --server open.mp --format markdown -o plugin-catalog.md
 amxtriage plugins --format json -o plugin-catalog.json
 ```
 
-Each entry contains the official project/release links, target server, installation location, evidence URL/date, and a status (`verified`, `documented`, `unknown`, or `incompatible`). The snapshot contains five documented open.mp component releases, two documented legacy plugins (`rustext` v2.0.11 using the `nomemhack` build and `keylistener` 1.1.2-pr), and one newer `sampvoice` release marked `unknown` because the cited official guide does not list that release. Each entry includes project/release links, target server, installation location, dependencies, evidence URLs/dates, and a status (`verified`, `documented`, `unknown`, or `incompatible`). `documented` means a cited upstream guide lists that release; it is **not a claim of runtime testing**. Empty version/platform fields mean the source did not specify those values. An empty dependency list means this snapshot did not establish a dependency, not that none exists. The command is fully offline: it does not check live releases, download binaries, or install components. Unknown evidence must remain `unknown` instead of being guessed.
+Each entry contains the official project/release links, target server, installation location, evidence URL/date, and a status (`verified`, `documented`, `unknown`, or `incompatible`). The snapshot contains nine records: five documented open.mp component releases, two documented legacy open.mp plugins (`rustext` v2.0.11 using the `nomemhack` build and `keylistener` 1.1.2-pr), the upstream-documented SA-MP Streamer Plugin `v2.9.6`, and one newer `sampvoice` release marked `unknown` because the cited official guide does not list that release. Each entry includes project/release links, target server, installation location, dependencies, evidence URLs/dates, and a status (`verified`, `documented`, `unknown`, or `incompatible`). `documented` means a cited upstream guide lists that release; it is **not a claim of runtime testing**. Empty version/platform fields mean the source did not specify those values. An empty dependency list means this snapshot did not establish a dependency, not that none exists. The command is fully offline: it does not check live releases, download binaries, or install components. Unknown evidence must remain `unknown` instead of being guessed.
 
 ### recommend (alias: suggest)
 
@@ -412,8 +429,7 @@ What it does:
   320 MB in the test under "Performance", where ordinary logs need about 25 MB.
 - **Binary input is refused** (a NUL byte in the first 4,096 bytes, or a UTF-16 byte order
   mark at the start). Invalid UTF-8 is replaced, not fatal. A damaged `.gz` file is a clean error.
-- **No network, no subprocesses, no dynamic code.** The package imports no networking module
-  (a test checks this) and `src/` contains no `subprocess`, `eval` or `pickle`.
+- **Default operation is offline; execution is explicit.** Normal analysis/watch/catalog/preview does not start child processes or access the network. Explicit `patch-apply` uses `subprocess` with `shell=False` only for the locally trusted compiler and optional test executable selected by the operator, with timeout/output limits. The benchmark helper starts a local watcher child for synthetic tests. The project does not use `eval` or `pickle`, and logs are never treated as commands.
 - **Writes only where you tell it to**: `-o FILE` and `--save-baseline FILE`. A baseline is
   written to a temporary file in the same folder and then moved into place, which replaces a
   symbolic link or a hard-linked name instead of writing through it. `-o` opens the file with
