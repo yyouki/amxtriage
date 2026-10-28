@@ -11,6 +11,9 @@ import json
 import os
 import stat
 import string
+import time
+from collections import OrderedDict, deque
+from collections.abc import Callable
 from pathlib import Path
 
 from amxtriage.errors import InputError, OutputError
@@ -37,6 +40,68 @@ _NONBLOCK = getattr(os, "O_NONBLOCK", 0)
 _NOCTTY = getattr(os, "O_NOCTTY", 0)
 _BINARY = getattr(os, "O_BINARY", 0)
 
+
+
+MAX_ALERT_COOLDOWN_SECONDS = 86400
+MAX_ALERTS_PER_MINUTE = 10000
+MAX_TRACKED_ALERT_SIGNATURES = 4096
+
+
+class AlertThrottle:
+    """Bounded in-process alert cooldown and global rate limiter.
+
+    Repeated occurrences of one diagnostic can be re-alerted after the cooldown. A separate
+    sliding one-minute limit caps bursts across distinct diagnostics. This is intentionally
+    in-memory: restarting the watcher resets the policy state.
+    """
+
+    def __init__(
+        self,
+        *,
+        cooldown_seconds: float = 300.0,
+        max_per_minute: int = 60,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        if not 0.0 <= cooldown_seconds <= MAX_ALERT_COOLDOWN_SECONDS:
+            raise InputError(
+                f"alert cooldown must be between 0 and {MAX_ALERT_COOLDOWN_SECONDS} seconds"
+            )
+        if not 1 <= max_per_minute <= MAX_ALERTS_PER_MINUTE:
+            raise InputError(
+                f"alert limit must be between 1 and {MAX_ALERTS_PER_MINUTE} per minute"
+            )
+        self.cooldown_seconds = cooldown_seconds
+        self.max_per_minute = max_per_minute
+        self._clock = clock
+        self._last_sent: OrderedDict[str, float] = OrderedDict()
+        self._sent_times: deque[float] = deque()
+        self.suppressed_count = 0
+
+    def allow(self, group: Group) -> bool:
+        """Return whether this diagnostic should be emitted to configured alert sinks."""
+        now = self._clock()
+        while self._sent_times and now - self._sent_times[0] >= 60.0:
+            self._sent_times.popleft()
+
+        signature = sanitize(group.signature_id, 64)
+        previous = self._last_sent.get(signature)
+        if (
+            self.cooldown_seconds > 0
+            and previous is not None
+            and now - previous < self.cooldown_seconds
+        ):
+            self.suppressed_count += 1
+            return False
+        if len(self._sent_times) >= self.max_per_minute:
+            self.suppressed_count += 1
+            return False
+
+        self._sent_times.append(now)
+        self._last_sent[signature] = now
+        self._last_sent.move_to_end(signature)
+        while len(self._last_sent) > MAX_TRACKED_ALERT_SIGNATURES:
+            self._last_sent.popitem(last=False)
+        return True
 
 def validate_alert_template(template: str) -> None:
     """Validate a single-line template without evaluating expressions or attribute access."""

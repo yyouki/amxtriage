@@ -313,7 +313,9 @@ def test_patch_preview_exposes_hashes_required_for_opt_in_apply(tmp_path: Path) 
     )
     rendered = render_patch_preview(preview, "json")
 
-    assert preview.source_sha256 is not None and len(preview.source_sha256) == 64
-    assert preview.patch_sha256 is not None and len(preview.patch_sha256) == 64
+    assert preview.source_sha256 is not None
+    assert len(preview.source_sha256) == 64
+    assert preview.patch_sha256 is not None
+    assert len(preview.patch_sha256) == 64
     assert f'"source_sha256": "{preview.source_sha256}"' in rendered
     assert f'"patch_sha256": "{preview.patch_sha256}"' in rendered

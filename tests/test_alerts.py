@@ -6,6 +6,7 @@ import pytest
 
 from amxtriage.aggregate import Aggregator
 from amxtriage.alerts import (
+    AlertThrottle,
     DEFAULT_ALERT_TEMPLATE,
     JsonlAlertSink,
     append_alert_event,
@@ -166,3 +167,53 @@ def test_default_template_has_location_and_message_placeholders() -> None:
     assert "{file}" in DEFAULT_ALERT_TEMPLATE
     assert "{line}" in DEFAULT_ALERT_TEMPLATE
     assert "{message}" in DEFAULT_ALERT_TEMPLATE
+
+
+
+def test_alert_throttle_allows_repeat_after_cooldown() -> None:
+    now = [0.0]
+    throttle = AlertThrottle(
+        cooldown_seconds=30.0,
+        max_per_minute=10,
+        clock=lambda: now[0],
+    )
+    group = make_group()
+
+    assert throttle.allow(group) is True
+    now[0] = 29.9
+    assert throttle.allow(group) is False
+    assert throttle.suppressed_count == 1
+    now[0] = 30.0
+    assert throttle.allow(group) is True
+
+
+def test_alert_throttle_enforces_sliding_minute_limit() -> None:
+    now = [0.0]
+    throttle = AlertThrottle(
+        cooldown_seconds=0.0,
+        max_per_minute=2,
+        clock=lambda: now[0],
+    )
+
+    assert throttle.allow(make_group(kind="runtime_error")) is True
+    now[0] = 1.0
+    assert throttle.allow(make_group(kind="crash")) is True
+    now[0] = 2.0
+    assert throttle.allow(make_group(kind="long_call")) is False
+    assert throttle.suppressed_count == 1
+    now[0] = 60.0
+    assert throttle.allow(make_group(kind="long_call")) is True
+
+
+@pytest.mark.parametrize(
+    ("cooldown_seconds", "max_per_minute"),
+    [(-1.0, 60), (86401.0, 60), (300.0, 0), (300.0, 10001)],
+)
+def test_alert_throttle_rejects_unsafe_policy_values(
+    cooldown_seconds: float, max_per_minute: int
+) -> None:
+    with pytest.raises(InputError):
+        AlertThrottle(
+            cooldown_seconds=cooldown_seconds,
+            max_per_minute=max_per_minute,
+        )

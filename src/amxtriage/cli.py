@@ -16,6 +16,7 @@ from amxtriage.aggregate import Aggregator
 from amxtriage.alerts import (
     DEFAULT_ALERT_PREFIX,
     DEFAULT_ALERT_TEMPLATE,
+    AlertThrottle,
     JsonlAlertSink,
     PawnBridgeAlertSink,
 )
@@ -99,7 +100,9 @@ _SIZE_UNITS = {"": 1, "K": 1024, "M": 1024**2, "G": 1024**3}
 
 def _sha256_digest(text: str) -> str:
     if re.fullmatch(r"[0-9a-fA-F]{64}", text) is None:
-        raise argparse.ArgumentTypeError("must be a 64-character SHA-256 hex digest copied from patch-preview")
+        raise argparse.ArgumentTypeError(
+            "must be a 64-character SHA-256 hex digest copied from patch-preview"
+        )
     return text.lower()
 
 
@@ -110,6 +113,16 @@ def _size(text: str) -> int:
             f"invalid size: {text!r} (use a number of bytes, or a number followed by K, M or G)"
         )
     return int(match[1]) * _SIZE_UNITS[match[2].upper()]
+
+
+def _alert_cooldown(text: str) -> float:
+    try:
+        value = float(text)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(f"invalid number: {text!r}") from error
+    if not 0.0 <= value <= 86400.0:
+        raise argparse.ArgumentTypeError("must be between 0 and 86400 seconds")
+    return value
 
 
 def _poll_interval(text: str) -> float:
@@ -253,6 +266,20 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_ALERT_PREFIX,
         metavar="TEXT",
         help="prefix for alert summaries (requires --alert-jsonl or --alert-pawn-file)",
+    )
+    watch.add_argument(
+        "--alert-cooldown",
+        type=_alert_cooldown,
+        default=300.0,
+        metavar="SECONDS",
+        help="suppress repeat alerts for the same diagnostic during this cooldown (default 300)",
+    )
+    watch.add_argument(
+        "--alert-max-per-minute",
+        type=_bounded_int(1, 300),
+        default=60,
+        metavar="COUNT",
+        help="maximum number of alerts written per minute (default 60; max 300)",
     )
     watch.add_argument(
         "--alert-template",
@@ -546,18 +573,22 @@ def _announce_new_problem(
     source_index: SourceIndex | None,
     args: argparse.Namespace,
     alert_sinks: Sequence[JsonlAlertSink | PawnBridgeAlertSink] = (),
+    alert_throttle: AlertThrottle | None = None,
 ) -> None:
     added = aggregator.add(event, label)
     group = added.group
-    if group is None or not added.created:
+    if group is None:
         return
     if baseline is not None and group.signature_id in baseline:
         return
-    for alert_sink in alert_sinks:
-        if not alert_sink.emit(group) and not alert_sink.warning_emitted:
-            detail = alert_sink.failure_reason or "write failed"
-            print(f"warning: local alert export disabled: {detail}", file=sys.stderr, flush=True)
-            alert_sink.warning_emitted = True
+    if alert_sinks and (alert_throttle is None or alert_throttle.allow(group)):
+        for alert_sink in alert_sinks:
+            if not alert_sink.emit(group) and not alert_sink.warning_emitted:
+                detail = alert_sink.failure_reason or "write failed"
+                print(f"warning: local alert export disabled: {detail}", file=sys.stderr, flush=True)
+                alert_sink.warning_emitted = True
+    if not added.created:
+        return
     snippet = None
     if source_index is not None and args.context > 0:
         snippet = snippet_for(group, source_index, args.context)
@@ -583,6 +614,14 @@ def _run_watch(args: argparse.Namespace) -> int:
         )
     if args.alert_pawn_file:
         alert_sinks.append(PawnBridgeAlertSink(args.alert_pawn_file, prefix=args.alert_prefix))
+    alert_throttle = (
+        AlertThrottle(
+            cooldown_seconds=args.alert_cooldown,
+            max_per_minute=args.alert_max_per_minute,
+        )
+        if alert_sinks
+        else None
+    )
     stop = threading.Event()
     follower = LogFollower(
         args.log,
@@ -607,7 +646,7 @@ def _run_watch(args: argparse.Namespace) -> int:
             events = parser.idle() if item is None else parser.feed(item)
             for event in events:
                 _announce_new_problem(
-                    event, aggregator, label, baseline, source_index, args, alert_sinks
+                    event, aggregator, label, baseline, source_index, args, alert_sinks, alert_throttle
                 )
     except KeyboardInterrupt:
         pass
@@ -615,7 +654,16 @@ def _run_watch(args: argparse.Namespace) -> int:
         restore_signal()
         follower.close()
     for event in parser.finish():
-        _announce_new_problem(event, aggregator, label, baseline, source_index, args, alert_sinks)
+        _announce_new_problem(
+            event, aggregator, label, baseline, source_index, args, alert_sinks, alert_throttle
+        )
+    if alert_throttle is not None and alert_throttle.suppressed_count:
+        print(
+            "warning: suppressed "
+            f"{alert_throttle.suppressed_count} alert(s) by cooldown/rate limit",
+            file=sys.stderr,
+            flush=True,
+        )
     result = AnalysisResult([label], parser.line_number, follower.truncated_lines, aggregator)
     report = build_report(
         result,
