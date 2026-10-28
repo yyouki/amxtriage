@@ -362,6 +362,7 @@ def test_patch_preview_cli_emits_unified_diff_without_editing_source(tmp_path, c
 
 def test_patch_preview_cli_returns_three_when_no_safe_patch_exists(tmp_path, capsys):
     root = tmp_path / "source"
+    root.mkdir()
     source = root / "rp.pwn"
     source.write_text("new value = 42\nreturn 1;\n", encoding="utf-8")
     compiler_log = write_log(
