@@ -56,7 +56,7 @@ Que exista una descarga no prueba compatibilidad. No inventes enlaces ni descarg
 
 El modo permanente debe ser un proceso/servicio visible, documentado y activado expresamente por el propietario; no un virus oculto ni un programa autorreplicable. No debe inyectar código en el proceso del juego, manipular memoria, evadir a administradores, cambiar el firewall en silencio ni ejecutar comandos extraídos de logs.
 
-Mide CPU, RAM, E/S de disco y latencia con registros realistas. Limita tamaño de entrada, líneas, memoria, colas y frecuencia de notificación. Agrupa incidentes repetidos. La red debe estar desactivada por defecto; todo transporte remoto debe ser opt-in, autenticado y limitado. No es posible garantizar cero sobrecarga o el mismo ping en todos los hosts.
+Mide CPU, RAM, E/S de disco y latencia con registros realistas. Limita tamaño de entrada, líneas, memoria, colas y frecuencia de notificación. Agrupa incidentes repetidos. La red debe estar desactivada por defecto; todo transporte remoto debe ser opt-in, autenticado y limitado. No es posible garantizar cero sobrecarga o el mismo ping en todos los hosts. El exportador opcional solo para Linux `watch --metrics-jsonl FILE --metrics-interval N` registra métricas del host/proceso y el tiempo local de exportación de alertas. `scripts/benchmark_watch.py` mide tráfico sintético local; la prueba de CI no es un benchmark de servidor de juego real ni de ping.
 
 ## DDoS, anti-cheat y avisos para administradores
 
