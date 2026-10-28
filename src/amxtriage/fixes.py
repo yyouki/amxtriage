@@ -31,7 +31,9 @@ _BLOCKED_START = re.compile(
     r"native\b|static\b|enum\b|struct\b)",
     re.IGNORECASE,
 )
-_BAD_TRAILING_TOKENS = ("=", "+", "-", "*", "/", "%", "&", "|", ".", ",", ":", "?", "(", "[", "\\", "<", ">")
+_BAD_TRAILING_TOKENS = (
+    "=", "+", "-", "*", "/", "%", "&", "|", ".", ",", ":", "?", "(", "[", "\\", "<", ">"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,7 +60,7 @@ def _is_target_diagnostic(diagnostic: CompilerDiagnostic) -> bool:
 def _line_parts(line: str) -> tuple[str, str]:
     if line.endswith("\r\n"):
         return line[:-2], "\r\n"
-    if line.endswith("\n") or line.endswith("\r"):
+    if line.endswith(("\n", "\r")):
         return line[:-1], line[-1:]
     return line, ""
 
@@ -75,9 +77,7 @@ def _simple_assignment(line: str) -> bool:
         return False
     if statement.count("(") != statement.count(")") or statement.count("[") != statement.count("]"):
         return False
-    if len(_SIMPLE_ASSIGNMENT.findall(statement)) != 1:
-        return False
-    return True
+    return len(_SIMPLE_ASSIGNMENT.findall(statement)) == 1
 
 
 def _has_unsafe_controls(text: str) -> bool:
@@ -104,7 +104,8 @@ def build_patch_preview(
     if len(targets) != 1:
         return PatchPreview(
             "ambiguous",
-            "Multiple matching diagnostics were found; review them individually. No patch was generated.",
+            "Multiple matching diagnostics were found; review them individually. "
+            "No patch was generated.",
             len(diagnostics),
             len(targets),
         )
@@ -113,7 +114,8 @@ def build_patch_preview(
     if not diagnostic.file or diagnostic.line is None or diagnostic.line < 2:
         return PatchPreview(
             "blocked",
-            "The diagnostic does not contain a usable source file and line; no patch was generated.",
+            "The diagnostic does not contain a usable source file and line; "
+            "no patch was generated.",
             len(diagnostics),
             1,
             diagnostic_id=diagnostic.diagnostic_id,
@@ -131,16 +133,22 @@ def build_patch_preview(
     if source is None:
         return PatchPreview(
             "blocked",
-            "The source file could not be resolved uniquely and safely inside --source-dir; no patch was generated.",
+            "The source file could not be resolved uniquely and safely inside --source-dir; "
+            "no patch was generated.",
             len(diagnostics),
             1,
             diagnostic_id=diagnostic.diagnostic_id,
         )
     relative_path, raw_source = source
-    if _has_unsafe_controls(relative_path) or relative_path.startswith("/") or ".." in relative_path.split("/"):
+    if (
+        _has_unsafe_controls(relative_path)
+        or relative_path.startswith("/")
+        or ".." in relative_path.split("/")
+    ):
         return PatchPreview(
             "blocked",
-            "The resolved source path cannot be represented safely in a patch; no patch was generated.",
+            "The resolved source path cannot be represented safely in a patch; "
+            "no patch was generated.",
             len(diagnostics),
             1,
             diagnostic_id=diagnostic.diagnostic_id,
@@ -177,7 +185,8 @@ def build_patch_preview(
     if re.match(r"^\s*return(?:\s|;|$)", current_text) is None:
         return PatchPreview(
             "blocked",
-            "The reported line does not begin with a Pawn return statement; no patch was generated.",
+            "The reported line does not begin with a Pawn return statement; "
+            "no patch was generated.",
             len(diagnostics),
             1,
             file=relative_path,
@@ -199,7 +208,8 @@ def build_patch_preview(
     if not _simple_assignment(previous_text):
         return PatchPreview(
             "blocked",
-            "The preceding line is not a single unambiguous assignment/declaration; no patch was generated.",
+            "The preceding line is not a single unambiguous assignment/declaration; "
+            "no patch was generated.",
             len(diagnostics),
             1,
             file=relative_path,
@@ -247,7 +257,8 @@ def build_patch_preview(
 
     return PatchPreview(
         "ready",
-        "One conservative patch is available for review. Source files were not modified and no compiler was run.",
+        "One conservative patch is available for review. Source files were not modified "
+        "and no compiler was run.",
         len(diagnostics),
         1,
         file=relative_path,
