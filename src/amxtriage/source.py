@@ -80,6 +80,11 @@ class SourceIndex:
         self._scan()
 
     @property
+    def root(self) -> Path:
+        """Return the canonical source root used for safe, root-confined operations."""
+        return self._root
+
+    @property
     def file_count(self) -> int:
         return sum(len(paths) for paths in self._files.values())
 
