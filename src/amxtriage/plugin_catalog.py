@@ -75,9 +75,11 @@ def _text(record: dict[str, object], key: str, label: str) -> str:
 
 def _checked_date(value: str, label: str) -> str:
     try:
-        date.fromisoformat(value)
+        parsed = date.fromisoformat(value)
     except ValueError as error:
-        raise InputError(f"invalid plugin catalog: {label} must be an ISO date") from error
+        raise InputError(f"invalid plugin catalog: {label} must be an ISO date (YYYY-MM-DD)") from error
+    if parsed.isoformat() != value:
+        raise InputError(f"invalid plugin catalog: {label} must use YYYY-MM-DD")
     return value
 
 
@@ -92,6 +94,8 @@ def _string_list(record: dict[str, object], key: str, label: str) -> tuple[str, 
     value = record.get(key)
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         raise InputError(f"invalid plugin catalog: {label}.{key} must be a list of strings")
+    if any(not item.strip() for item in value):
+        raise InputError(f"invalid plugin catalog: {label}.{key} must not contain empty values")
     return tuple(value)
 
 
@@ -144,7 +148,34 @@ def parse_catalog(raw: object) -> CatalogSnapshot:
         project_url = _https_url(_text(row, "project_url", label), label + ".project_url")
         release_url = _https_url(_text(row, "release_url", label), label + ".release_url")
         checked_on = _checked_date(_text(row, "checked_on", label), label + ".checked_on")
+        if checked_on > snapshot_date:
+            raise InputError(f"invalid plugin catalog: {label}.checked_on is after snapshot_date")
         evidence = _evidence_list(row, label)
+        if any(item.checked_on > snapshot_date for item in evidence):
+            raise InputError(f"invalid plugin catalog: {label}.evidence date is after snapshot_date")
+
+        server_versions = _string_list(row, "server_versions", label)
+        platforms = _string_list(row, "platforms", label)
+        architectures = (
+            _string_list(row, "architectures", label) if "architectures" in row else ()
+        )
+        dependencies = _string_list(row, "dependencies", label) if "dependencies" in row else ()
+        if status_text == "verified":
+            if not server_versions or not platforms or not architectures:
+                raise InputError(
+                    f"invalid plugin catalog: verified entry {entry_id} must specify "
+                    "server_versions, platforms, and architectures"
+                )
+            if not any(
+                "runtime test passed" in item.statement.casefold()
+                or "runtime-verified by amxtriage" in item.statement.casefold()
+                for item in evidence
+            ):
+                raise InputError(
+                    f"invalid plugin catalog: verified entry {entry_id} needs explicit "
+                    "runtime verification evidence"
+                )
+
         entries.append(
             CatalogEntry(
                 id=entry_id,
@@ -154,14 +185,10 @@ def parse_catalog(raw: object) -> CatalogSnapshot:
                 release_url=release_url,
                 version=_text(row, "version", label),
                 target_server=server_text,
-                server_versions=_string_list(row, "server_versions", label),
-                platforms=_string_list(row, "platforms", label),
-                architectures=(
-                    _string_list(row, "architectures", label) if "architectures" in row else ()
-                ),
-                dependencies=(
-                    _string_list(row, "dependencies", label) if "dependencies" in row else ()
-                ),
+                server_versions=server_versions,
+                platforms=platforms,
+                architectures=architectures,
+                dependencies=dependencies,
                 install_location=_text(row, "install_location", label),
                 status=status_text,
                 checked_on=checked_on,
