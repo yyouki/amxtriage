@@ -297,10 +297,7 @@ def render_catalog_report(
                 f"  {tr(language, 'catalog_release')}: {entry.release_url}",
                 f"  {tr(language, 'catalog_install')}: {entry.install_location}",
                 f"  {tr(language, 'catalog_dependencies')}: "
-                + (
-                    ", ".join(entry.dependencies)
-                    or tr(language, "catalog_dependencies_unknown")
-                ),
+                + (", ".join(entry.dependencies) or tr(language, "catalog_dependencies_unknown")),
                 f"  {tr(language, 'catalog_checked')}: {entry.checked_on}",
                 f"  {tr(language, 'catalog_evidence')}: "
                 + ", ".join(item.url for item in entry.evidence),

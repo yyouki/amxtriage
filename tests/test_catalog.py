@@ -54,9 +54,7 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
     )
     assert all(not entry.server_versions and not entry.platforms for entry in snapshot.entries)
     rustext = next(
-        entry
-        for entry in snapshot.entries
-        if entry.id == "rustext-openmp-v2.0.11-nomemhack"
+        entry for entry in snapshot.entries if entry.id == "rustext-openmp-v2.0.11-nomemhack"
     )
     assert rustext.kind == "plugin"
     assert rustext.version == "v2.0.11 (nomemhack build)"
