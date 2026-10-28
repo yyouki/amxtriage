@@ -42,7 +42,7 @@ def main() -> int:
         source_root = workspace / "source"
         source_file = source_root / "gamemodes" / "rp.pwn"
         source_file.parent.mkdir(parents=True)
-        original = "main()\n{\n    new value = 42\n    return 1;\n}\n"
+        original = "#pragma semicolon 1\nmain()\n{\n    new value = 42\n    return 1;\n}\n"
         source_file.write_text(original, encoding="utf-8")
         original_bytes = source_file.read_bytes()
 
