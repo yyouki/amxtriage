@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
 
 from amxtriage.compiler import parse_compiler_lines
+from amxtriage.errors import SourceError
 from amxtriage.fixes import build_patch_preview, render_patch_preview
 from amxtriage.source import SourceIndex
 
@@ -39,6 +41,7 @@ def make_source(root: Path, content: str) -> Path:
 def test_patch_preview_emits_one_unified_diff_without_modifying_source(tmp_path: Path) -> None:
     source = make_source(tmp_path, "new value = 42\nreturn 1;\n")
     before = source.read_bytes()
+    assert os.path.isfile(source)
     preview = build_patch_preview(
         [parse_pawn_diagnostic()],
         SourceIndex(str(tmp_path)),
@@ -185,5 +188,5 @@ def test_control_characters_in_diff_context_are_refused(tmp_path: Path) -> None:
     assert source.read_bytes() == before
 
 def test_patch_preview_refuses_invalid_source_dir(tmp_path: Path) -> None:
-    with pytest.raises(Exception, match="source directory"):
+    with pytest.raises(SourceError, match="source directory"):
         SourceIndex(str(tmp_path / "missing"))
