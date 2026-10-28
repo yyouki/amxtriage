@@ -111,7 +111,9 @@
     "catalog_install": "Install location",
     "catalog_checked": "Checked on",
     "catalog_evidence": "Evidence",
-    "catalog_notes": "Notes"
+    "catalog_notes": "Notes",
+    "catalog_dependencies": "Dependencies",
+    "catalog_dependencies_unknown": "Not specified by cited evidence"
   },
   "id": {
     "input_label": "masukan:",
@@ -225,7 +227,9 @@
     "catalog_install": "Lokasi instalasi",
     "catalog_checked": "Diperiksa pada",
     "catalog_evidence": "Bukti",
-    "catalog_notes": "Catatan"
+    "catalog_notes": "Catatan",
+    "catalog_dependencies": "Dependensi",
+    "catalog_dependencies_unknown": "Tidak disebutkan dalam bukti yang dikutip"
   },
   "es": {
     "input_label": "entrada:",
@@ -339,6 +343,8 @@
     "catalog_install": "Ubicación de instalación",
     "catalog_checked": "Comprobado el",
     "catalog_evidence": "Evidencia",
-    "catalog_notes": "Notas"
+    "catalog_notes": "Notas",
+    "catalog_dependencies": "Dependencias",
+    "catalog_dependencies_unknown": "No especificadas en la evidencia citada"
   }
 }

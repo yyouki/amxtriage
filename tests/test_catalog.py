@@ -31,10 +31,10 @@ def raw_catalog(snapshot: CatalogSnapshot) -> dict[str, object]:
 
 def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> None:
     snapshot = load_catalog()
-    assert len(snapshot.entries) == 6
+    assert len(snapshot.entries) == 8
     documented = [entry for entry in snapshot.entries if entry.status == "documented"]
     unknown = [entry for entry in snapshot.entries if entry.status == "unknown"]
-    assert len(documented) == 5
+    assert len(documented) == 7
     assert len(unknown) == 1
     assert all(entry.target_server == "open.mp" for entry in snapshot.entries)
     assert all(entry.evidence for entry in snapshot.entries)
@@ -51,13 +51,26 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
         for evidence in newer_sampvoice.evidence
     )
     assert all(not entry.server_versions and not entry.platforms for entry in snapshot.entries)
+    rustext = next(entry for entry in snapshot.entries if entry.id == "rustext-openmp-v2.0.11-nomemhack")
+    assert rustext.kind == "plugin"
+    assert rustext.version == "v2.0.11 (nomemhack build)"
+    assert rustext.install_location == "plugins"
+    assert rustext.release_url == "https://github.com/ziggi/rustext/releases/tag/v2.0.11"
+    assert any("nomemhack" in item.statement for item in rustext.evidence)
+    keylistener = next(
+        entry for entry in snapshot.entries if entry.id == "keylistener-openmp-1.1.2-pr"
+    )
+    assert keylistener.kind == "plugin"
+    assert keylistener.install_location == "plugins"
+    assert keylistener.release_url == "https://github.com/edgyaf/keylistener/releases/tag/1.1.2-pr"
+    assert any("does not establish a mandatory runtime dependency" in item.statement for item in keylistener.evidence)
 
 
 def test_server_and_status_filters_are_exact() -> None:
     snapshot = load_catalog()
-    assert len(filter_catalog_entries(snapshot.entries, server="open.mp")) == 6
+    assert len(filter_catalog_entries(snapshot.entries, server="open.mp")) == 8
     assert filter_catalog_entries(snapshot.entries, server="sa-mp") == []
-    assert len(filter_catalog_entries(snapshot.entries, server="all", status="documented")) == 5
+    assert len(filter_catalog_entries(snapshot.entries, server="all", status="documented")) == 7
     assert len(filter_catalog_entries(snapshot.entries, status="unknown")) == 1
     assert filter_catalog_entries(snapshot.entries, status="verified") == []
 
@@ -68,9 +81,11 @@ def test_json_report_has_stable_schema_and_honest_limit_notes() -> None:
     raw = render_catalog_report(snapshot, entries, output_format="json", server="open.mp")
     payload = json.loads(raw)
     assert payload["schema_version"] == 1
-    assert payload["entry_count"] == 6
+    assert payload["entry_count"] == 8
     assert payload["filters"] == {"server": "open.mp", "status": None}
     assert "runtime compatibility" in " ".join(payload["notes"])
+    assert any("dependencies" in note for note in payload["notes"])
+    assert "dependencies" in payload["entries"][0]
     assert payload["entries"][0]["evidence"][0]["url"] == (
         "https://open.mp/docs/server/Installation"
     )
@@ -88,6 +103,9 @@ def test_markdown_report_links_official_release_and_evidence() -> None:
     assert "Katalog kompatibilitas plugin dan dependensi" in report
     assert "https://github.com/katursis/Pawn.CMD/releases/tag/3.4.0-omp" in report
     assert "https://open.mp/docs/server/Installation" in report
+    assert "https://github.com/ziggi/rustext/releases/tag/v2.0.11" in report
+    assert "https://github.com/edgyaf/keylistener/releases/tag/1.1.2-pr" in report
+    assert "Dependencies" not in report
     assert "documented" in report
 
 

@@ -44,6 +44,7 @@ class CatalogEntry:
     target_server: CatalogServer
     server_versions: tuple[str, ...]
     platforms: tuple[str, ...]
+    dependencies: tuple[str, ...]
     install_location: str
     status: CatalogStatus
     checked_on: str
@@ -154,6 +155,9 @@ def parse_catalog(raw: object) -> CatalogSnapshot:
                 target_server=server_text,
                 server_versions=_string_list(row, "server_versions", label),
                 platforms=_string_list(row, "platforms", label),
+                dependencies=(
+                    _string_list(row, "dependencies", label) if "dependencies" in row else ()
+                ),
                 install_location=_text(row, "install_location", label),
                 status=status_text,
                 checked_on=checked_on,
@@ -223,6 +227,8 @@ def render_catalog_report(
                 "of runtime compatibility.",
                 "Empty server_versions/platforms fields mean the cited evidence did "
                 "not specify them.",
+                "An empty dependencies list means this snapshot did not establish a dependency; "
+                "it is not proof that no dependency exists.",
                 "No downloads, network probes, or binary execution are performed.",
             ],
         }
@@ -244,9 +250,9 @@ def render_catalog_report(
             return "\n".join(lines) + "\n"
         lines.extend(
             [
-                "| Name | Version | Target | Type | Status | Install location | "
+                "| Name | Version | Target | Type | Status | Install location | Dependencies | "
                 "Official release | Evidence checked |",
-                "|---|---|---|---|---|---|---|---|",
+                "|---|---|---|---|---|---|---|---|---|",
             ]
         )
         for entry in entries:
@@ -264,6 +270,10 @@ def render_catalog_report(
                         _md(entry.kind),
                         _md(entry.status),
                         _md(entry.install_location),
+                        _md(
+                            ", ".join(entry.dependencies)
+                            or tr(language, "catalog_dependencies_unknown")
+                        ),
                         release,
                         evidence,
                     )
@@ -286,6 +296,11 @@ def render_catalog_report(
                 f"  {tr(language, 'catalog_project')}: {entry.project_url}",
                 f"  {tr(language, 'catalog_release')}: {entry.release_url}",
                 f"  {tr(language, 'catalog_install')}: {entry.install_location}",
+                f"  {tr(language, 'catalog_dependencies')}: "
+                + (
+                    ", ".join(entry.dependencies)
+                    or tr(language, "catalog_dependencies_unknown")
+                ),
                 f"  {tr(language, 'catalog_checked')}: {entry.checked_on}",
                 f"  {tr(language, 'catalog_evidence')}: "
                 + ", ".join(item.url for item in entry.evidence),

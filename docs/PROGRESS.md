@@ -30,7 +30,7 @@ Nilai dibulatkan untuk tampilan. Persentase area bukan bukti kualitas runtime: p
 - CLI Python untuk analisis log SA-MP/open.mp, pengelompokan masalah, `watch`, baseline, konteks source, dan rekomendasi offline.
 - Diagnostik teks compiler/linter untuk format umum Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go, dan Rust. Ini tidak mencakup semua versi tool dan perintah `diagnose` tidak menjalankan compiler.
 - Label laporan dan dokumentasi English, Bahasa Indonesia, dan Español.
-- Katalog offline berisi lima component open.mp yang tercatat dari dokumentasi upstream; status `documented` bukan bukti kompatibilitas runtime pada semua OS/versi.
+- Katalog offline mencatat lima rilis component yang tercantum di dokumentasi open.mp, satu rilis sampvoice yang belum dipastikan (`unknown`), serta dua plugin legacy (rustext dan keylistener) yang direkomendasikan oleh panduan migrasi resmi. Dependencies ditampilkan hanya jika bukti upstream menyebutkannya; daftar kosong bukan bukti bahwa tidak ada dependensi.
 - Alert JSONL dengan template terbatas, field lokasi terstruktur yang tidak dapat ditimpa template, safe local output, dan perilaku fail-safe jika ekspor gagal.
 - Opsi `watch --alert-pawn-file` dan source filterscript `integrations/pawn/amxtriage_bridge.pwn`. Bridge default hanya mengirim ke admin RCON, membatasi pemrosesan menjadi lima record per detik, serta menampilkan path merah dan nomor baris biru.
 - GitHub Actions menjalankan tes Python 3.10–3.13, pemeriksaan kualitas/paket, dan kompilasi Pawn dengan toolchain yang dipatok. Source bridge berhasil dikompilasi dalam CI.

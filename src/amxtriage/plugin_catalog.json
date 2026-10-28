@@ -22,7 +22,8 @@
           "statement": "The official open.mp installation guide lists this release in the component installation section."
         }
       ],
-      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. The guide does not specify all server builds, operating systems, or CPU architectures. Verify the downloaded artifact and required include/API on the target host."
+      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. The guide does not specify all server builds, operating systems, or CPU architectures. Verify the downloaded artifact and required include/API on the target host.",
+      "dependencies": []
     },
     {
       "id": "pawn-raknet-openmp-1.6.0-omp",
@@ -44,7 +45,8 @@
           "statement": "The official open.mp installation guide lists this release in the component installation section."
         }
       ],
-      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. The guide does not specify all server builds, operating systems, or CPU architectures. Verify the downloaded artifact and required include/API on the target host."
+      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. The guide does not specify all server builds, operating systems, or CPU architectures. Verify the downloaded artifact and required include/API on the target host.",
+      "dependencies": []
     },
     {
       "id": "sampvoice-openmp-3.1.5-omp",
@@ -66,7 +68,8 @@
           "statement": "The official open.mp installation guide lists this release in the component installation section."
         }
       ],
-      "notes": "The official open.mp installation guide explicitly lists v3.1.5-omp, but the upstream releases page now lists v3.2.0-omp. That newer release is tracked separately as unknown until compatibility with the target server build, OS/architecture, and dependencies is verified."
+      "notes": "The official open.mp installation guide explicitly lists v3.1.5-omp, but the upstream releases page now lists v3.2.0-omp. That newer release is tracked separately as unknown until compatibility with the target server build, OS/architecture, and dependencies is verified.",
+      "dependencies": []
     },
     {
       "id": "sampvoice-openmp-3.2.0-omp",
@@ -93,7 +96,8 @@
           "statement": "The official open.mp installation guide currently lists v3.1.5-omp, not v3.2.0-omp; compatibility for the newer release is not established by that guide."
         }
       ],
-      "notes": "Upstream shows a newer open.mp-tagged release than the version named in the official open.mp installation guide. amxtriage has not verified runtime compatibility, target server build, OS/architecture matrix, or dependencies. Treat this release as unknown and test it on a staging server before use."
+      "notes": "Upstream shows a newer open.mp-tagged release than the version named in the official open.mp installation guide. amxtriage has not verified runtime compatibility, target server build, OS/architecture matrix, or dependencies. Treat this release as unknown and test it on a staging server before use.",
+      "dependencies": []
     },
     {
       "id": "discord-connector-openmp-0.3.6-pre",
@@ -115,7 +119,8 @@
           "statement": "The official open.mp installation guide lists this release in the component installation section."
         }
       ],
-      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. Discord API/service requirements and compatibility with other server builds must be checked separately."
+      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. Discord API/service requirements and compatibility with other server builds must be checked separately.",
+      "dependencies": []
     },
     {
       "id": "sscanf-openmp-2.13.8",
@@ -137,7 +142,64 @@
           "statement": "The official open.mp installation guide lists this release in the component installation section."
         }
       ],
-      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. Match the include and runtime binary version; the guide does not specify a full OS/architecture matrix."
+      "notes": "Documented by the official open.mp guide, not runtime-verified by amxtriage. Match the include and runtime binary version; the guide does not specify a full OS/architecture matrix.",
+      "dependencies": []
+    },
+    {
+      "id": "rustext-openmp-v2.0.11-nomemhack",
+      "name": "rustext",
+      "kind": "plugin",
+      "project_url": "https://github.com/ziggi/rustext",
+      "release_url": "https://github.com/ziggi/rustext/releases/tag/v2.0.11",
+      "version": "v2.0.11 (nomemhack build)",
+      "target_server": "open.mp",
+      "server_versions": [],
+      "platforms": [],
+      "dependencies": [],
+      "install_location": "plugins",
+      "status": "documented",
+      "checked_on": "2026-10-28",
+      "evidence": [
+        {
+          "url": "https://open.mp/docs/server/Installation",
+          "checked_on": "2026-10-28",
+          "statement": "The official open.mp installation guide explicitly lists rustext v2.0.11 and specifies the nomemhack build for OMP."
+        },
+        {
+          "url": "https://github.com/ziggi/rustext/releases/tag/v2.0.11",
+          "checked_on": "2026-10-28",
+          "statement": "The upstream release page describes fixes and functions for the nomemhack build; the cited release does not establish a complete server/OS/architecture matrix."
+        }
+      ],
+      "notes": "The official guide specifies the nomemhack build. This entry documents the listed release only; amxtriage has not runtime-tested it or established a complete server-build, OS, CPU-architecture, ABI, or dependency matrix. Check the exact artifact and test it on staging before deployment."
+    },
+    {
+      "id": "keylistener-openmp-1.1.2-pr",
+      "name": "keylistener",
+      "kind": "plugin",
+      "project_url": "https://github.com/edgyaf/keylistener",
+      "release_url": "https://github.com/edgyaf/keylistener/releases/tag/1.1.2-pr",
+      "version": "1.1.2-pr",
+      "target_server": "open.mp",
+      "server_versions": [],
+      "platforms": [],
+      "dependencies": [],
+      "install_location": "plugins",
+      "status": "documented",
+      "checked_on": "2026-10-28",
+      "evidence": [
+        {
+          "url": "https://open.mp/docs/server/Installation",
+          "checked_on": "2026-10-28",
+          "statement": "The official open.mp installation guide lists keylistener release 1.1.2-pr as the OMP-compatible plugin release."
+        },
+        {
+          "url": "https://github.com/edgyaf/keylistener/releases/tag/1.1.2-pr",
+          "checked_on": "2026-10-28",
+          "statement": "The upstream release notes say this release was ported to Pawn.RakNet; the note alone does not establish a mandatory runtime dependency or a full platform matrix."
+        }
+      ],
+      "notes": "The official guide lists this specific plugin release for OMP. The upstream note mentions a port to Pawn.RakNet, but this catalog does not infer that it is a mandatory runtime dependency without explicit documentation. Version/OS/architecture/ABI compatibility and any required includes or runtime dependencies remain unverified; test on staging."
     }
   ]
 }
