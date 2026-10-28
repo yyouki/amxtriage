@@ -403,7 +403,7 @@ def test_patch_apply_refuses_test_runner_that_changes_source(tmp_path: Path) -> 
     runner.write_text(
         "#!/usr/bin/env python3\n"
         "import pathlib\n"
-        "pathlib.Path('gamemodes/rp.pwn').write_text('external edit\n', encoding='utf-8')\n",
+        "pathlib.Path('gamemodes/rp.pwn').write_text('external edit\\n', encoding='utf-8')\n",
         encoding="utf-8",
     )
     runner.chmod(0o755)

@@ -778,9 +778,9 @@ def apply_patch_preview(
                     )
                 else:
                     failure_phase = "test"
-                    assert resolved_test_command is not None
+                    command_for_tests = resolved_test_command or ()
                     test_exit_code, test_output, test_problem = _run_bounded_command(
-                        resolved_test_command,
+                        command_for_tests,
                         cwd=root,
                         timeout_seconds=timeout_seconds,
                     )
