@@ -422,7 +422,7 @@ def _make_temporary_replacement(target: Path, data: bytes, mode: int) -> Path:
     )
     temp_path = Path(raw_path)
     try:
-        os.fchmod(descriptor, mode)
+        _set_descriptor_mode(descriptor, temp_path, mode)
         offset = 0
         while offset < len(data):
             written = os.write(descriptor, data[offset:])
@@ -461,16 +461,12 @@ def _fsync_directory(path: Path) -> None:
     """Best-effort durability for directory entry updates on platforms that support it."""
     if not hasattr(os, "O_DIRECTORY"):
         return
-    descriptor: int | None = None
-    try:
+    with contextlib.suppress(OSError):
         descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
-        os.fsync(descriptor)
-    except OSError:
-        pass
-    finally:
-        if descriptor is not None:
-            with contextlib.suppress(OSError):
-                os.close(descriptor)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
 
 
 def _temporary_rollback(
@@ -498,6 +494,7 @@ def _temporary_rollback(
             temporary.unlink(missing_ok=True)
             return False
         os.replace(temporary, target)
+        _fsync_directory(target.parent)
         return True
     except OSError:
         return False
@@ -665,6 +662,14 @@ def apply_patch_preview(
             failure_message = (
                 "Compiler validation could not run: "
                 f"{error.strerror or type(error).__name__}"
+            )
+        except KeyboardInterrupt:
+            compiler_exit_code = None
+            failure_message = "Compiler validation was interrupted by the user."
+        except Exception as error:
+            compiler_exit_code = None
+            failure_message = (
+                "Compiler validation failed unexpectedly: " f"{type(error).__name__}."
             )
 
         if replacement_info is None:
