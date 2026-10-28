@@ -74,14 +74,23 @@ def main() -> int:
             cwd=workspace,
         )
         if preview_result.returncode != 0:
-            fail("amxtriage patch-preview failed on real compiler output.", detail=preview_result.stdout + preview_result.stderr)
+            fail(
+                "amxtriage patch-preview failed on real compiler output.",
+                detail=preview_result.stdout + preview_result.stderr,
+            )
         try:
             preview = json.loads(preview_result.stdout)
         except json.JSONDecodeError:
             fail("patch-preview did not return valid JSON.", detail=preview_result.stdout)
         if preview.get("status") != "ready":
-            fail("patch-preview did not produce the expected conservative patch.", detail=preview_result.stdout)
-        if preview.get("source_modified") is not False or source_file.read_bytes() != original_bytes:
+            fail(
+                "patch-preview did not produce the expected conservative patch.",
+                detail=preview_result.stdout,
+            )
+        if (
+            preview.get("source_modified") is not False
+            or source_file.read_bytes() != original_bytes
+        ):
             fail("patch-preview modified the source file; diff-only contract was violated.")
         patch_hash = preview.get("patch_sha256")
         source_hash = preview.get("source_sha256")
@@ -112,9 +121,15 @@ def main() -> int:
             fail("patch-apply failed with the real Pawn compiler.", detail=apply_output)
         expected = "    new value = 42;\n"
         if expected not in source_file.read_text(encoding="utf-8"):
-            fail("patch-apply did not add the expected semicolon.", detail=source_file.read_text(encoding="utf-8"))
+            fail(
+                "patch-apply did not add the expected semicolon.",
+                detail=source_file.read_text(encoding="utf-8"),
+            )
 
-        print("Real Pawn compiler patch smoke test passed: preview was non-mutating; reviewed apply compiled.")
+        print(
+            "Real Pawn compiler patch smoke test passed: preview was non-mutating; "
+            "reviewed apply compiled."
+        )
         return 0
 
 
