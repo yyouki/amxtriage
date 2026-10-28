@@ -74,6 +74,17 @@ Por defecto, el bridge envía mensajes solo a administradores autenticados por R
 
 **Estado de las pruebas:** el source Pawn se compila en GitHub Actions con el compilador e includes fijados. El envío de mensajes aún no se ha probado de extremo a extremo en un servidor staging real de SA-MP/open.mp. Compilar no demuestra compatibilidad en tiempo de ejecución ni garantiza que el ping no cambie. Este bridge solo informa de problemas de diagnóstico; no es un sistema anti-cheat ni mitiga DDoS.
 
+## Vista previa segura del parche (solo diff)
+
+El comando `patch-preview` crea un diff para un único caso Pawn muy concreto: el error de compilador `001` indica que falta un punto y coma justo antes de `return`, y la línea anterior es una asignación/declaración sencilla. El archivo fuente debe resolverse de forma única y segura dentro de `--source-dir`.
+
+```bash
+amxtriage patch-preview compile.log --source-dir . --format unified
+amxtriage patch-preview compile.log --source-dir . --format json -o vista-previa-parche.json
+```
+
+Esto **no** es un reparador automático general. No modifica el código, no aplica parches, no descarga dependencias y no ejecuta el compilador. Los casos ambiguos o no admitidos se rechazan. El formato `unified` acepta un solo log de compilación después de expandir comodines y muestra únicamente el diff; si no hay una opción segura, explica el motivo en stderr y termina con el código `3`. Revisa el diff, compila con el compilador Pawn oficial y ejecuta pruebas de regresión/juego antes de usarlo.
+
 ## Límites y seguridad
 
 La versión actual lee archivos locales; los comandos `catalog` y `watch --alert-jsonl` no inician conexiones de red. Las recomendaciones siguen siendo sugerencias, no correcciones automáticas.

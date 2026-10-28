@@ -589,11 +589,12 @@ def _run_diagnose(args: argparse.Namespace) -> int:
 
 
 def _run_patch_preview(args: argparse.Namespace) -> int:
-    if args.format == "unified" and len(args.logs) > 1:
+    log_paths = expand_paths(args.logs)
+    if args.format == "unified" and len(log_paths) > 1:
         raise InputError("patch-preview unified output accepts one compiler log at a time")
     source_index = SourceIndex(args.source_dir)
     report = analyze_compiler_outputs(
-        expand_paths(args.logs),
+        log_paths,
         source_language="pawn",
         max_input_bytes=args.max_input_bytes or None,
     )

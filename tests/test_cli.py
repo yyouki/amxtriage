@@ -381,6 +381,33 @@ def test_patch_preview_cli_returns_three_when_no_safe_patch_exists(tmp_path, cap
     assert source.read_text(encoding="utf-8") == "new value = 42\nreturn 1;\n"
 
 
+def test_patch_preview_unified_rejects_multiple_expanded_logs(
+    tmp_path, capsys
+):
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    write_log(logs_dir / "first.log", ["first log"])
+    write_log(logs_dir / "second.log", ["second log"])
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+
+    code, out, err = run(
+        [
+            "patch-preview",
+            str(logs_dir / "*.log"),
+            "--source-dir",
+            str(source_root),
+            "--format",
+            "unified",
+        ],
+        capsys,
+    )
+
+    assert code == cli.EXIT_ERROR
+    assert out == ""
+    assert "accepts one compiler log at a time" in err
+
+
 def test_subprocess_module_help_works(run_cli):
     result = run_cli("--help")
     assert result.returncode == 0

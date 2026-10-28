@@ -75,6 +75,17 @@ Bridge default hanya mengirim ke admin yang terautentikasi RCON, memeriksa maksi
 
 **Status pengujian:** source Pawn berhasil dikompilasi di GitHub Actions dengan compiler dan include yang dipatok. Pengiriman pesan belum diuji end-to-end pada server staging SA-MP/open.mp nyata. Kompilasi tidak membuktikan kompatibilitas runtime atau bahwa ping tidak berubah. Bridge ini hanya saluran pemberitahuan diagnostik—bukan anti-cheat atau mitigasi DDoS.
 
+## Pratinjau patch aman (hanya diff)
+
+Perintah `patch-preview` membuat diff untuk satu kasus Pawn yang sempit: error compiler `001` menyatakan titik koma hilang tepat sebelum `return`, dan baris sebelumnya merupakan assignment/deklarasi sederhana. File source harus bisa ditemukan secara unik dan aman di dalam `--source-dir`.
+
+```bash
+amxtriage patch-preview compile.log --source-dir . --format unified
+amxtriage patch-preview compile.log --source-dir . --format json -o pratinjau-patch.json
+```
+
+Ini **bukan** perbaikan otomatis untuk semua error. Source tidak diubah, patch tidak diterapkan, dependensi tidak diunduh, dan compiler tidak dijalankan. Kasus yang ambigu atau belum didukung akan ditolak. Format `unified` menerima satu log compiler setelah ekspansi wildcard dan hanya mencetak diff; jika tidak ada kandidat aman, alasan dikirim ke stderr dan proses keluar dengan status `3`. Tinjau diff, kompilasi dengan compiler Pawn resmi, lalu jalankan tes regresi/gameplay sebelum menggunakannya.
+
 ## Batas kemampuan dan keamanan
 
 Versi saat ini membaca file lokal, tidak memulai koneksi jaringan, dan tidak mengubah source code. Rekomendasi bersifat saran, bukan perbaikan otomatis.

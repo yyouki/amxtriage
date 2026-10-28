@@ -101,6 +101,17 @@ amxtriage diagnose compile.log --format json -o diagnostics.json
 
 The detector is based on common text formats, not every compiler release. “No diagnostics recognized” does not prove that compilation succeeded. The JSON format preserves structured `file`, `line`, `column`, `severity` and `code` fields. The current command does not change source files.
 
+## Safe patch preview (diff only)
+
+The `patch-preview` command can produce a reviewable diff for one narrow Pawn compiler case: error `001` reports a missing semicolon immediately before `return`, and the preceding line is a simple assignment/declaration. The source file must resolve uniquely inside `--source-dir`.
+
+```bash
+amxtriage patch-preview compile.log --source-dir . --format unified
+amxtriage patch-preview compile.log --source-dir . --format json -o patch-preview.json
+```
+
+This is **not** a general automatic fixer. It never modifies source files, applies patches, downloads dependencies, or runs a compiler. Ambiguous or unsupported cases are refused. `--format unified` accepts one compiler log after wildcard expansion and prints only the diff; when no safe candidate is available, it prints the reason to standard error and exits with status `3`. A generated diff still needs review, compilation with the official Pawn compiler, and regression/gameplay tests before use.
+
 ## What it understands
 
 amxtriage recognises these lines. A timestamp such as `[13:46:01]` and up to three leading

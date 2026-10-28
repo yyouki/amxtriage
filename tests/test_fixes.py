@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from amxtriage.compiler import parse_compiler_lines
+from amxtriage.compiler import CompilerDiagnostic, parse_compiler_lines
 from amxtriage.errors import SourceError
 from amxtriage.fixes import build_patch_preview, render_patch_preview
 from amxtriage.source import SourceIndex
@@ -18,7 +18,7 @@ def parse_pawn_diagnostic(
     code: str = "001",
     message: str = EXPECTED_MESSAGE,
     severity: str = "error",
-):
+) -> CompilerDiagnostic:
     diagnostics, dropped = parse_compiler_lines(
         [f"{file}({line}) : {severity} {code}: {message}"],
         source_language="pawn",
