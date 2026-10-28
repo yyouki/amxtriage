@@ -16,7 +16,13 @@
  */
 
 #define _console_included
-#include <a_samp>
+
+// SA-MP uses a_samp; open.mp builds opt into the official open.mp include set.
+#if defined AMXTRIAGE_OPENMP
+    #include <open.mp>
+#else
+    #include <a_samp>
+#endif
 
 #define AMXTRIAGE_ALERT_FILE "amxtriage-alerts.txt"
 #define AMXTRIAGE_POLL_MS (1000)

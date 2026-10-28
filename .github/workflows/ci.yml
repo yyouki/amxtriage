@@ -98,21 +98,56 @@ jobs:
           test -n "$SAMP_INCLUDE"
           chmod +x "$PAWNCC"
           export LD_LIBRARY_PATH="$(dirname "$PAWN_LIB"):${LD_LIBRARY_PATH:-}"
-          printf 'Pawn compiler: %s\n' "$PAWNCC"
-          printf 'Pawn shared library: %s\n' "$PAWN_LIB"
-          printf 'Core include: %s\n' "$CORE_INCLUDE"
-          printf 'SA-MP include: %s\n' "$SAMP_INCLUDE"
+          printf 'SA-MP Pawn compiler: %s\n' "$PAWNCC"
           INCLUDE_ARGS=("-i$(dirname "$SAMP_INCLUDE")" "-i$(dirname "$CORE_INCLUDE")")
           "$PAWNCC" \
             "${INCLUDE_ARGS[@]}" \
-            "-o$RUNNER_TEMP/amxtriage_bridge.amx" \
+            "-o$RUNNER_TEMP/amxtriage_bridge_samp.amx" \
             "$GITHUB_WORKSPACE/integrations/pawn/amxtriage_bridge.pwn"
-          test -s "$RUNNER_TEMP/amxtriage_bridge.amx"
+          test -s "$RUNNER_TEMP/amxtriage_bridge_samp.amx"
           python scripts/validate_patch_with_pawn_compiler.py "$PAWNCC"
-      - name: Upload compiled bridge artifact
+      - name: Download official open.mp Pawn compiler and includes
+        env:
+          OPENMP_COMPILER_VERSION: "v3.10.11"
+          OMP_STDLIB_REVISION: "17c1b0191195cb0b59a820135fbca622c84129dd"
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/openmp-compiler" "$RUNNER_TEMP/openmp-compiler-source" "$RUNNER_TEMP/omp-stdlib"
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/openmultiplayer/compiler/releases/download/${OPENMP_COMPILER_VERSION}/pawnc-3.10.11-linux.tar.gz" \
+            --output "$RUNNER_TEMP/openmp-compiler.tar.gz"
+          tar -xzf "$RUNNER_TEMP/openmp-compiler.tar.gz" -C "$RUNNER_TEMP/openmp-compiler"
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/openmultiplayer/compiler/archive/refs/tags/${OPENMP_COMPILER_VERSION}.tar.gz" \
+            --output "$RUNNER_TEMP/openmp-compiler-source.tar.gz"
+          tar -xzf "$RUNNER_TEMP/openmp-compiler-source.tar.gz" -C "$RUNNER_TEMP/openmp-compiler-source"
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/openmultiplayer/omp-stdlib/archive/${OMP_STDLIB_REVISION}.tar.gz" \
+            --output "$RUNNER_TEMP/omp-stdlib.tar.gz"
+          tar -xzf "$RUNNER_TEMP/omp-stdlib.tar.gz" -C "$RUNNER_TEMP/omp-stdlib"
+          OMP_PAWNCC="$(find "$RUNNER_TEMP/openmp-compiler" -type f -name pawncc -print -quit)"
+          OMP_PAWN_LIB="$(find "$RUNNER_TEMP/openmp-compiler" -type f -name libpawnc.so -print -quit)"
+          OMP_CORE_INCLUDE="$(find "$RUNNER_TEMP/openmp-compiler-source" -type f -name core.inc -print -quit)"
+          OMP_INCLUDE="$(find "$RUNNER_TEMP/omp-stdlib" -type f -name open.mp.inc -print -quit)"
+          test -n "$OMP_PAWNCC"
+          test -n "$OMP_PAWN_LIB"
+          test -n "$OMP_CORE_INCLUDE"
+          test -n "$OMP_INCLUDE"
+          chmod +x "$OMP_PAWNCC"
+          export LD_LIBRARY_PATH="$(dirname "$OMP_PAWN_LIB"):${LD_LIBRARY_PATH:-}"
+          printf 'open.mp Pawn compiler: %s\n' "$OMP_PAWNCC"
+          OMP_INCLUDE_ARGS=("-i$(dirname "$OMP_INCLUDE")" "-i$(dirname "$OMP_CORE_INCLUDE")")
+          "$OMP_PAWNCC" \
+            "${OMP_INCLUDE_ARGS[@]}" \
+            "-o$RUNNER_TEMP/amxtriage_bridge_openmp.amx" \
+            "$GITHUB_WORKSPACE/integrations/pawn/amxtriage_bridge_openmp.pwn"
+          test -s "$RUNNER_TEMP/amxtriage_bridge_openmp.amx"
+      - name: Upload compiled bridge artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: amxtriage-pawn-bridge
-          path: ${{ runner.temp }}/amxtriage_bridge.amx
+          name: amxtriage-pawn-bridges
+          path: |
+            ${{ runner.temp }}/amxtriage_bridge_samp.amx
+            ${{ runner.temp }}/amxtriage_bridge_openmp.amx
           if-no-files-found: error
           retention-days: 7

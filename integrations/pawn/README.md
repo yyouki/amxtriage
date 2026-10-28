@@ -6,16 +6,22 @@ This optional filterscript reads a local append-only file produced by `amxtriage
 
 ## Files and versions
 
-- `amxtriage_bridge.pwn` — filterscript source.
-- Compiler used by CI: Pawn compiler `v3.10.10`.
-- Standard API headers used by CI: `pawn-lang/samp-stdlib` commit [`8ffb055624308b25521665b60e78b5e6e6b3717f`](https://github.com/pawn-lang/samp-stdlib/commit/8ffb055624308b25521665b60e78b5e6e6b3717f), pinned in `.github/workflows/ci.yml`.
+- `amxtriage_bridge.pwn` — SA-MP entry point using `<a_samp>`.
+- `amxtriage_bridge_openmp.pwn` — open.mp entry point using the official `<open.mp>` includes; both share the same implementation and local protocol.
+- SA-MP CI compiler: `pawn-lang/compiler v3.10.10`.
+- open.mp CI compiler: `openmultiplayer/compiler v3.10.11`.
+- SA-MP headers: `pawn-lang/samp-stdlib` commit [`8ffb055624308b25521665b60e78b5e6e6b3717f`](https://github.com/pawn-lang/samp-stdlib/commit/8ffb055624308b25521665b60e78b5e6e6b3717f).
+- open.mp headers: `openmultiplayer/omp-stdlib` commit [`17c1b0191195cb0b59a820135fbca622c84129dd`](https://github.com/openmultiplayer/omp-stdlib/commit/17c1b0191195cb0b59a820135fbca622c84129dd). CI pins both header revisions.
 - A successful compiler run validates the Pawn source against these headers; it does not replace a live staging test against the exact server distribution.
 - The binary `.amx` is built by CI as an artifact; it is not committed to this repository.
 
 ## Installation
 
 1. Install Python 3.10+ and install amxtriage from this checkout or package.
-2. Compile `amxtriage_bridge.pwn` with the Pawn compiler and the standard SA-MP includes for the target environment. CI uses Pawn compiler `v3.10.10` and the pinned `samp-stdlib` commit above; obtain them from the [official Pawn compiler release](https://github.com/pawn-lang/compiler/releases/tag/v3.10.10) and [official samp-stdlib repository](https://github.com/pawn-lang/samp-stdlib). The headers used in CI are for compile validation; check the includes and server API against the exact server distribution you operate.
+2. Choose the entry point matching your server:
+   - **SA-MP:** compile `amxtriage_bridge.pwn` using [Pawn compiler v3.10.10](https://github.com/pawn-lang/compiler/releases/tag/v3.10.10) and [`samp-stdlib`](https://github.com/pawn-lang/samp-stdlib).
+   - **open.mp:** compile `amxtriage_bridge_openmp.pwn` using [open.mp Pawn compiler v3.10.11](https://github.com/openmultiplayer/compiler/releases/tag/v3.10.11) and [`omp-stdlib`](https://github.com/openmultiplayer/omp-stdlib).
+   CI compiles both variants with pinned headers. Other compiler versions may work, but are not certified until an equivalent compile/runtime test passes.
 3. Copy the resulting `amxtriage_bridge.amx` to the server's `filterscripts/` directory.
 4. Add `amxtriage_bridge` to the server's configured filterscript list, or load it through the server's normal administration procedure. The bridge does not edit server configuration automatically.
 5. Start the monitor from the server working directory so the output is inside the server's `scriptfiles/` directory:
