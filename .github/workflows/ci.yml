@@ -56,6 +56,8 @@ jobs:
           "$RUNNER_TEMP/amxtriage-smoke/bin/amxtriage" --help
           "$RUNNER_TEMP/amxtriage-smoke/bin/amxtriage" catalog --format json > "$RUNNER_TEMP/plugin-catalog.json"
           "$RUNNER_TEMP/amxtriage-smoke/bin/python" -c 'import json,sys; p=json.load(open(sys.argv[1], encoding="utf-8")); assert p["schema_version"] == 1 and p["entry_count"] == len(p["entries"])' "$RUNNER_TEMP/plugin-catalog.json"
+      - name: Smoke-test local watch resource benchmark
+        run: python scripts/benchmark_watch.py --events 3 --timeout 15
 
   pawn-bridge:
     name: Compile Pawn bridge and validate patch workflow
