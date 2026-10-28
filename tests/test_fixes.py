@@ -88,7 +88,7 @@ def test_no_matching_diagnostic_produces_no_patch(tmp_path: Path) -> None:
 
     assert preview.status == "no_candidate"
     assert preview.patch is None
-    assert "not been modified" in preview.message
+    assert "no source file was modified" in preview.message
 
 
 def test_multiple_matching_diagnostics_are_refused_as_ambiguous(tmp_path: Path) -> None:
