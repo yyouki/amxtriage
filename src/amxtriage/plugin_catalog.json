@@ -208,6 +208,35 @@
         }
       ],
       "notes": "The official guide lists this specific plugin release for OMP. The upstream note mentions a port to Pawn.RakNet, but this catalog does not infer that it is a mandatory runtime dependency without explicit documentation. Version/OS/architecture/ABI compatibility and any required includes or runtime dependencies remain unverified; test on staging."
+    },
+    {
+      "id": "streamer-samp-2.9.6",
+      "name": "Streamer Plugin",
+      "kind": "plugin",
+      "project_url": "https://github.com/samp-incognito/samp-streamer-plugin",
+      "release_url": "https://github.com/samp-incognito/samp-streamer-plugin/releases/tag/v2.9.6",
+      "version": "v2.9.6",
+      "target_server": "SA-MP",
+      "server_versions": [],
+      "platforms": [],
+      "architectures": [],
+      "dependencies": [],
+      "install_location": "plugins",
+      "status": "documented",
+      "checked_on": "2026-10-28",
+      "evidence": [
+        {
+          "url": "https://github.com/samp-incognito/samp-streamer-plugin",
+          "checked_on": "2026-10-28",
+          "statement": "The upstream project describes this as the Streamer Plugin for SA-MP; it does not specify an exact server version or a complete OS/architecture compatibility matrix."
+        },
+        {
+          "url": "https://github.com/samp-incognito/samp-streamer-plugin/releases/tag/v2.9.6",
+          "checked_on": "2026-10-28",
+          "statement": "The upstream releases page lists v2.9.6 as the latest listed release at the time of this check; release metadata does not establish all target OS/architecture combinations."
+        }
+      ],
+      "notes": "The upstream project identifies this plugin for SA-MP and publishes v2.9.6. This is upstream-documented scope only, not runtime-verified by amxtriage. Exact SA-MP server version, OS, CPU architecture, ABI and dependencies are not established by this evidence; validate the selected artifact and test on staging."
     }
   ]
 }

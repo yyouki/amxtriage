@@ -31,10 +31,10 @@ def raw_catalog(snapshot: CatalogSnapshot) -> dict[str, object]:
 
 def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> None:
     snapshot = load_catalog()
-    assert len(snapshot.entries) == 8
+    assert len(snapshot.entries) == 9
     documented = [entry for entry in snapshot.entries if entry.status == "documented"]
     unknown = [entry for entry in snapshot.entries if entry.status == "unknown"]
-    assert len(documented) == 7
+    assert len(documented) == 8
     assert len(unknown) == 1
     assert all(entry.target_server == "open.mp" for entry in snapshot.entries)
     assert all(entry.evidence for entry in snapshot.entries)
@@ -44,6 +44,22 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
             for evidence in entry.evidence
         )
         for entry in documented
+        if entry.target_server == "open.mp"
+    )
+    samp_streamer = next(
+        entry for entry in snapshot.entries if entry.id == "streamer-samp-2.9.6"
+    )
+    assert samp_streamer.target_server == "SA-MP"
+    assert samp_streamer.kind == "plugin"
+    assert samp_streamer.version == "v2.9.6"
+    assert samp_streamer.status == "documented"
+    assert samp_streamer.install_location == "plugins"
+    assert not samp_streamer.server_versions
+    assert not samp_streamer.platforms
+    assert not samp_streamer.architectures
+    assert any(
+        evidence.url == "https://github.com/samp-incognito/samp-streamer-plugin/releases/tag/v2.9.6"
+        for evidence in samp_streamer.evidence
     )
     newer_sampvoice = unknown[0]
     assert newer_sampvoice.id == "sampvoice-openmp-3.2.0-omp"
@@ -79,12 +95,12 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
 def test_server_status_and_kind_filters_are_exact() -> None:
     snapshot = load_catalog()
     assert len(filter_catalog_entries(snapshot.entries, server="open.mp")) == 8
-    assert filter_catalog_entries(snapshot.entries, server="sa-mp") == []
+    assert len(filter_catalog_entries(snapshot.entries, server="sa-mp")) == 1
     assert len(filter_catalog_entries(snapshot.entries, server="all", status="documented")) == 7
     assert len(filter_catalog_entries(snapshot.entries, status="unknown")) == 1
     assert filter_catalog_entries(snapshot.entries, status="verified") == []
     assert len(filter_catalog_entries(snapshot.entries, kind="component")) == 6
-    assert len(filter_catalog_entries(snapshot.entries, kind="plugin")) == 2
+    assert len(filter_catalog_entries(snapshot.entries, kind="plugin")) == 3
     assert filter_catalog_entries(snapshot.entries, kind="include") == []
 
 
@@ -228,8 +244,9 @@ def test_empty_filter_does_not_claim_no_compatible_plugins_exist() -> None:
     snapshot = load_catalog()
     report = render_catalog_report(
         snapshot,
-        filter_catalog_entries(snapshot.entries, server="sa-mp"),
+        filter_catalog_entries(snapshot.entries, server="sa-mp", status="incompatible"),
         server="sa-mp",
+        status="incompatible",
         language="en",
     )
     assert "No catalog entries matched" in report
