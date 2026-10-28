@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 from amxtriage import cli
+from amxtriage.monitoring import metrics_supported
 
 BLOCK = [
     '[13:46:01] [debug] Run time error 4: "Array index out of bounds"',
@@ -190,7 +191,7 @@ def test_watch_writes_opt_in_metrics_jsonl_and_processing_latency(
 def test_metrics_output_must_not_overwrite_the_log(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
-    if not cli.metrics_supported():
+    if not metrics_supported():
         pytest.skip("Linux host metrics are not supported on this runner")
     log = tmp_path / "server_log.txt"
     log.write_text("", encoding="utf-8")
