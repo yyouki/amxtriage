@@ -45,9 +45,7 @@ def nested(sample: dict[str, object], key: str) -> dict[str, object]:
 
 def test_sampler_reports_cpu_memory_process_rss_and_disk_rates(tmp_path: Path) -> None:
     proc, sysroot = tmp_path / "proc", tmp_path / "sys"
-    write_snapshot(
-        proc, sysroot, cpu="100 0 50 800 50 0 0 0 0 0", ticks=(100, 50), rss_pages=20
-    )
+    write_snapshot(proc, sysroot, cpu="100 0 50 800 50 0 0 0 0 0", ticks=(100, 50), rss_pages=20)
     clock = [100.0]
     sampler = MetricsSampler(5, proc_root=proc, sys_root=sysroot, clock=lambda: clock[0])
     first = sampler.sample()
@@ -56,8 +54,13 @@ def test_sampler_reports_cpu_memory_process_rss_and_disk_rates(tmp_path: Path) -
     assert nested(first, "process")["rss_bytes"] == 20 * 4096
 
     write_snapshot(
-        proc, sysroot, cpu="150 0 70 920 60 0 0 0 40 10",
-        ticks=(125, 75), rss_pages=30, read_sectors=150, write_sectors=240,
+        proc,
+        sysroot,
+        cpu="150 0 70 920 60 0 0 0 40 10",
+        ticks=(125, 75),
+        rss_pages=30,
+        read_sectors=150,
+        write_sectors=240,
     )
     clock[0] += 5.0
     second = sampler.sample()
@@ -75,7 +78,10 @@ def test_alert_processing_timing_is_aggregated_per_sample(tmp_path: Path) -> Non
     sampler.record_alert_processing(4.2)
     sampler.record_alert_processing(5.8)
     assert nested(sampler.sample(), "alert_processing") == {
-        "count": 2, "average_ms": 5.0, "max_ms": 5.8, "latest_ms": 5.8
+        "count": 2,
+        "average_ms": 5.0,
+        "max_ms": 5.8,
+        "latest_ms": 5.8,
     }
 
 
