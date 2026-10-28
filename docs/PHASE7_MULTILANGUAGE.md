@@ -73,7 +73,7 @@ Performance goals need benchmarks rather than promises:
 - Use backpressure and a bounded queue; on overload, report dropped/aggregated alerts rather than slowing the game loop.
 - Keep network access off by default. Any remote transport is opt-in, documented, authenticated and rate-limited.
 - Run with least-privilege filesystem access and never collect player passwords or unnecessary player data.
-- Measure CPU, RAM, disk I/O and alert latency on realistic logs. No software can promise zero overhead or unchanged ping on every host.
+- Measure CPU, RAM, disk I/O and alert latency on realistic logs. No software can promise zero overhead or unchanged ping on every host. A Linux-only opt-in `watch --metrics-jsonl FILE --metrics-interval N` exporter reports host/process metrics and local alert-export timing. `scripts/benchmark_watch.py` measures synthetic local file traffic; its CI smoke test is not a live game-server or ping benchmark.
 
 ### DDoS and anti-cheat boundaries
 
