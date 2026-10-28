@@ -330,6 +330,56 @@ def test_subprocess_output_is_utf8(run_cli, tmp_path):
     assert "Caf\u00e9" in result.stdout.decode("utf-8")
 
 
+def test_patch_preview_cli_emits_unified_diff_without_editing_source(tmp_path, capsys):
+    root = tmp_path / "source"
+    source = root / "gamemodes" / "rp.pwn"
+    source.parent.mkdir(parents=True)
+    source.write_text("new value = 42\nreturn 1;\n", encoding="utf-8")
+    before = source.read_bytes()
+    compiler_log = write_log(
+        tmp_path / "compiler.log",
+        ['gamemodes/rp.pwn(2) : error 001: expected token: ";", but found "return"'],
+    )
+
+    code, out, err = run(
+        [
+            "patch-preview",
+            compiler_log,
+            "--source-dir",
+            str(root),
+            "--format",
+            "unified",
+        ],
+        capsys,
+    )
+
+    assert code == 0
+    assert err == ""
+    assert out.startswith("--- a/gamemodes/rp.pwn\n")
+    assert "+new value = 42;\n" in out
+    assert source.read_bytes() == before
+
+
+def test_patch_preview_cli_returns_three_when_no_safe_patch_exists(tmp_path, capsys):
+    root = tmp_path / "source"
+    source = root / "rp.pwn"
+    source.write_text("new value = 42\nreturn 1;\n", encoding="utf-8")
+    compiler_log = write_log(
+        tmp_path / "compiler.log",
+        ['rp.pwn(2) : error 017: undefined symbol "PlayerData"'],
+    )
+
+    code, out, err = run(
+        ["patch-preview", compiler_log, "--source-dir", str(root), "--format", "unified"],
+        capsys,
+    )
+
+    assert code == cli.EXIT_NO_PATCH
+    assert out == ""
+    assert "No supported high-confidence fix candidate" in err
+    assert source.read_text(encoding="utf-8") == "new value = 42\nreturn 1;\n"
+
+
 def test_subprocess_module_help_works(run_cli):
     result = run_cli("--help")
     assert result.returncode == 0
