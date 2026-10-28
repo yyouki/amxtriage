@@ -36,7 +36,7 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
     unknown = [entry for entry in snapshot.entries if entry.status == "unknown"]
     assert len(documented) == 8
     assert len(unknown) == 1
-    assert all(entry.target_server == "open.mp" for entry in snapshot.entries)
+    assert all(entry.target_server in {"open.mp", "SA-MP"} for entry in snapshot.entries)
     assert all(entry.evidence for entry in snapshot.entries)
     assert all(
         any(
@@ -94,7 +94,7 @@ def test_server_status_and_kind_filters_are_exact() -> None:
     snapshot = load_catalog()
     assert len(filter_catalog_entries(snapshot.entries, server="open.mp")) == 8
     assert len(filter_catalog_entries(snapshot.entries, server="sa-mp")) == 1
-    assert len(filter_catalog_entries(snapshot.entries, server="all", status="documented")) == 7
+    assert len(filter_catalog_entries(snapshot.entries, server="all", status="documented")) == 8
     assert len(filter_catalog_entries(snapshot.entries, status="unknown")) == 1
     assert filter_catalog_entries(snapshot.entries, status="verified") == []
     assert len(filter_catalog_entries(snapshot.entries, kind="component")) == 6
