@@ -160,9 +160,7 @@ def parse_catalog(raw: object) -> CatalogSnapshot:
 
         server_versions = _string_list(row, "server_versions", label)
         platforms = _string_list(row, "platforms", label)
-        architectures = (
-            _string_list(row, "architectures", label) if "architectures" in row else ()
-        )
+        architectures = _string_list(row, "architectures", label) if "architectures" in row else ()
         dependencies = _string_list(row, "dependencies", label) if "dependencies" in row else ()
         if status_text == "verified":
             if not server_versions or not platforms or not architectures:
