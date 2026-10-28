@@ -840,6 +840,11 @@ def apply_patch_preview(
             expected_replacement_sha256=replacement_hash,
         )
         if restored:
+            rollback_status = (
+                "compile_failed_rolled_back"
+                if failure_phase == "compile"
+                else "test_failed_rolled_back"
+            )
             return PatchApplyResult(
                 rollback_status,
                 f"{failure_message} Original source restored; backup retained for audit.",
@@ -849,11 +854,6 @@ def apply_patch_preview(
                 compiler_output=compiler_output,
                 test_exit_code=test_exit_code,
                 test_output=test_output,
-            )
-            rollback_status = (
-                "compile_failed_rolled_back"
-                if failure_phase == "compile"
-                else "test_failed_rolled_back"
             )
         return PatchApplyResult(
             "rollback_blocked",
