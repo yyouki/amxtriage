@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -201,7 +201,8 @@ def run_benchmark(event_count: int, timeout_seconds: float) -> dict[str, object]
                     ),
                 },
                 "notes": [
-                    "Synthetic workload only; values depend on host, filesystem, Python and poll interval.",
+                    "Synthetic workload only; values depend on host, filesystem, Python, "
+                    "and poll interval.",
                     "Kernel-accounted I/O is not a guarantee of physical disk writes.",
                     "Do not infer live server CPU, RAM, disk I/O or player ping from this result.",
                 ],
