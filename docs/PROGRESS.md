@@ -2,8 +2,8 @@
 
 **Snapshot:** 28 Oktober 2026  
 **Branch target:** `main`  
-**Commit kode fitur yang terakhir diverifikasi:** `b762679170fa9b17bdd698580ba873b209a9cd80`  
-**CI:** [Run 40626533141 lulus](https://github.com/yyouki/amxtriage/actions/runs/40626533141) pada kode `b762679`; 1.843 tes lulus pada masing-masing Python 3.10, 3.11, 3.12, dan 3.13. Ruff lint/format, mypy strict, build wheel/sdist, metadata package, smoke test CLI, serta kompilasi filterscript Pawn juga lulus. CI tidak menguji chat delivery pada server game live.
+**Commit kode fitur yang terakhir diverifikasi:** `3d79847f4bf67fd75c40c4afb7eb08cb88cdd8bc`  
+**CI:** [Run 40627116263 lulus](https://github.com/yyouki/amxtriage/actions/runs/40627116263) pada kode `3d79847`; 1.843 tes lulus pada masing-masing Python 3.10, 3.11, 3.12, dan 3.13. Ruff lint/format, mypy strict, build wheel/sdist, validasi metadata, smoke test CLI, serta kompilasi filterscript Pawn juga lulus. CI tidak menguji pengiriman chat pada server game live.
 
 **Bahasa / Language / Idioma:** [English README](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
 
@@ -17,11 +17,11 @@
 | Diagnostik keluaran compiler multi-bahasa | 15 | 67% | 10 |
 | Lokalisasi CLI dan dokumentasi | 10 | 70% | 7 |
 | CI, pengujian lintas Python, packaging, kompilasi Pawn | 10 | 100% | 10 |
-| Katalog kompatibilitas plugin/dependensi | 10 | 35% | 3.5 |
+| Katalog kompatibilitas plugin/dependensi | 10 | 40% | 4.0 |
 | Monitor dan bridge alert admin | 10 | 60% | 6 |
 | Mitigasi DDoS dan integrasi anti-cheat sisi server | 15 | 0% | 0 |
 | Patch preview yang aman, validasi, rollback | 10 | 20% | 2 |
-| **Total** | **100** |  | **56.5/100 ≈ 57%** |
+| **Total** | **100** |  | **57/100 = 57%** |
 
 Nilai dibulatkan untuk tampilan. Persentase area bukan bukti kualitas runtime: perubahan tidak boleh menaikkan skor hanya karena file atau dokumentasi baru ditambahkan.
 
@@ -40,7 +40,7 @@ Nilai dibulatkan untuk tampilan. Persentase area bukan bukti kualitas runtime: p
 
 - Chat alert **belum diverifikasi end-to-end pada server staging/live SA-MP/open.mp**. Kompilasi Pawn tidak membuktikan izin file, callback timing, role/ACL, warna, rotasi/truncation, atau dampak resource/ping di server nyata.
 - Dampak CPU/RAM/disk I/O dan ping belum diukur secara benchmark pada server nyata; tidak ada klaim “nol overhead”.
-- Katalog kompatibilitas masih kecil; hanya lima component open.mp yang terdokumentasi. Cakupan kompatibilitas plugin lintas versi, OS, arsitektur, dan dependensi masih belum lengkap.
+- Katalog kompatibilitas masih terbatas: lima rilis component open.mp terdokumentasi, dua plugin legacy terdokumentasi, dan satu rilis sampvoice berstatus `unknown`. Matriks runtime untuk versi server, OS, arsitektur, ABI, dan dependensi masih belum lengkap.
 - Mitigasi DDoS jaringan/provider dan integrasi anti-cheat server-side belum dibuat.
 - Mode `apply` dengan checkpoint, validasi compiler/tes, bounded repair loop, dan rollback belum dibuat. `patch-preview` saat ini hanya mendukung satu aturan sintaks Pawn; diff yang dihasilkan masih perlu ditinjau dan diuji secara manual.
 

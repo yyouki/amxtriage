@@ -52,7 +52,7 @@ amxtriage catalog --server open.mp --format markdown -o plugin-catalog.md
 amxtriage plugins --format json -o plugin-catalog.json
 ```
 
-Las entradas actuales son `documented` a partir de la guía oficial de instalación de open.mp; no son pruebas de compatibilidad en tiempo de ejecución. Los campos de sistema operativo/versiones vacíos indican que la fuente no los especifica. El comando no descarga ni ejecuta binarios.
+La instantánea contiene cinco versiones de componentes open.mp documentadas, dos plugins legacy recomendados por la guía oficial (`rustext` v2.0.11 usando la compilación `nomemhack` y `keylistener` 1.1.2-pr), y una versión más nueva de `sampvoice` marcada como `unknown` porque la guía citada no la enumera. Cada registro incluye enlaces del proyecto/lanzamiento, ubicación de instalación, estado, fuentes/fechas de evidencia y metadatos de dependencias. `documented` no significa que se haya probado en tiempo de ejecución. Los campos de sistema operativo/versiones vacíos indican que la fuente no los especifica. Una lista de dependencias vacía significa que esta instantánea no estableció ninguna a partir de la evidencia citada, no que no existan dependencias. El comando funciona sin conexión: no consulta lanzamientos en vivo, no descarga binarios ni los instala.
 
 ## Alertas locales y avisos en el chat de administradores
 

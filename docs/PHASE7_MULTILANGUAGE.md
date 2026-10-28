@@ -2,7 +2,7 @@
 
 **Language / Bahasa / Idioma:** [English](PHASE7_MULTILANGUAGE.md) · [Bahasa Indonesia](PHASE7_MULTILANGUAGE.id.md) · [Español](PHASE7_MULTILANGUAGE.es.md)
 
-**Status snapshot:** 2026-10-27. This document is a roadmap and design contract. Unless a feature is listed under “Implemented today”, do not assume it exists in the shipped CLI.
+**Status snapshot:** 2026-10-28. This document is a roadmap and design contract. Unless a feature is listed under “Implemented today”, do not assume it exists in the shipped CLI.
 
 ## Implemented today
 
@@ -11,6 +11,8 @@
 - The initial `diagnose` command parses common saved compiler/linter formats for Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go and Rust. It does not execute compilers and does not cover every tool/version.
 - Reads local files and does not initiate network connections or modify source files in its current mode.
 - Existing CLI recommendations are advisory. They are not proof of a correct fix.
+- The offline `catalog`/`plugins` command contains five documented open.mp component releases, two documented legacy plugin releases (`rustext` with the `nomemhack` build and `keylistener` 1.1.2-pr), and one newer `sampvoice` release marked `unknown`; dependencies are surfaced in reports without guessing missing requirements.
+- `patch-preview`/`fix-preview` can generate a diff for one narrow Pawn compiler case. It never edits source or runs the compiler; the transactional apply/checkpoint/rollback workflow is not implemented.
 
 ## Product target and progress accounting
 
@@ -22,10 +24,10 @@ The intended end state is broader than the current log triager. Track progress b
 | CI, architecture and safety documentation | Cross-version tests, static checks, packaging and the pinned Pawn bridge compile job pass in GitHub Actions; live server behavior remains unverified | CI baseline implemented |
 | Compiler output adapters for common formats | Initial parsers/tests for common formats are implemented; real compiler-version coverage is incomplete | First slice implemented |
 | User-facing CLI/report localization | Report labels and explain headings support en/id/es; remediation advice and argparse help are still English | First slice implemented |
-| Evidence-backed plugin/dependency compatibility catalog | Offline snapshot with 5 documented open.mp component entries; runtime verification and broader OS/version coverage are not implemented | First slice implemented |
+| Evidence-backed plugin/dependency compatibility catalog | Offline snapshot with 5 documented component releases, 2 documented legacy plugins, and 1 `unknown` release; runtime verification and broader OS/version coverage remain incomplete | First slice implemented |
 | In-game admin warning bridge | JSONL and `--alert-pawn-file` export, Pawn filterscript source, and CI compilation are implemented; live staging delivery is not yet verified | Implementation slice complete; staging verification pending |
 | Actual network-layer DDoS mitigation / server-side anti-cheat integration | Not implemented | 0% |
-| Patch generation, compile/test validation and rollback | Existing suggestions only; transactional patch workflow not implemented | Early design stage |
+| Patch generation, compile/test validation and rollback | Narrow Pawn `patch-preview` diff-only rule implemented; transactional apply/checkpoint/rollback not implemented | Early design stage |
 
 The overall completion percentage must be recalculated from tested milestones. Do not count a document as implementation or a successful syntax check as proof of correct game behaviour.
 
@@ -58,7 +60,7 @@ CLI/report labels currently support English (`en`), Indonesian (`id`) and Spanis
 
 Every compatibility entry needs the canonical project URL, official release/download URL, source of evidence and check date, release/version, target server (SA-MP or open.mp), OS, CPU architecture, ABI/bitness where applicable, dependency requirements, installation type (plugin versus component) and a status: `verified`, `documented`, `unknown` or `incompatible`.
 
-A download existing is not proof of compatibility. Never fabricate links, auto-download or execute third-party binaries, or label unknown versions as compatible. Prefer upstream documentation and official release pages. The bundled `amxtriage catalog` command exposes an offline snapshot of five component releases listed by the official open.mp installation guide; each is `documented`, not runtime-verified. Its OS and server-version matrix is intentionally blank where the cited source does not specify it. Check the official installation and configuration documents: https://open.mp/docs/server/Installation and https://open.mp/docs/server/config.json. If evidence is stale or contradictory, show `unknown` and explain why.
+A download existing is not proof of compatibility. Never fabricate links, auto-download or execute third-party binaries, or label unknown versions as compatible. Prefer upstream documentation and official release pages. The bundled `amxtriage catalog` command exposes eight records: five documented component releases and two documented legacy plugins listed by the official open.mp installation guide, plus one newer `sampvoice` release marked `unknown` because the guide does not list that version. The catalog records dependencies only when the cited evidence establishes them; an empty dependency list is not proof that no dependency exists. Its OS and server-version matrix is intentionally blank where the cited source does not specify it. No entry is runtime-verified by amxtriage. Check the official installation and configuration documents: https://open.mp/docs/server/Installation and https://open.mp/docs/server/config.json. If evidence is stale or contradictory, show `unknown` and explain why.
 
 ## Lightweight monitoring and trust boundaries
 

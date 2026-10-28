@@ -2,7 +2,7 @@
 
 **Bahasa / Language / Idioma:** [English](PHASE7_MULTILANGUAGE.md) · [Bahasa Indonesia](PHASE7_MULTILANGUAGE.id.md) · [Español](PHASE7_MULTILANGUAGE.es.md)
 
-**Status:** 27 Oktober 2026. Ini adalah peta jalan, bukan klaim bahwa semua fitur sudah tersedia. Fitur baru dianggap selesai jika sudah diimplementasikan dan tes relevannya lulus.
+**Status:** 28 Oktober 2026. Ini adalah peta jalan, bukan klaim bahwa semua fitur sudah tersedia. Fitur baru dianggap selesai jika sudah diimplementasikan dan tes relevannya lulus.
 
 ## Yang sudah tersedia
 
@@ -20,10 +20,10 @@
 | CI, paket, dan pemeriksaan keselamatan | Tes lintas Python, pemeriksaan statis, packaging, serta kompilasi bridge Pawn lulus di GitHub Actions; perilaku runtime game tetap menunggu staging test |
 | Diagnostik compiler multi-bahasa | Parser awal dan tes format umum tersedia; cakupan versi belum lengkap |
 | Lokalisasi CLI dan Markdown | Label laporan dan dokumentasi tersedia dalam en/id/es; sebagian bantuan dan rekomendasi detail masih English |
-| Katalog kompatibilitas plugin/dependensi | Snapshot offline dengan 5 entri component open.mp yang terdokumentasi; validasi runtime dan cakupan OS/versi belum ada |
+| Katalog kompatibilitas plugin/dependensi | Snapshot offline dengan 5 rilis component terdokumentasi, 2 plugin legacy terdokumentasi, dan 1 rilis `unknown`; validasi runtime serta matriks OS/versi belum lengkap |
 | Notifikasi in-game untuk admin/owner | Ekspor JSONL/`--alert-pawn-file`, source filterscript Pawn, dan kompilasi CI tersedia; pengiriman chat pada staging server belum diverifikasi |
 | Mitigasi DDoS jaringan dan integrasi anti-cheat server-side | Belum dibuat |
-| Patch, validasi compiler/test, dan rollback | Baru berupa saran; alur patch belum diimplementasikan |
+| Patch, validasi compiler/test, dan rollback | Aturan sempit `patch-preview` untuk Pawn sudah menghasilkan diff saja; apply/checkpoint/rollback belum dibuat |
 
 Dokumen bukan implementasi. Progres harus dihitung dari fitur dan kriteria penerimaan yang sudah diuji.
 
@@ -52,7 +52,7 @@ Terjemahkan bantuan CLI, error yang dibuat amxtriage, dan rekomendasi. Jangan me
 
 Setiap entri harus memuat URL proyek kanonis, URL rilis/download resmi, sumber bukti dan tanggal pemeriksaan, versi, target server SA-MP/open.mp, OS, arsitektur CPU, ABI/bitness bila berlaku, dependensi, jenis pemasangan (`plugin` atau `component`), serta status `verified`, `documented`, `unknown`, atau `incompatible`.
 
-Link download bukan bukti kompatibilitas. Jangan mengarang link, mengunduh/menjalankan binary pihak ketiga secara otomatis, atau menyebut versi yang belum diketahui sebagai kompatibel. Perintah offline `amxtriage catalog` saat ini berisi 5 rilis component open.mp yang tercantum dalam [panduan instalasi resmi](https://open.mp/docs/server/Installation); statusnya `documented`, bukan hasil uji runtime. Matriks OS dan versi server sengaja kosong bila sumber tidak menyebutkannya. Lihat juga [konfigurasi open.mp](https://open.mp/docs/server/config.json). Jika bukti kedaluwarsa atau bertentangan, tandai `unknown` dan jelaskan alasannya.
+Link download bukan bukti kompatibilitas. Jangan mengarang link, mengunduh/menjalankan binary pihak ketiga secara otomatis, atau menyebut versi yang belum diketahui sebagai kompatibel. Perintah offline `amxtriage catalog` mencatat delapan entri: lima rilis component open.mp yang terdokumentasi, dua plugin legacy yang tercantum sebagai cocok untuk open.mp (`rustext` v2.0.11 build `nomemhack` dan `keylistener` 1.1.2-pr), serta satu rilis `sampvoice` baru yang ditandai `unknown` karena tidak tercantum pada panduan yang dikutip. Metadata dependensi hanya diisi jika bukti yang dikutip menetapkannya; daftar kosong bukan bukti tidak ada dependensi. Matriks OS/versi server kosong bila sumber tidak menyebutkannya, dan tidak ada entri yang sudah diverifikasi runtime oleh amxtriage. Lihat juga [konfigurasi open.mp](https://open.mp/docs/server/config.json). Jika bukti kedaluwarsa atau bertentangan, tandai `unknown` dan jelaskan alasannya.
 
 ## Pemantauan ringan dan keamanan
 

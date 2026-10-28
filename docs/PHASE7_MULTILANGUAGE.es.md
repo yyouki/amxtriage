@@ -2,7 +2,7 @@
 
 **Idioma / Bahasa / Language:** [English](PHASE7_MULTILANGUAGE.md) · [Bahasa Indonesia](PHASE7_MULTILANGUAGE.id.md) · [Español](PHASE7_MULTILANGUAGE.es.md)
 
-**Estado:** 27 de octubre de 2026. Esta es una hoja de ruta, no una afirmación de que todas las funciones estén disponibles. Una función solo se considera terminada cuando su implementación y sus pruebas relevantes pasan.
+**Estado:** 28 de octubre de 2026. Esta es una hoja de ruta, no una afirmación de que todas las funciones estén disponibles. Una función solo se considera terminada cuando su implementación y sus pruebas relevantes pasan.
 
 ## Funciones actuales
 
@@ -20,10 +20,10 @@
 | CI, empaquetado y seguridad | Las pruebas en varias versiones de Python, los controles estáticos, el empaquetado y la compilación del bridge Pawn pasan en GitHub Actions; el comportamiento del servidor aún necesita pruebas de staging |
 | Diagnósticos multilenguaje de compilador | Parsers iniciales y pruebas de formatos comunes; cobertura de versiones incompleta |
 | Localización de CLI y Markdown | Etiquetas y documentación en en/id/es; parte de la ayuda y recomendaciones detalladas siguen en inglés |
-| Catálogo de compatibilidad de plugins/dependencias | Instantánea offline con 5 componentes open.mp documentados; sin validación en tiempo de ejecución ni cobertura completa de SO/versiones |
+| Catálogo de compatibilidad de plugins/dependencias | Instantánea offline con 5 versiones de componentes documentadas, 2 plugins legacy documentados y 1 versión `unknown`; la matriz de SO/versiones y la validación de ejecución siguen incompletas |
 | Avisos dentro del juego a administradores/propietarios | Exportación JSONL/`--alert-pawn-file`, source del filterscript Pawn y compilación en CI implementados; la entrega en un servidor staging aún no está verificada |
 | Mitigación DDoS de red e integración anti-cheat en el servidor | No implementado |
-| Parches, validación y reversión | Solo hay recomendaciones; no existe un flujo de parche aplicado |
+| Parches, validación y reversión | Una regla Pawn limitada de `patch-preview` genera únicamente un diff; el flujo de apply/checkpoint/reversión no está implementado |
 
 La documentación no cuenta como implementación. El progreso debe basarse en funciones y criterios de aceptación que tengan pruebas aprobadas.
 
@@ -50,7 +50,7 @@ Los idiomas documentados actualmente son inglés (`en`), indonesio (`id`) y espa
 
 Cada registro debe contener URL canónica del proyecto, enlace oficial de descarga/release, fuente de evidencia y fecha de comprobación, versión, servidor objetivo (SA-MP/open.mp), sistema operativo, arquitectura de CPU, ABI/bitness cuando corresponda, dependencias, tipo de instalación (`plugin` o `component`) y estado `verified`, `documented`, `unknown` o `incompatible`.
 
-Que exista una descarga no prueba compatibilidad. No inventes enlaces ni descargues/ejecutes binarios de terceros automáticamente. El comando offline `amxtriage catalog` contiene cinco releases de componentes open.mp enumerados en la [guía oficial de instalación](https://open.mp/docs/server/Installation); su estado es `documented`, no una verificación de ejecución real. Las listas de sistemas operativos/versiones quedan vacías cuando la fuente no las especifica. Consulta también la [configuración de open.mp](https://open.mp/docs/server/config.json). Si la evidencia es antigua o contradictoria, muestra `unknown` y explica por qué.
+Que exista una descarga no prueba compatibilidad. No inventes enlaces ni descargues/ejecutes binarios de terceros automáticamente. El comando offline `amxtriage catalog` contiene ocho registros: cinco versiones de componentes open.mp documentadas, dos plugins legacy mencionados en la guía oficial (`rustext` v2.0.11 con la compilación `nomemhack` y `keylistener` 1.1.2-pr), y una versión más nueva de `sampvoice` marcada `unknown` porque la guía citada no la incluye. Los metadatos de dependencias solo se rellenan si la evidencia las establece; una lista vacía no demuestra que no existan dependencias. Los campos de SO/versión permanecen vacíos cuando la fuente no los especifica, y amxtriage no ha verificado ninguna entrada en tiempo de ejecución. Consulta también la [configuración de open.mp](https://open.mp/docs/server/config.json). Si la evidencia es antigua o contradictoria, muestra `unknown` y explica por qué.
 
 ## Monitorización y límites de seguridad
 

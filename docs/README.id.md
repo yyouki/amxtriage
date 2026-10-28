@@ -53,7 +53,7 @@ amxtriage catalog --server open.mp --format markdown -o katalog-plugin.md
 amxtriage plugins --format json -o katalog-plugin.json
 ```
 
-Status `documented` berarti rilis tercantum pada dokumentasi upstream; status ini bukan bukti uji runtime. Katalog saat ini berisi beberapa component open.mp dari panduan instalasi resmi. Kolom versi/platform yang kosong berarti sumber tidak menentukannya. Perintah ini offline, tidak mengunduh binary, dan tidak melakukan pemasangan otomatis.
+Snapshot katalog memiliki lima rilis component open.mp yang terdokumentasi, dua plugin legacy yang disebut dalam panduan resmi (`rustext` v2.0.11 build `nomemhack` dan `keylistener` 1.1.2-pr), serta satu rilis `sampvoice` yang ditandai `unknown` karena rilis tersebut tidak tercantum pada panduan yang dikutip. Setiap entri memuat link proyek/rilis, lokasi instalasi, status, sumber bukti beserta tanggal, dan metadata dependensi. Status `documented` bukan bukti uji runtime. Kolom versi/platform yang kosong berarti sumber tidak menentukannya. Daftar dependensi kosong berarti katalog ini belum menemukan dependensi yang ditetapkan oleh bukti yang dikutip—bukan jaminan bahwa tidak ada dependensi. Perintah ini offline; tidak memeriksa rilis secara langsung, tidak mengunduh binary, dan tidak melakukan pemasangan otomatis.
 
 ## Alert lokal dan notifikasi chat admin
 
