@@ -585,7 +585,11 @@ def _announce_new_problem(
         for alert_sink in alert_sinks:
             if not alert_sink.emit(group) and not alert_sink.warning_emitted:
                 detail = alert_sink.failure_reason or "write failed"
-                print(f"warning: local alert export disabled: {detail}", file=sys.stderr, flush=True)
+                print(
+                    f"warning: local alert export disabled: {detail}",
+                    file=sys.stderr,
+                    flush=True,
+                )
                 alert_sink.warning_emitted = True
     if not added.created:
         return
@@ -646,7 +650,14 @@ def _run_watch(args: argparse.Namespace) -> int:
             events = parser.idle() if item is None else parser.feed(item)
             for event in events:
                 _announce_new_problem(
-                    event, aggregator, label, baseline, source_index, args, alert_sinks, alert_throttle
+                    event,
+                    aggregator,
+                    label,
+                    baseline,
+                    source_index,
+                    args,
+                    alert_sinks,
+                    alert_throttle,
                 )
     except KeyboardInterrupt:
         pass
