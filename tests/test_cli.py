@@ -80,7 +80,6 @@ def test_output_to_an_unwritable_location_is_a_clean_error(sample_log, tmp_path,
         ([], "required"),
     ],
 )
-
 def test_invalid_arguments_exit_with_status_two(argv, message, capsys):
     with pytest.raises(SystemExit) as raised:
         main(argv)

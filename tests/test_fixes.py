@@ -345,7 +345,6 @@ def test_patch_apply_runs_explicit_test_command_and_keeps_patch_when_it_passes(
         ("output", 5, "output exceeded"),
     ],
 )
-
 def test_patch_apply_rolls_back_when_test_command_fails(
     tmp_path: Path,
     mode: str,
