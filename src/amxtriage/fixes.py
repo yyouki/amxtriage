@@ -7,6 +7,7 @@ This module never writes or executes source code.
 
 from __future__ import annotations
 
+import contextlib
 import difflib
 import hashlib
 import json
@@ -18,9 +19,10 @@ import subprocess
 import tempfile
 import unicodedata
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
-from typing import Literal, Sequence
+from typing import Literal
 
 from amxtriage.compiler import CompilerDiagnostic
 from amxtriage.source import SourceIndex
@@ -356,7 +358,9 @@ class PatchApplyResult:
     compiler_output: str = ""
 
 
-def _safe_read_target(path: Path, *, max_bytes: int = 8 * 1024 * 1024) -> tuple[bytes, os.stat_result]:
+def _safe_read_target(
+    path: Path, *, max_bytes: int = 8 * 1024 * 1024
+) -> tuple[bytes, os.stat_result]:
     """Read one regular, single-link file without following the final symlink."""
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
     descriptor = os.open(path, flags)
@@ -387,11 +391,20 @@ def _safe_read_target(path: Path, *, max_bytes: int = 8 * 1024 * 1024) -> tuple[
         os.close(descriptor)
 
 
+
+def _set_descriptor_mode(descriptor: int, path: Path, mode: int) -> None:
+    fchmod = getattr(os, "fchmod", None)
+    if fchmod is not None:
+        fchmod(descriptor, mode)
+    else:
+        os.chmod(path, mode)
+
+
 def _write_exclusive(path: Path, data: bytes, *, mode: int = 0o600) -> None:
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
     descriptor = os.open(path, flags, mode)
     try:
-        os.fchmod(descriptor, mode)
+        _set_descriptor_mode(descriptor, path, mode)
         offset = 0
         while offset < len(data):
             written = os.write(descriptor, data[offset:])
@@ -419,10 +432,8 @@ def _make_temporary_replacement(target: Path, data: bytes, mode: int) -> Path:
         os.fsync(descriptor)
     except Exception:
         os.close(descriptor)
-        try:
+        with contextlib.suppress(OSError):
             temp_path.unlink()
-        except OSError:
-            pass
         raise
     os.close(descriptor)
     return temp_path
@@ -443,6 +454,23 @@ def _resolve_compiler_path(compiler: str) -> Path:
     if os.name != "nt" and not os.access(candidate, os.X_OK):
         raise OSError("compiler file is not executable")
     return candidate
+
+
+
+def _fsync_directory(path: Path) -> None:
+    """Best-effort durability for directory entry updates on platforms that support it."""
+    if not hasattr(os, "O_DIRECTORY"):
+        return
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+        os.fsync(descriptor)
+    except OSError:
+        pass
+    finally:
+        if descriptor is not None:
+            with contextlib.suppress(OSError):
+                os.close(descriptor)
 
 
 def _temporary_rollback(
@@ -504,11 +532,14 @@ def apply_patch_preview(
     ):
         return PatchApplyResult(
             "confirmation_mismatch",
-            "The reviewed patch/source hash does not match the current preview. No source was modified.",
+            "The reviewed patch/source hash does not match the current preview. "
+            "No source was modified.",
             preview.file,
         )
     if not 1 <= timeout_seconds <= MAX_COMPILER_TIMEOUT_SECONDS:
-        raise ValueError(f"compiler timeout must be between 1 and {MAX_COMPILER_TIMEOUT_SECONDS} seconds")
+        raise ValueError(
+            f"compiler timeout must be between 1 and {MAX_COMPILER_TIMEOUT_SECONDS} seconds"
+        )
     compiler_path = _resolve_compiler_path(compiler)
     resolved_include_dirs: list[Path] = []
     for item in include_dirs:
@@ -518,7 +549,11 @@ def apply_patch_preview(
         resolved_include_dirs.append(directory)
 
     relative = PurePosixPath(preview.file)
-    if relative.is_absolute() or not relative.parts or any(part in {"", ".", ".."} for part in relative.parts):
+    if (
+        relative.is_absolute()
+        or not relative.parts
+        or any(part in {"", ".", ".."} for part in relative.parts)
+    ):
         raise OSError("the patch path is not a safe relative path")
     root = source_index.root
     target = root.joinpath(*relative.parts)
@@ -555,7 +590,6 @@ def apply_patch_preview(
     )
     _write_exclusive(backup, original, mode=0o600)
     temporary: Path | None = None
-    replaced = False
     replacement_info: os.stat_result | None = None
     try:
         temporary = _make_temporary_replacement(
@@ -567,10 +601,10 @@ def apply_patch_preview(
             or hashlib.sha256(latest).hexdigest() != source_hash
         ):
             raise OSError("the source changed during patch preparation; no patch was applied")
+        replacement_info = temporary.stat(follow_symlinks=False)
         os.replace(temporary, target)
         temporary = None
-        replaced = True
-        replacement_info = target.stat(follow_symlinks=False)
+        _fsync_directory(target.parent)
 
         compiler_output = ""
         compiler_exit_code: int | None = None
@@ -583,7 +617,7 @@ def apply_patch_preview(
                     f"-o{artifact}",
                     str(target),
                 ]
-                completed = subprocess.run(
+                completed = subprocess.run(  # noqa: S603 - explicit trusted compiler path, no shell
                     command,
                     cwd=str(root),
                     stdout=subprocess.PIPE,
@@ -597,11 +631,15 @@ def apply_patch_preview(
                 )
                 compiler_exit_code = completed.returncode
                 compiler_output = sanitize(completed.stdout, MAX_COMPILER_OUTPUT_CHARS)
-                compile_ok = completed.returncode == 0 and artifact.is_file() and artifact.stat().st_size > 0
+                compile_ok = (
+                    completed.returncode == 0
+                    and artifact.is_file()
+                    and artifact.stat().st_size > 0
+                )
                 if compile_ok:
                     return PatchApplyResult(
                         "applied",
-                        "Patch applied and the configured Pawn compiler produced a non-empty AMX artifact. "
+                        "Patch applied and the configured Pawn compiler produced a non-empty AMX "
                         "Gameplay behavior still requires regression/staging tests.",
                         preview.file,
                         backup_file=backup.relative_to(root).as_posix(),
@@ -615,12 +653,19 @@ def apply_patch_preview(
             compiler_exit_code = None
             captured = error.stdout or b""
             compiler_output = sanitize(
-                captured.decode("utf-8", errors="replace") if isinstance(captured, bytes) else captured,
+                (
+                    captured.decode("utf-8", errors="replace")
+                    if isinstance(captured, bytes)
+                    else captured
+                ),
                 MAX_COMPILER_OUTPUT_CHARS,
             )
             failure_message = f"Compiler validation timed out after {timeout_seconds} seconds."
         except OSError as error:
-            failure_message = f"Compiler validation could not run: {error.strerror or type(error).__name__}"
+            failure_message = (
+                "Compiler validation could not run: "
+                f"{error.strerror or type(error).__name__}"
+            )
 
         if replacement_info is None:
             raise OSError("could not verify patched file before rollback")
@@ -643,7 +688,7 @@ def apply_patch_preview(
             )
         return PatchApplyResult(
             "rollback_blocked",
-            f"{failure_message} Rollback was blocked because the target changed or could not be safely restored. "
+            f"{failure_message} Rollback was blocked because the target changed or could not be "
             "Do not overwrite it manually; inspect the source and backup.",
             preview.file,
             backup_file=backup.relative_to(root).as_posix(),
@@ -652,7 +697,5 @@ def apply_patch_preview(
         )
     finally:
         if temporary is not None:
-            try:
+            with contextlib.suppress(OSError):
                 temporary.unlink()
-            except OSError:
-                pass
