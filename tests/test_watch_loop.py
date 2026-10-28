@@ -169,8 +169,9 @@ def test_alert_template_requires_jsonl_output(
         pytest.fail("invalid configuration must fail before watching")
 
     monkeypatch.setattr(cli, "LogFollower", unexpected_follower)
-    code = cli.main(["watch", "server_log.txt", "--alert-template", "{prefix}: {message}"])
+    with pytest.raises(SystemExit) as raised:
+        cli.main(["watch", "server_log.txt", "--alert-template", "{prefix}: {message}"])
     captured = capsys.readouterr()
-    assert code == 2
+    assert raised.value.code == 2
     assert captured.out == ""
     assert "--alert-template requires --alert-jsonl" in captured.err

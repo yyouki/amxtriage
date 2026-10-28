@@ -289,10 +289,7 @@ def render_catalog_report(
                             or tr(language, "catalog_unknown_value")
                         ),
                         _md(", ".join(entry.platforms) or tr(language, "catalog_unknown_value")),
-                        _md(
-                            ", ".join(entry.architectures)
-                            or tr(language, "catalog_unknown_value")
-                        ),
+                        _md(", ".join(entry.architectures) or tr(language, "catalog_unknown_value")),
                         _md(entry.kind),
                         _md(entry.status),
                         _md(entry.install_location),
