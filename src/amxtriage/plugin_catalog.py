@@ -77,7 +77,9 @@ def _checked_date(value: str, label: str) -> str:
     try:
         parsed = date.fromisoformat(value)
     except ValueError as error:
-        raise InputError(f"invalid plugin catalog: {label} must be an ISO date (YYYY-MM-DD)") from error
+        raise InputError(
+            f"invalid plugin catalog: {label} must be an ISO date (YYYY-MM-DD)"
+        ) from error
     if parsed.isoformat() != value:
         raise InputError(f"invalid plugin catalog: {label} must use YYYY-MM-DD")
     return value
@@ -152,7 +154,9 @@ def parse_catalog(raw: object) -> CatalogSnapshot:
             raise InputError(f"invalid plugin catalog: {label}.checked_on is after snapshot_date")
         evidence = _evidence_list(row, label)
         if any(item.checked_on > snapshot_date for item in evidence):
-            raise InputError(f"invalid plugin catalog: {label}.evidence date is after snapshot_date")
+            raise InputError(
+                f"invalid plugin catalog: {label}.evidence date is after snapshot_date"
+            )
 
         server_versions = _string_list(row, "server_versions", label)
         platforms = _string_list(row, "platforms", label)
