@@ -163,9 +163,7 @@ def run_benchmark(event_count: int, timeout_seconds: float) -> dict[str, object]
                 raise RuntimeError(f"watch process exited with code {exit_code}")
             rows = alert_path.read_text(encoding="utf-8").splitlines()
             if len(rows) != event_count:
-                raise RuntimeError(
-                    f"expected {event_count} alerts but received {len(rows)}"
-                )
+                raise RuntimeError(f"expected {event_count} alerts but received {len(rows)}")
 
             start_sample = samples[0]
             end_sample = samples[-1]
