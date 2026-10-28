@@ -2,14 +2,14 @@
 
 **Snapshot:** 28 Oktober 2026  
 **Branch target:** `main`  
-**Kode `main` yang terakhir diuji:** `523cc856a3af3933fb8855d9a249b74fd4d1bbf8`  
-**CI:** [Run 40558293760 lulus](https://github.com/yyouki/amxtriage/actions/runs/40558293760) pada kode `523cc856`; tes Python 3.10–3.13, quality/package checks, dan kompilasi filterscript Pawn berhasil. Suite mencatat 1.828 tes lulus pada Python 3.10. CI tidak menguji chat delivery pada server game live.
+**Commit kode fitur yang terakhir diverifikasi:** `b762679170fa9b17bdd698580ba873b209a9cd80`  
+**CI:** [Run 40626533141 lulus](https://github.com/yyouki/amxtriage/actions/runs/40626533141) pada kode `b762679`; 1.843 tes lulus pada masing-masing Python 3.10, 3.11, 3.12, dan 3.13. Ruff lint/format, mypy strict, build wheel/sdist, metadata package, smoke test CLI, serta kompilasi filterscript Pawn juga lulus. CI tidak menguji chat delivery pada server game live.
 
 **Bahasa / Language / Idioma:** [English README](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
 
 ## Progres keseluruhan
 
-**Estimasi berbobot: 56% dari target produk penuh.** Ini estimasi perencanaan, bukan metrik otomatis dan bukan klaim bahwa sistem sudah teruji penuh pada server nyata. Perhitungan memakai bobot 100 poin dan menilai implementasi serta tes yang benar-benar tersedia.
+**Estimasi berbobot: 57% dari target produk penuh.** Ini estimasi perencanaan, bukan metrik otomatis dan bukan klaim bahwa sistem sudah teruji penuh pada server nyata. Perhitungan memakai bobot 100 poin dan menilai implementasi serta tes yang benar-benar tersedia.
 
 | Area | Bobot | Porsi selesai yang diperkirakan | Poin |
 |---|---:|---:|---:|
@@ -20,8 +20,8 @@
 | Katalog kompatibilitas plugin/dependensi | 10 | 35% | 3.5 |
 | Monitor dan bridge alert admin | 10 | 60% | 6 |
 | Mitigasi DDoS dan integrasi anti-cheat sisi server | 15 | 0% | 0 |
-| Patch otomatis yang aman, validasi, rollback | 10 | 10% | 1 |
-| **Total** | **100** |  | **55.5/100 ≈ 56%** |
+| Patch preview yang aman, validasi, rollback | 10 | 20% | 2 |
+| **Total** | **100** |  | **56.5/100 ≈ 57%** |
 
 Nilai dibulatkan untuk tampilan. Persentase area bukan bukti kualitas runtime: perubahan tidak boleh menaikkan skor hanya karena file atau dokumentasi baru ditambahkan.
 
@@ -34,6 +34,7 @@ Nilai dibulatkan untuk tampilan. Persentase area bukan bukti kualitas runtime: p
 - Alert JSONL dengan template terbatas, field lokasi terstruktur yang tidak dapat ditimpa template, safe local output, dan perilaku fail-safe jika ekspor gagal.
 - Opsi `watch --alert-pawn-file` dan source filterscript `integrations/pawn/amxtriage_bridge.pwn`. Bridge default hanya mengirim ke admin RCON, membatasi pemrosesan menjadi lima record per detik, serta menampilkan path merah dan nomor baris biru.
 - GitHub Actions menjalankan tes Python 3.10–3.13, pemeriksaan kualitas/paket, dan kompilasi Pawn dengan toolchain yang dipatok. Source bridge berhasil dikompilasi dalam CI.
+- Perintah `patch-preview` (alias `fix-preview`) yang hanya menghasilkan unified diff untuk satu kasus Pawn berkeyakinan tinggi: compiler error `001` menyatakan titik koma hilang tepat sebelum `return`, dengan baris sebelumnya berupa assignment/deklarasi sederhana. Kasus ambigu atau tidak aman ditolak; source tidak diedit dan compiler tidak dijalankan.
 
 ## Yang belum boleh diklaim selesai
 
@@ -41,14 +42,14 @@ Nilai dibulatkan untuk tampilan. Persentase area bukan bukti kualitas runtime: p
 - Dampak CPU/RAM/disk I/O dan ping belum diukur secara benchmark pada server nyata; tidak ada klaim “nol overhead”.
 - Katalog kompatibilitas masih kecil; hanya lima component open.mp yang terdokumentasi. Cakupan kompatibilitas plugin lintas versi, OS, arsitektur, dan dependensi masih belum lengkap.
 - Mitigasi DDoS jaringan/provider dan integrasi anti-cheat server-side belum dibuat.
-- Mode `patch`/`apply` dengan checkpoint, validasi compiler/tes, bounded repair loop, dan rollback belum dibuat.
+- Mode `apply` dengan checkpoint, validasi compiler/tes, bounded repair loop, dan rollback belum dibuat. `patch-preview` saat ini hanya mendukung satu aturan sintaks Pawn; diff yang dihasilkan masih perlu ditinjau dan diuji secara manual.
 
 ## Gerbang untuk milestone berikutnya
 
 1. Uji bridge pada server staging dengan versi server dan OS yang diketahui; periksa filter admin, warna, path/baris, izin file bersama, alert ganda, record belum lengkap, rotasi/truncation, dan latensi alert.
 2. Ukur penggunaan CPU/RAM/disk I/O dan latency alert saat idle serta saat log sibuk; laporkan angka hasil ukur, bukan janji.
 3. Perluas katalog hanya bila proyek, rilis, versi, dan kompatibilitas memiliki bukti resmi; jika bukti kurang, gunakan `unknown`.
-4. Buat mode patch sebagai diff-only dahulu, lalu apply opt-in dengan checkpoint, compiler/test resmi, pemeriksaan regresi, dan rollback.
+4. Perluas aturan `patch-preview` hanya jika ada fixture compiler yang kuat; setelah itu rancang apply opt-in dengan checkpoint, compiler/test resmi, pemeriksaan regresi, batas percobaan, dan rollback. Jangan menganggap preview saat ini sebagai auto-fix.
 5. Untuk DDoS/anti-cheat, integrasikan hanya provider atau API yang benar-benar didukung. Jangan mengklaim perlindungan universal dari analisis log.
 
 Gunakan branch `main` sesuai permintaan proyek, jangan force-push atau membuang perubahan yang belum diperiksa, dan tandai fitur selesai hanya setelah kriteria penerimaan serta tes relevan lulus.
