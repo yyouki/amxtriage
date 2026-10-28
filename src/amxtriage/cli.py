@@ -28,7 +28,7 @@ from amxtriage.compiler import (
     render_compiler_report,
 )
 from amxtriage.errors import AmxTriageError, InputError
-from amxtriage.fixes import build_patch_preview, render_patch_preview
+from amxtriage.fixes import apply_patch_preview, build_patch_preview, render_patch_preview
 from amxtriage.follow import (
     DEFAULT_POLL_INTERVAL,
     MAX_POLL_INTERVAL,
@@ -95,6 +95,12 @@ def _bounded_int(minimum: int, maximum: int | None = None) -> Callable[[str], in
 
 _SIZE = re.compile(r"(\d{1,15})([KMGkmg]?)")
 _SIZE_UNITS = {"": 1, "K": 1024, "M": 1024**2, "G": 1024**3}
+
+
+def _sha256_digest(text: str) -> str:
+    if re.fullmatch(r"[0-9a-fA-F]{64}", text) is None:
+        raise argparse.ArgumentTypeError("must be a 64-character SHA-256 hex digest copied from patch-preview")
+    return text.lower()
 
 
 def _size(text: str) -> int:
@@ -379,6 +385,65 @@ def build_parser() -> argparse.ArgumentParser:
         help="stop if a compiler log exceeds SIZE bytes after decompression (0 means no limit)",
     )
 
+    patch_apply = commands.add_parser(
+        "patch-apply",
+        aliases=["fix-apply"],
+        help="apply one reviewed Pawn patch, validate with a compiler, and roll back on failure",
+        description=(
+            "Apply only the narrow patch produced by patch-preview. Both source and patch SHA-256 "
+            "values from a reviewed preview are required. A configured Pawn compiler must validate "
+            "the modified source; on failure the original bytes are restored when safe."
+        ),
+    )
+    _add_language_argument(patch_apply)
+    patch_apply.add_argument(
+        "logs", nargs="+", metavar="COMPILER_LOG", help="saved Pawn compiler output file(s)"
+    )
+    patch_apply.add_argument(
+        "--source-dir",
+        required=True,
+        metavar="DIR",
+        help="root containing Pawn source files; logged paths are used only for safe matching",
+    )
+    patch_apply.add_argument(
+        "--compiler", required=True, metavar="PAWNCC", help="trusted local Pawn compiler executable"
+    )
+    patch_apply.add_argument(
+        "--include-dir",
+        action="append",
+        default=[],
+        metavar="DIR",
+        help="include directory for compiler validation; can be repeated",
+    )
+    patch_apply.add_argument(
+        "--confirm-patch-sha256",
+        required=True,
+        type=_sha256_digest,
+        metavar="SHA256",
+        help="patch hash copied from a previously reviewed patch-preview",
+    )
+    patch_apply.add_argument(
+        "--confirm-source-sha256",
+        required=True,
+        type=_sha256_digest,
+        metavar="SHA256",
+        help="source hash copied from the same reviewed patch-preview",
+    )
+    patch_apply.add_argument(
+        "--timeout",
+        type=_bounded_int(1, 120),
+        default=30,
+        metavar="SECONDS",
+        help="compiler timeout from 1 to 120 seconds (default 30)",
+    )
+    patch_apply.add_argument(
+        "--max-input-bytes",
+        type=_size,
+        default=0,
+        metavar="SIZE",
+        help="stop if a compiler log exceeds SIZE bytes after decompression (0 means no limit)",
+    )
+
     explain = commands.add_parser(
         "explain",
         help="explain an AMX runtime error code (no code lists all known codes)",
@@ -607,6 +672,39 @@ def _run_patch_preview(args: argparse.Namespace) -> int:
     return EXIT_OK if preview.status == "ready" else EXIT_NO_PATCH
 
 
+def _run_patch_apply(args: argparse.Namespace) -> int:
+    log_paths = expand_paths(args.logs)
+    source_index = SourceIndex(args.source_dir)
+    report = analyze_compiler_outputs(
+        log_paths,
+        source_language="pawn",
+        max_input_bytes=args.max_input_bytes or None,
+    )
+    preview = build_patch_preview(report.diagnostics, source_index)
+    _write_output(render_patch_preview(preview, "text"), None)
+    if preview.status != "ready":
+        return EXIT_NO_PATCH
+    result = apply_patch_preview(
+        preview,
+        source_index,
+        expected_patch_sha256=args.confirm_patch_sha256,
+        expected_source_sha256=args.confirm_source_sha256,
+        compiler=args.compiler,
+        include_dirs=args.include_dir,
+        timeout_seconds=args.timeout,
+    )
+    print(f"Apply status: {result.status}")
+    print(sanitize(result.message, MESSAGE_LIMIT))
+    if result.backup_file:
+        print(f"Backup: {sanitize(result.backup_file, MESSAGE_LIMIT)}")
+    if result.compiler_exit_code is not None:
+        print(f"Compiler exit code: {result.compiler_exit_code}")
+    if result.compiler_output:
+        print("Compiler output:")
+        print(sanitize(result.compiler_output, MESSAGE_LIMIT * 4))
+    return EXIT_OK if result.status == "applied" else EXIT_ERROR
+
+
 def _run_catalog(args: argparse.Namespace) -> int:
     snapshot = load_catalog()
     entries = filter_catalog_entries(snapshot.entries, server=args.server, status=args.status)
@@ -674,6 +772,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_diagnose(args)
         if args.command in ("patch-preview", "fix-preview"):
             return _run_patch_preview(args)
+        if args.command in ("patch-apply", "fix-apply"):
+            return _run_patch_apply(args)
         if args.command in ("catalog", "plugins"):
             return _run_catalog(args)
         return _run_explain(args)
