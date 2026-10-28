@@ -6,6 +6,7 @@ import re
 import signal
 import sys
 import threading
+import time
 import traceback
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -42,6 +43,12 @@ from amxtriage.follow import (
 from amxtriage.localization import SUPPORTED_LANGUAGES
 from amxtriage.localization import translate as tr
 from amxtriage.model import REPORTED_KINDS, Event, EventKind
+from amxtriage.monitoring import (
+    DEFAULT_METRICS_INTERVAL_SECONDS,
+    JsonlMetricsSink,
+    MetricsSampler,
+    metrics_supported,
+)
 from amxtriage.output import write_text_file
 from amxtriage.plugin_catalog import (
     KINDS,
@@ -136,6 +143,16 @@ def _poll_interval(text: str) -> float:
         raise argparse.ArgumentTypeError(
             f"must be between {MIN_POLL_INTERVAL} and {MAX_POLL_INTERVAL} seconds"
         )
+    return value
+
+
+def _metrics_interval(text: str) -> float:
+    try:
+        value = float(text)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(f"invalid number: {text!r}") from error
+    if not 1.0 <= value <= 3600.0:
+        raise argparse.ArgumentTypeError("must be between 1 and 3600 seconds")
     return value
 
 
@@ -307,6 +324,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_POLL_INTERVAL,
         metavar="SECONDS",
         help=f"seconds between checks for new lines (default {DEFAULT_POLL_INTERVAL})",
+    )
+    watch.add_argument(
+        "--metrics-jsonl",
+        metavar="FILE",
+        help="append opt-in Linux host/process metrics and local alert-processing timings to FILE",
+    )
+    watch.add_argument(
+        "--metrics-interval",
+        type=_metrics_interval,
+        default=DEFAULT_METRICS_INTERVAL_SECONDS,
+        metavar="SECONDS",
+        help="metrics sampling interval from 1 to 3600 seconds (default 5; requires --metrics-jsonl)",
     )
     _add_context_arguments(watch)
 
@@ -630,6 +659,7 @@ def _announce_new_problem(
     args: argparse.Namespace,
     alert_sinks: Sequence[JsonlAlertSink | PawnBridgeAlertSink] = (),
     alert_throttle: AlertThrottle | None = None,
+    metrics_sampler: MetricsSampler | None = None,
 ) -> None:
     added = aggregator.add(event, label)
     group = added.group
@@ -638,6 +668,7 @@ def _announce_new_problem(
     if baseline is not None and group.signature_id in baseline:
         return
     if alert_sinks and (alert_throttle is None or alert_throttle.allow(group)):
+        alert_started = time.perf_counter()
         for alert_sink in alert_sinks:
             if not alert_sink.emit(group) and not alert_sink.warning_emitted:
                 detail = alert_sink.failure_reason or "write failed"
@@ -647,6 +678,9 @@ def _announce_new_problem(
                     flush=True,
                 )
                 alert_sink.warning_emitted = True
+        if metrics_sampler is not None:
+            # This measures local export handling, not the Pawn bridge's chat delivery.
+            metrics_sampler.record_alert_processing((time.perf_counter() - alert_started) * 1000.0)
     if not added.created:
         return
     snippet = None
@@ -690,6 +724,24 @@ def _run_watch(args: argparse.Namespace) -> int:
         if alert_sinks
         else None
     )
+    metrics_sampler: MetricsSampler | None = None
+    metrics_sink: JsonlMetricsSink | None = None
+    if args.metrics_jsonl:
+        if not metrics_supported():
+            raise InputError(
+                "--metrics-jsonl is currently supported on Linux only; no metrics were collected"
+            )
+        metrics_path = Path(args.metrics_jsonl).expanduser().resolve()
+        compared_paths = [Path(args.log).expanduser().resolve()]
+        compared_paths.extend(
+            Path(path).expanduser().resolve()
+            for path in (args.alert_jsonl, args.alert_pawn_file)
+            if path
+        )
+        if metrics_path in compared_paths:
+            raise InputError("metrics output must be a separate file from the log and alert outputs")
+        metrics_sampler = MetricsSampler(args.metrics_interval)
+        metrics_sink = JsonlMetricsSink(args.metrics_jsonl)
     stop = threading.Event()
     follower = LogFollower(
         args.log,
@@ -722,7 +774,20 @@ def _run_watch(args: argparse.Namespace) -> int:
                     args,
                     alert_sinks,
                     alert_throttle,
+                    metrics_sampler,
                 )
+            if metrics_sampler is not None and metrics_sink is not None and metrics_sampler.due():
+                if (
+                    not metrics_sink.emit(metrics_sampler.sample())
+                    and not metrics_sink.warning_emitted
+                ):
+                    detail = metrics_sink.failure_reason or "write failed"
+                    print(
+                        f"warning: metrics export disabled: {detail}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    metrics_sink.warning_emitted = True
     except KeyboardInterrupt:
         pass
     finally:
@@ -730,8 +795,33 @@ def _run_watch(args: argparse.Namespace) -> int:
         follower.close()
     for event in parser.finish():
         _announce_new_problem(
-            event, aggregator, label, baseline, source_index, args, alert_sinks, alert_throttle
+            event,
+            aggregator,
+            label,
+            baseline,
+            source_index,
+            args,
+            alert_sinks,
+            alert_throttle,
+            metrics_sampler,
         )
+    if (
+        metrics_sampler is not None
+        and metrics_sink is not None
+        and (not metrics_sampler.has_sampled or metrics_sampler.has_pending_alerts)
+        and not metrics_sink.disabled
+    ):
+        if (
+            not metrics_sink.emit(metrics_sampler.sample())
+            and not metrics_sink.warning_emitted
+        ):
+            detail = metrics_sink.failure_reason or "write failed"
+            print(
+                f"warning: metrics export disabled: {detail}",
+                file=sys.stderr,
+                flush=True,
+            )
+            metrics_sink.warning_emitted = True
     if alert_throttle is not None and alert_throttle.suppressed_count:
         print(
             "warning: suppressed "
@@ -913,6 +1003,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             and not args.alert_pawn_file
         ):
             parser.error("--alert-message-template requires --alert-pawn-file")
+        if (
+            args.metrics_interval != DEFAULT_METRICS_INTERVAL_SECONDS
+            and not args.metrics_jsonl
+        ):
+            parser.error("--metrics-interval requires --metrics-jsonl")
     try:
         if args.command == "analyze":
             return _run_analyze(args)
