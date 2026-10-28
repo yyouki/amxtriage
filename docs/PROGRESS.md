@@ -2,14 +2,14 @@
 
 **Snapshot:** 28 Oktober 2026  
 **Branch target:** `main`  
-**Commit kode fitur yang terakhir diverifikasi:** `3d79847f4bf67fd75c40c4afb7eb08cb88cdd8bc`  
-**CI:** [Run 40627116263 lulus](https://github.com/yyouki/amxtriage/actions/runs/40627116263) pada kode `3d79847`; 1.843 tes lulus pada masing-masing Python 3.10, 3.11, 3.12, dan 3.13. Ruff lint/format, mypy strict, build wheel/sdist, validasi metadata, smoke test CLI, serta kompilasi filterscript Pawn juga lulus. CI tidak menguji pengiriman chat pada server game live.
+**Kode yang diaudit:** `dda2b9c3d8788430189d8959aeaf636f54f30768`  
+**CI terverifikasi:** [Run 40643832465 lulus](https://github.com/yyouki/amxtriage/actions/runs/40643832465) pada commit `dda2b9c`. Seluruh job lulus: 1.866 tes pada Python 3.10, 3.11, 3.12, dan 3.13; Ruff lint/format, mypy strict, wheel/sdist, validasi metadata, smoke test CLI, serta kompilasi filterscript Pawn. CI tidak menguji pengiriman chat pada server game live.
 
 **Bahasa / Language / Idioma:** [English README](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
 
 ## Progres keseluruhan
 
-**Estimasi berbobot: 57% dari target produk penuh.** Ini estimasi perencanaan, bukan metrik otomatis dan bukan klaim bahwa sistem sudah teruji penuh pada server nyata. Perhitungan memakai bobot 100 poin dan menilai implementasi serta tes yang benar-benar tersedia.
+**Estimasi berbobot: 60% dari target produk penuh.** Ini estimasi perencanaan dari implementasi dan tes yang tersedia, bukan jaminan akurasi atau bukti bahwa semua integrasi sudah diuji pada server nyata.
 
 | Area | Bobot | Porsi selesai yang diperkirakan | Poin |
 |---|---:|---:|---:|
@@ -17,39 +17,39 @@
 | Diagnostik keluaran compiler multi-bahasa | 15 | 67% | 10 |
 | Lokalisasi CLI dan dokumentasi | 10 | 70% | 7 |
 | CI, pengujian lintas Python, packaging, kompilasi Pawn | 10 | 100% | 10 |
-| Katalog kompatibilitas plugin/dependensi | 10 | 40% | 4.0 |
+| Katalog kompatibilitas plugin/dependensi | 10 | 40% | 4 |
 | Monitor dan bridge alert admin | 10 | 60% | 6 |
 | Mitigasi DDoS dan integrasi anti-cheat sisi server | 15 | 0% | 0 |
-| Patch preview yang aman, validasi, rollback | 10 | 20% | 2 |
-| **Total** | **100** |  | **57/100 = 57%** |
+| Patch preview, konfirmasi, validasi compiler, checkpoint, rollback | 10 | 50% | 5 |
+| **Total** | **100** |  | **60/100 = 60%** |
 
-Nilai dibulatkan untuk tampilan. Persentase area bukan bukti kualitas runtime: perubahan tidak boleh menaikkan skor hanya karena file atau dokumentasi baru ditambahkan.
+Nilai area tetap konservatif: dokumentasi bukan implementasi, kompilasi bukan bukti pengiriman live, dan validasi compiler bukan bukti kebenaran gameplay.
 
 ## Yang sudah tersedia
 
 - CLI Python untuk analisis log SA-MP/open.mp, pengelompokan masalah, `watch`, baseline, konteks source, dan rekomendasi offline.
-- Diagnostik teks compiler/linter untuk format umum Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go, dan Rust. Ini tidak mencakup semua versi tool dan perintah `diagnose` tidak menjalankan compiler.
+- Diagnostik teks compiler/linter untuk format umum Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go, dan Rust. Ini tidak mencakup semua versi tool; perintah `diagnose` tidak menjalankan compiler.
 - Label laporan dan dokumentasi English, Bahasa Indonesia, dan Español.
-- Katalog offline mencatat lima rilis component yang tercantum di dokumentasi open.mp, satu rilis sampvoice yang belum dipastikan (`unknown`), serta dua plugin legacy (rustext dan keylistener) yang direkomendasikan oleh panduan migrasi resmi. Dependencies ditampilkan hanya jika bukti upstream menyebutkannya; daftar kosong bukan bukti bahwa tidak ada dependensi.
-- Alert JSONL dengan template terbatas, field lokasi terstruktur yang tidak dapat ditimpa template, safe local output, dan perilaku fail-safe jika ekspor gagal.
-- Opsi `watch --alert-pawn-file` dan source filterscript `integrations/pawn/amxtriage_bridge.pwn`. Bridge default hanya mengirim ke admin RCON, membatasi pemrosesan menjadi lima record per detik, serta menampilkan path merah dan nomor baris biru.
-- GitHub Actions menjalankan tes Python 3.10–3.13, pemeriksaan kualitas/paket, dan kompilasi Pawn dengan toolchain yang dipatok. Source bridge berhasil dikompilasi dalam CI.
-- Perintah `patch-preview` (alias `fix-preview`) yang hanya menghasilkan unified diff untuk satu kasus Pawn berkeyakinan tinggi: compiler error `001` menyatakan titik koma hilang tepat sebelum `return`, dengan baris sebelumnya berupa assignment/deklarasi sederhana. Kasus ambigu atau tidak aman ditolak; source tidak diedit dan compiler tidak dijalankan.
+- Katalog offline delapan entri: lima rilis component yang dicantumkan dokumentasi open.mp, dua plugin legacy yang direkomendasikan panduan migrasi, dan satu versi `sampvoice` tambahan berstatus `unknown`. Setiap entri membawa URL proyek/rilis, bukti bertanggal, jenis instalasi, dan field versi/OS/arsitektur/dependensi. Field kosong berarti bukti saat ini tidak menetapkan nilai tersebut, bukan kompatibilitas yang diasumsikan.
+- Alert JSONL dan protokol lokal `--alert-pawn-file`, template pesan terbatas, field path/baris terstruktur yang tidak dapat ditimpa template, file output lokal yang dibatasi, deduplikasi/cooldown, serta rate limit.
+- Filterscript Pawn `integrations/pawn/amxtriage_bridge.pwn` yang default-nya hanya memberi chat ke admin RCON, menampilkan path merah dan nomor baris biru, dan memproses paling banyak lima record per tick. Source bridge dikompilasi dengan toolchain Pawn yang dipatok di CI.
+- `patch-preview`/`fix-preview` menghasilkan unified diff tanpa mengubah source untuk satu aturan sintaks Pawn berkeyakinan tinggi: compiler error `001` untuk titik koma yang hilang tepat sebelum `return`, dengan baris sebelumnya berupa assignment/deklarasi sederhana.
+- `patch-apply`/`fix-apply` meminta hash source dan patch dari preview yang ditinjau, memeriksa path dan file source, membuat checkpoint dengan izin terbatas, menjalankan compiler Pawn lokal yang dipilih operator dengan timeout, dan mencoba rollback jika validasi compiler gagal. Tes menggunakan compiler stub memeriksa alur sukses, konfirmasi salah, file berubah, dan rollback.
 
 ## Yang belum boleh diklaim selesai
 
-- Chat alert **belum diverifikasi end-to-end pada server staging/live SA-MP/open.mp**. Kompilasi Pawn tidak membuktikan izin file, callback timing, role/ACL, warna, rotasi/truncation, atau dampak resource/ping di server nyata.
-- Dampak CPU/RAM/disk I/O dan ping belum diukur secara benchmark pada server nyata; tidak ada klaim “nol overhead”.
-- Katalog kompatibilitas masih terbatas: lima rilis component open.mp terdokumentasi, dua plugin legacy terdokumentasi, dan satu rilis sampvoice berstatus `unknown`. Matriks runtime untuk versi server, OS, arsitektur, ABI, dan dependensi masih belum lengkap.
-- Mitigasi DDoS jaringan/provider dan integrasi anti-cheat server-side belum dibuat.
-- Mode `apply` dengan checkpoint, validasi compiler/tes, bounded repair loop, dan rollback belum dibuat. `patch-preview` saat ini hanya mendukung satu aturan sintaks Pawn; diff yang dihasilkan masih perlu ditinjau dan diuji secara manual.
+- Chat alert **belum diverifikasi end-to-end pada server staging/live SA-MP/open.mp**. Kompilasi Pawn dan tes protokol lokal tidak membuktikan callback timing, ACL pada server target, izin file bersama, perilaku saat rotasi/truncation, atau dampak resource/ping.
+- CPU, RAM, disk I/O, dan latency alert belum diukur pada server nyata; tidak ada klaim “nol overhead”.
+- Katalog belum memiliki matriks runtime yang lengkap. Versi server, OS, arsitektur CPU/ABI, dan dependensi tetap kosong ketika sumber resmi tidak menetapkannya. Belum ada entri yang ditandai runtime-`verified` oleh amxtriage.
+- `patch-apply` saat ini memvalidasi dengan compiler; ia belum menjalankan test suite proyek atau linter khusus, belum mengonfirmasi perilaku gameplay, dan cakupan patch hanya satu aturan Pawn. Tes compiler stub bukan pengganti pengujian source nyata.
+- Mitigasi DDoS jaringan/provider dan integrasi anti-cheat server-side belum dibuat. Log analyzer hanya bisa mendeteksi gejala dan tidak bisa sendiri menghentikan serangan volumetrik.
 
-## Gerbang untuk milestone berikutnya
+## Gerbang berikutnya
 
-1. Uji bridge pada server staging dengan versi server dan OS yang diketahui; periksa filter admin, warna, path/baris, izin file bersama, alert ganda, record belum lengkap, rotasi/truncation, dan latensi alert.
-2. Ukur penggunaan CPU/RAM/disk I/O dan latency alert saat idle serta saat log sibuk; laporkan angka hasil ukur, bukan janji.
-3. Perluas katalog hanya bila proyek, rilis, versi, dan kompatibilitas memiliki bukti resmi; jika bukti kurang, gunakan `unknown`.
-4. Perluas aturan `patch-preview` hanya jika ada fixture compiler yang kuat; setelah itu rancang apply opt-in dengan checkpoint, compiler/test resmi, pemeriksaan regresi, batas percobaan, dan rollback. Jangan menganggap preview saat ini sebagai auto-fix.
-5. Untuk DDoS/anti-cheat, integrasikan hanya provider atau API yang benar-benar didukung. Jangan mengklaim perlindungan universal dari analisis log.
+1. **Bridge:** jalankan staging test dengan versi server dan OS yang diketahui; periksa otorisasi admin, warna, path/baris, izin file, record parsial, truncation/rotasi, deduplikasi, dan latency. Sampai itu tersedia, integrasi live tetap berstatus belum diverifikasi.
+2. **Katalog:** tambahkan filter berdasarkan versi server, OS/platform, arsitektur, dan jenis plugin/component; perluas data hanya ketika URL proyek/rilis serta bukti resmi tersedia. Field yang tidak terbukti harus tetap unknown/kosong dan tidak boleh menghasilkan klaim kompatibilitas.
+3. **Patch:** tambahkan runner test/linter lokal yang eksplisit dan tanpa shell, dengan timeout/output terbatas; tes sukses/gagal/timeout dan rollback harus tersedia sebelum fitur itu dihitung lebih lengkap. Compiler sukses tetap bukan bukti benar secara gameplay.
+4. **Monitoring:** ukur CPU/RAM/disk I/O dan latensi alert saat idle serta log sibuk di host uji.
+5. **DDoS/anti-cheat:** hanya tambahkan adapter yang benar-benar didukung provider/server dan memerlukan opt-in. Jangan klaim perlindungan universal.
 
-Gunakan branch `main` sesuai permintaan proyek, jangan force-push atau membuang perubahan yang belum diperiksa, dan tandai fitur selesai hanya setelah kriteria penerimaan serta tes relevan lulus.
+Gunakan `main` sesuai permintaan; jangan force-push atau mengganti perubahan yang belum diaudit. Tandai milestone selesai hanya setelah kriteria penerimaan dan tes relevan lulus.
