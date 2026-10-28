@@ -722,6 +722,8 @@ def apply_patch_preview(
         f".{target.name}.amxtriage-backup-{source_hash[:12]}-{uuid.uuid4().hex[:8]}"
     )
     _write_exclusive(backup, original, mode=0o600)
+    # Persist the checkpoint directory entry before any source replacement can occur.
+    _fsync_directory(target.parent)
     temporary: Path | None = None
     replacement_info: os.stat_result | None = None
     try:

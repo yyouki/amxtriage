@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+import amxtriage.fixes as fixes
 from amxtriage.compiler import CompilerDiagnostic, parse_compiler_lines
 from amxtriage.errors import SourceError
 from amxtriage.fixes import apply_patch_preview, build_patch_preview, render_patch_preview
@@ -279,6 +280,41 @@ def test_patch_apply_creates_checkpoint_and_keeps_patch_only_after_compiler_succ
     assert backup.read_bytes() == original
     if os.name == "posix":
         assert backup.stat().st_mode & 0o777 == 0o600
+
+
+@pytest.mark.skipif(os.name == "nt", reason="executable test compiler uses a POSIX shebang")
+def test_patch_apply_syncs_checkpoint_directory_before_replacing_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = make_source(tmp_path, "new value = 42\\nreturn 1;\\n")
+    original = source.read_bytes()
+    source_index = SourceIndex(str(tmp_path))
+    preview = build_patch_preview([parse_pawn_diagnostic()], source_index)
+    compiler = make_fake_compiler(tmp_path)
+    calls: list[bytes] = []
+    real_fsync_directory = fixes._fsync_directory
+
+    def observe_fsync_directory(path: Path) -> None:
+        # The first directory sync must happen while the source still has its original bytes.
+        calls.append(source.read_bytes())
+        real_fsync_directory(path)
+
+    monkeypatch.setattr(fixes, "_fsync_directory", observe_fsync_directory)
+    result = apply_patch_preview(
+        preview,
+        source_index,
+        expected_patch_sha256=preview.patch_sha256 or "",
+        expected_source_sha256=preview.source_sha256 or "",
+        compiler=str(compiler),
+        compile_only=True,
+    )
+
+    assert result.status == "applied"
+    assert calls
+    assert calls[0] == original
+    assert source.read_bytes() == b"new value = 42;\\nreturn 1;\\n"
+    assert result.backup_file is not None
+    assert (tmp_path / result.backup_file).read_bytes() == original
 
 
 @pytest.mark.skipif(os.name == "nt", reason="executable test compiler uses a POSIX shebang")
