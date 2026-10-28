@@ -5,7 +5,7 @@ import pytest
 
 from amxtriage.compiler import CompilerDiagnostic, parse_compiler_lines
 from amxtriage.errors import SourceError
-from amxtriage.fixes import build_patch_preview, render_patch_preview
+from amxtriage.fixes import apply_patch_preview, build_patch_preview, render_patch_preview
 from amxtriage.source import SourceIndex
 
 EXPECTED_MESSAGE = 'expected token: ";", but found "return"'
@@ -188,3 +188,132 @@ def test_control_characters_in_diff_context_are_refused(tmp_path: Path) -> None:
 def test_patch_preview_refuses_invalid_source_dir(tmp_path: Path) -> None:
     with pytest.raises(SourceError, match="source directory"):
         SourceIndex(str(tmp_path / "missing"))
+
+
+
+def make_fake_compiler(path: Path) -> Path:
+    script = path / "pawncc-stub"
+    script.write_text(
+        "#!/usr/bin/env python3\n"
+        "import pathlib, sys\n"
+        "args = sys.argv[1:]\n"
+        "source = pathlib.Path(args[-1])\n"
+        "text = source.read_text(encoding='utf-8')\n"
+        "if 'COMPILER_FAIL' in text:\n"
+        "    print('synthetic compiler rejection')\n"
+        "    raise SystemExit(1)\n"
+        "output = next((arg[2:] for arg in args if arg.startswith('-o')), None)\n"
+        "if output is None:\n"
+        "    print('missing output argument')\n"
+        "    raise SystemExit(2)\n"
+        "pathlib.Path(output).write_bytes(b'AMX')\n",
+        encoding="utf-8",
+    )
+    script.chmod(0o755)
+    return script
+
+
+def test_patch_apply_requires_matching_review_hashes_and_does_not_edit_on_mismatch(
+    tmp_path: Path,
+) -> None:
+    source = make_source(tmp_path, "new value = 42\nreturn 1;\n")
+    original = source.read_bytes()
+    source_index = SourceIndex(str(tmp_path))
+    preview = build_patch_preview([parse_pawn_diagnostic()], source_index)
+    compiler = make_fake_compiler(tmp_path)
+
+    result = apply_patch_preview(
+        preview,
+        source_index,
+        expected_patch_sha256="0" * 64,
+        expected_source_sha256=preview.source_sha256 or "",
+        compiler=str(compiler),
+    )
+
+    assert result.status == "confirmation_mismatch"
+    assert source.read_bytes() == original
+    assert not list(tmp_path.glob("*.amxtriage-backup-*"))
+
+
+@pytest.mark.skipif(os.name == "nt", reason="executable test compiler uses a POSIX shebang")
+def test_patch_apply_creates_checkpoint_and_keeps_patch_only_after_compiler_success(
+    tmp_path: Path,
+) -> None:
+    source = make_source(tmp_path, "new value = 42\nreturn 1;\n")
+    original = source.read_bytes()
+    source_index = SourceIndex(str(tmp_path))
+    preview = build_patch_preview([parse_pawn_diagnostic()], source_index)
+    compiler = make_fake_compiler(tmp_path)
+
+    result = apply_patch_preview(
+        preview,
+        source_index,
+        expected_patch_sha256=preview.patch_sha256 or "",
+        expected_source_sha256=preview.source_sha256 or "",
+        compiler=str(compiler),
+    )
+
+    assert result.status == "applied"
+    assert result.compiler_exit_code == 0
+    assert source.read_bytes() == b"new value = 42;\nreturn 1;\n"
+    assert result.backup_file is not None
+    backup = tmp_path / result.backup_file
+    assert backup.read_bytes() == original
+    if os.name == "posix":
+        assert backup.stat().st_mode & 0o777 == 0o600
+
+
+@pytest.mark.skipif(os.name == "nt", reason="executable test compiler uses a POSIX shebang")
+def test_patch_apply_rolls_back_exact_original_bytes_after_compiler_failure(
+    tmp_path: Path,
+) -> None:
+    source = make_source(tmp_path, "new value = 42\nreturn 1;\n// COMPILER_FAIL\n")
+    original = source.read_bytes()
+    source_index = SourceIndex(str(tmp_path))
+    preview = build_patch_preview([parse_pawn_diagnostic()], source_index)
+    compiler = make_fake_compiler(tmp_path)
+
+    result = apply_patch_preview(
+        preview,
+        source_index,
+        expected_patch_sha256=preview.patch_sha256 or "",
+        expected_source_sha256=preview.source_sha256 or "",
+        compiler=str(compiler),
+    )
+
+    assert result.status == "compile_failed_rolled_back"
+    assert result.compiler_exit_code == 1
+    assert source.read_bytes() == original
+    assert result.backup_file is not None
+    assert (tmp_path / result.backup_file).read_bytes() == original
+
+
+def test_patch_apply_refuses_source_that_changed_after_review(tmp_path: Path) -> None:
+    source = make_source(tmp_path, "new value = 42\nreturn 1;\n")
+    source_index = SourceIndex(str(tmp_path))
+    preview = build_patch_preview([parse_pawn_diagnostic()], source_index)
+    compiler = make_fake_compiler(tmp_path)
+    source.write_bytes(b"new value = 99\nreturn 1;\n")
+
+    with pytest.raises(OSError, match="changed since preview"):
+        apply_patch_preview(
+            preview,
+            source_index,
+            expected_patch_sha256=preview.patch_sha256 or "",
+            expected_source_sha256=preview.source_sha256 or "",
+            compiler=str(compiler),
+        )
+    assert source.read_bytes() == b"new value = 99\nreturn 1;\n"
+
+
+def test_patch_preview_exposes_hashes_required_for_opt_in_apply(tmp_path: Path) -> None:
+    make_source(tmp_path, "new value = 42\nreturn 1;\n")
+    preview = build_patch_preview(
+        [parse_pawn_diagnostic()], SourceIndex(str(tmp_path))
+    )
+    rendered = render_patch_preview(preview, "json")
+
+    assert preview.source_sha256 is not None and len(preview.source_sha256) == 64
+    assert preview.patch_sha256 is not None and len(preview.patch_sha256) == 64
+    assert f'"source_sha256": "{preview.source_sha256}"' in rendered
+    assert f'"patch_sha256": "{preview.patch_sha256}"' in rendered
