@@ -251,7 +251,6 @@ def test_empty_filter_does_not_claim_no_compatible_plugins_exist() -> None:
     assert "does not mean no compatible plugins" in report
 
 
-
 def test_catalog_dates_require_canonical_iso_and_cannot_exceed_snapshot() -> None:
     snapshot = load_catalog()
     raw = raw_catalog(snapshot)
@@ -267,7 +266,6 @@ def test_catalog_dates_require_canonical_iso_and_cannot_exceed_snapshot() -> Non
     first["checked_on"] = "2026-10-29"
     with pytest.raises(InputError, match="after snapshot_date"):
         parse_catalog(raw)
-
 
 
 def test_catalog_rejects_blank_matrix_values_and_future_evidence_dates() -> None:
