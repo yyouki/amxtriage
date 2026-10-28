@@ -787,11 +787,10 @@ def apply_patch_preview(
                     if test_problem is None and test_exit_code == 0:
                         try:
                             tested_bytes, tested_info = _safe_read_target(target)
-                            target_unchanged = (
-                                (tested_info.st_dev, tested_info.st_ino)
-                                == (replacement_info.st_dev, replacement_info.st_ino)
-                                and hashlib.sha256(tested_bytes).hexdigest() == replacement_hash
-                            )
+                            target_unchanged = (tested_info.st_dev, tested_info.st_ino) == (
+                                replacement_info.st_dev,
+                                replacement_info.st_ino,
+                            ) and hashlib.sha256(tested_bytes).hexdigest() == replacement_hash
                         except OSError:
                             target_unchanged = False
                         if target_unchanged:

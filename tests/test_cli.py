@@ -97,7 +97,31 @@ def test_fail_on_new_requires_a_baseline(sample_log, capsys):
 
 def test_patch_apply_requires_test_command_or_explicit_compile_only(capsys):
     with pytest.raises(SystemExit) as raised:
-        main([
+        main(
+            [
+                "patch-apply",
+                "compiler.log",
+                "--source-dir",
+                ".",
+                "--compiler",
+                "pawncc",
+                "--confirm-patch-sha256",
+                "0" * 64,
+                "--confirm-source-sha256",
+                "1" * 64,
+            ]
+        )
+    assert raised.value.code == 2
+    assert "one of the arguments --test-executable --compile-only is required" in (
+        capsys.readouterr().err
+    )
+
+
+def test_patch_apply_parser_accepts_explicit_compile_only():
+    from amxtriage.cli import build_parser
+
+    args = build_parser().parse_args(
+        [
             "patch-apply",
             "compiler.log",
             "--source-dir",
@@ -108,31 +132,12 @@ def test_patch_apply_requires_test_command_or_explicit_compile_only(capsys):
             "0" * 64,
             "--confirm-source-sha256",
             "1" * 64,
-        ])
-    assert raised.value.code == 2
-    assert "one of the arguments --test-executable --compile-only is required" in (
-        capsys.readouterr().err
+            "--compile-only",
+        ]
     )
-
-
-def test_patch_apply_parser_accepts_explicit_compile_only():
-    from amxtriage.cli import build_parser
-
-    args = build_parser().parse_args([
-        "patch-apply",
-        "compiler.log",
-        "--source-dir",
-        ".",
-        "--compiler",
-        "pawncc",
-        "--confirm-patch-sha256",
-        "0" * 64,
-        "--confirm-source-sha256",
-        "1" * 64,
-        "--compile-only",
-    ])
     assert args.compile_only is True
     assert args.test_executable is None
+
 
 def test_version_flag(capsys):
     with pytest.raises(SystemExit) as raised:

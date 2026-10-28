@@ -814,9 +814,7 @@ def _run_patch_apply(args: argparse.Namespace) -> int:
         compiler=args.compiler,
         include_dirs=args.include_dir,
         timeout_seconds=args.timeout,
-        test_command=(
-            [args.test_executable, *args.test_arg] if args.test_executable else None
-        ),
+        test_command=([args.test_executable, *args.test_arg] if args.test_executable else None),
         compile_only=args.compile_only,
     )
     print(f"Apply status: {result.status}")
