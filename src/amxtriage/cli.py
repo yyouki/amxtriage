@@ -14,6 +14,7 @@ from types import FrameType
 from amxtriage import __version__
 from amxtriage.aggregate import Aggregator
 from amxtriage.alerts import (
+    DEFAULT_ALERT_MESSAGE_TEMPLATE,
     DEFAULT_ALERT_PREFIX,
     DEFAULT_ALERT_TEMPLATE,
     AlertThrottle,
@@ -266,6 +267,15 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_ALERT_PREFIX,
         metavar="TEXT",
         help="prefix for alert summaries (requires --alert-jsonl or --alert-pawn-file)",
+    )
+    watch.add_argument(
+        "--alert-message-template",
+        default=DEFAULT_ALERT_MESSAGE_TEMPLATE,
+        metavar="TEMPLATE",
+        help=(
+            "customize in-game message body with {severity}, {kind}, {message}, {code}, "
+            "{signature}, {count}; source file and line are protected; requires --alert-pawn-file"
+        ),
     )
     watch.add_argument(
         "--alert-cooldown",
@@ -607,6 +617,11 @@ def _run_watch(args: argparse.Namespace) -> int:
     source_index = SourceIndex(args.source_dir) if args.source_dir else None
     if args.alert_template != DEFAULT_ALERT_TEMPLATE and not args.alert_jsonl:
         raise InputError("--alert-template requires --alert-jsonl")
+    if (
+        args.alert_message_template != DEFAULT_ALERT_MESSAGE_TEMPLATE
+        and not args.alert_pawn_file
+    ):
+        raise InputError("--alert-message-template requires --alert-pawn-file")
     alert_sinks: list[JsonlAlertSink | PawnBridgeAlertSink] = []
     if args.alert_jsonl:
         alert_sinks.append(
@@ -617,7 +632,13 @@ def _run_watch(args: argparse.Namespace) -> int:
             )
         )
     if args.alert_pawn_file:
-        alert_sinks.append(PawnBridgeAlertSink(args.alert_pawn_file, prefix=args.alert_prefix))
+        alert_sinks.append(
+            PawnBridgeAlertSink(
+                args.alert_pawn_file,
+                prefix=args.alert_prefix,
+                message_template=args.alert_message_template,
+            )
+        )
     alert_throttle = (
         AlertThrottle(
             cooldown_seconds=args.alert_cooldown,

@@ -6,12 +6,15 @@ import pytest
 
 from amxtriage.aggregate import Aggregator
 from amxtriage.alerts import (
+    DEFAULT_ALERT_MESSAGE_TEMPLATE,
     DEFAULT_ALERT_TEMPLATE,
     AlertThrottle,
     JsonlAlertSink,
     append_alert_event,
     build_alert_event,
     serialize_alert_event,
+    serialize_pawn_bridge_record,
+    validate_alert_message_template,
 )
 from amxtriage.errors import InputError, OutputError
 from amxtriage.model import Event, EventKind, Frame, Group
@@ -216,3 +219,35 @@ def test_alert_throttle_rejects_unsafe_policy_values(
             cooldown_seconds=cooldown_seconds,
             max_per_minute=max_per_minute,
         )
+
+
+
+def test_pawn_message_template_cannot_change_location_fields() -> None:
+    group = make_group(message="Array index out of bounds", file="gamemodes/rp.pwn", line=42)
+    record = serialize_pawn_bridge_record(
+        group,
+        message_template="[{severity}] {message} (x{count})",
+    )
+    fields = record.rstrip("\n").split("|")
+
+    assert fields[1] == "HIGH"
+    assert fields[3] == "gamemodes/rp.pwn"
+    assert fields[4] == "42"
+    assert fields[5] == "[HIGH] Array index out of bounds (x1)"
+    assert DEFAULT_ALERT_MESSAGE_TEMPLATE == "{message}"
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        "{file}",
+        "{line}",
+        "{severity} {file}:{line} {message}",
+        "{message!r}",
+        "{message:>20}",
+        "{message}\nFORGED",
+    ],
+)
+def test_pawn_message_template_rejects_location_and_unsafe_syntax(template: str) -> None:
+    with pytest.raises(InputError):
+        validate_alert_message_template(template)

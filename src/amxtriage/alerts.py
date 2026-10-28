@@ -26,6 +26,7 @@ MAX_PREFIX_LENGTH = 80
 MAX_ALERT_BYTES = 8192
 DEFAULT_ALERT_PREFIX = "AMXTRIAGE"
 DEFAULT_ALERT_TEMPLATE = "[{prefix}] [{severity}] {file}:{line} — {message}"
+DEFAULT_ALERT_MESSAGE_TEMPLATE = "{message}"
 
 _SEVERITY: dict[str, str] = {
     "crash": "CRITICAL",
@@ -35,6 +36,7 @@ _SEVERITY: dict[str, str] = {
 _ALLOWED_FIELDS = frozenset(
     {"prefix", "severity", "kind", "message", "file", "line", "code", "signature", "count"}
 )
+_MESSAGE_TEMPLATE_FIELDS = frozenset({"severity", "kind", "message", "code", "signature", "count"})
 _NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
 _NONBLOCK = getattr(os, "O_NONBLOCK", 0)
 _NOCTTY = getattr(os, "O_NOCTTY", 0)
@@ -122,6 +124,45 @@ def validate_alert_template(template: str) -> None:
             raise InputError(
                 "alert template format specifications and conversions are not supported"
             )
+
+
+
+def validate_alert_message_template(template: str) -> None:
+    """Validate the in-game message body template; source path and line are protected."""
+    if len(template) > MAX_TEMPLATE_LENGTH:
+        raise InputError(f"alert message template exceeds {MAX_TEMPLATE_LENGTH} characters")
+    if sanitize(template, MAX_TEMPLATE_LENGTH + 1) != template:
+        raise InputError("alert message template must be a single line without control characters")
+    try:
+        fields = list(string.Formatter().parse(template))
+    except ValueError as error:
+        raise InputError("alert message template contains invalid brace syntax") from error
+    for _, field_name, format_spec, conversion in fields:
+        if field_name is None:
+            continue
+        if field_name not in _MESSAGE_TEMPLATE_FIELDS:
+            if field_name in {"file", "line"}:
+                raise InputError(
+                    f"source {field_name} is protected and cannot be supplied by the message template"
+                )
+            raise InputError(f"unsupported alert message template field: {field_name}")
+        if format_spec or conversion:
+            raise InputError(
+                "alert message template format specifications and conversions are not supported"
+            )
+
+
+def _render_alert_message(group: Group, template: str) -> str:
+    validate_alert_message_template(template)
+    values = {
+        "severity": _SEVERITY.get(group.kind, "LOW"),
+        "kind": group.kind,
+        "message": sanitize(group.message or group.kind.replace("_", " "), 300),
+        "code": str(group.code) if group.code is not None else "—",
+        "signature": sanitize(group.signature_id, 64),
+        "count": str(max(1, group.count)),
+    }
+    return sanitize(template.format_map(values), MAX_PAWN_MESSAGE_LENGTH)
 
 
 def _clean_optional(text: str | None, limit: int = 300) -> str | None:
@@ -316,6 +357,7 @@ def serialize_pawn_bridge_record(
     group: Group,
     *,
     prefix: str = DEFAULT_ALERT_PREFIX,
+    message_template: str = DEFAULT_ALERT_MESSAGE_TEMPLATE,
 ) -> str:
     """Serialize one safe, bounded record for the optional Pawn filterscript.
 
@@ -331,7 +373,7 @@ def serialize_pawn_bridge_record(
     line_rows = group.top_lines(1)
     source_line = line_rows[0][0] if line_rows and line_rows[0][0] > 0 else 0
     severity = _SEVERITY.get(group.kind, "LOW")
-    message = sanitize(group.message or group.kind.replace("_", " "), MAX_PAWN_MESSAGE_LENGTH)
+    message = _render_alert_message(group, message_template)
     fields = (
         "AMXTRIAGE1",
         severity,
@@ -353,9 +395,12 @@ def append_pawn_bridge_record(
     group: Group,
     *,
     prefix: str = DEFAULT_ALERT_PREFIX,
+    message_template: str = DEFAULT_ALERT_MESSAGE_TEMPLATE,
 ) -> None:
     """Append one protocol record for the Pawn filterscript using the same safe file checks."""
-    data = serialize_pawn_bridge_record(group, prefix=prefix).encode("utf-8")
+    data = serialize_pawn_bridge_record(
+        group, prefix=prefix, message_template=message_template
+    ).encode("utf-8")
     descriptor = _open_append(path)
     try:
         written = 0
@@ -378,13 +423,21 @@ def append_pawn_bridge_record(
 class PawnBridgeAlertSink:
     """Optional local file sink consumed by integrations/pawn/amxtriage_bridge.pwn."""
 
-    def __init__(self, path: str, *, prefix: str = DEFAULT_ALERT_PREFIX) -> None:
+    def __init__(
+        self,
+        path: str,
+        *,
+        prefix: str = DEFAULT_ALERT_PREFIX,
+        message_template: str = DEFAULT_ALERT_MESSAGE_TEMPLATE,
+    ) -> None:
         if len(prefix) > MAX_PREFIX_LENGTH or sanitize(prefix, MAX_PREFIX_LENGTH + 1) != prefix:
             raise InputError(
                 f"alert prefix must be a single line of at most {MAX_PREFIX_LENGTH} characters"
             )
+        validate_alert_message_template(message_template)
         self.path = path
         self.prefix = prefix
+        self.message_template = message_template
         self.disabled = False
         self.failure_reason: str | None = None
         self.warning_emitted = False
@@ -393,7 +446,12 @@ class PawnBridgeAlertSink:
         if self.disabled:
             return False
         try:
-            append_pawn_bridge_record(self.path, group, prefix=self.prefix)
+            append_pawn_bridge_record(
+                self.path,
+                group,
+                prefix=self.prefix,
+                message_template=self.message_template,
+            )
         except OutputError as error:
             self.disabled = True
             self.failure_reason = sanitize(str(error), 300)

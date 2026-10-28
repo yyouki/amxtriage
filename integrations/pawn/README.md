@@ -28,6 +28,8 @@ This optional filterscript reads a local append-only file produced by `amxtriage
 
 ## What the bridge does
 
+The watcher also accepts `--alert-message-template` to customize the message body, for example `--alert-message-template \"{severity}: {message}\"`. Supported placeholders are `{severity}`, `{kind}`, `{message}`, `{code}`, `{signature}` and `{count}`. `{file}` and `{line}` are rejected in this template because the bridge reads the protected source location from separate fields; the filterscript always renders the path in red and line in blue.
+
 - Checks and parses the fixed `AMXTRIAGE1` record schema, then sends an alert only to connected players for whom `IsPlayerAdmin(playerid)` is true (RCON-authenticated admins).
 - Displays the source file path in red and source line in blue, when the diagnostic contains both fields.
 - Keeps file path and line number in structured fields; configurable human-readable message templates apply to the JSONL sink and cannot replace the protected location fields.
