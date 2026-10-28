@@ -97,8 +97,8 @@ def test_multiple_matching_diagnostics_are_refused_as_ambiguous(tmp_path: Path) 
     make_source(tmp_path, "new value = 42\nreturn 1;\nnew other = 3\nreturn 2;\n")
     diagnostics, _ = parse_compiler_lines(
         [
-            f'gamemodes/rp.pwn(2) : error 001: {EXPECTED_MESSAGE}',
-            f'gamemodes/rp.pwn(4) : error 001: {EXPECTED_MESSAGE}',
+            f"gamemodes/rp.pwn(2) : error 001: {EXPECTED_MESSAGE}",
+            f"gamemodes/rp.pwn(4) : error 001: {EXPECTED_MESSAGE}",
         ],
         source_language="pawn",
     )
