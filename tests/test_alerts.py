@@ -6,8 +6,8 @@ import pytest
 
 from amxtriage.aggregate import Aggregator
 from amxtriage.alerts import (
-    AlertThrottle,
     DEFAULT_ALERT_TEMPLATE,
+    AlertThrottle,
     JsonlAlertSink,
     append_alert_event,
     build_alert_event,
