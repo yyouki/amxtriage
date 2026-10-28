@@ -1,3 +1,4 @@
+from pathlib import Path
 from __future__ import annotations
 
 import os
@@ -150,3 +151,16 @@ def test_pawn_bridge_encoded_fields_fit_fixed_pawn_buffers() -> None:
     assert len(fields) == 8
     assert len(fields[3]) <= 480
     assert len(fields[5]) <= 480
+
+
+
+def test_pawn_filterscript_enforces_admin_only_bounded_colored_delivery() -> None:
+    bridge_path = Path(__file__).resolve().parents[1] / "integrations/pawn/amxtriage_bridge.pwn"
+    source = bridge_path.read_text(encoding="utf-8")
+
+    # These contract assertions complement the pinned Pawn compiler job in GitHub Actions.
+    assert "AMXTRIAGE_MAX_RECORDS_PER_TICK (5)" in source
+    assert "IsPlayerAdmin(playerid) != 0" in source
+    assert "SendClientMessage(playerid, 0xFFFFFFFF, safeOutput);" in source
+    assert "{FF0000}%s{FFFFFF}:{0000FF}%s" in source
+    assert "g_AmxTriageReadOffset = flength(handle);" in source

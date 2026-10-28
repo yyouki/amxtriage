@@ -143,7 +143,8 @@ def validate_alert_message_template(template: str) -> None:
         if field_name not in _MESSAGE_TEMPLATE_FIELDS:
             if field_name in {"file", "line"}:
                 raise InputError(
-                    f"source {field_name} is protected and cannot be supplied by the message template"
+                    f"source {field_name} is protected and cannot be supplied "
+                    "by the message template"
                 )
             raise InputError(f"unsupported alert message template field: {field_name}")
         if format_spec or conversion:

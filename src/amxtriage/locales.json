@@ -117,7 +117,12 @@
     "catalog_server_versions": "Server versions",
     "catalog_platforms": "OS / platform",
     "catalog_architectures": "CPU architectures",
-    "catalog_unknown_value": "Not specified by cited evidence"
+    "catalog_unknown_value": "Not specified by cited evidence",
+    "catalog_name": "Name",
+    "catalog_version": "Version",
+    "catalog_target": "Target",
+    "catalog_kind": "Type",
+    "catalog_status": "Status"
   },
   "id": {
     "input_label": "masukan:",
@@ -237,7 +242,12 @@
     "catalog_server_versions": "Versi server",
     "catalog_platforms": "OS / platform",
     "catalog_architectures": "Arsitektur CPU",
-    "catalog_unknown_value": "Tidak disebutkan dalam bukti yang dikutip"
+    "catalog_unknown_value": "Tidak disebutkan dalam bukti yang dikutip",
+    "catalog_name": "Nama",
+    "catalog_version": "Versi",
+    "catalog_target": "Target",
+    "catalog_kind": "Jenis",
+    "catalog_status": "Status"
   },
   "es": {
     "input_label": "entrada:",
@@ -357,6 +367,11 @@
     "catalog_server_versions": "Versiones del servidor",
     "catalog_platforms": "SO / plataforma",
     "catalog_architectures": "Arquitecturas de CPU",
-    "catalog_unknown_value": "No especificado en la evidencia citada"
+    "catalog_unknown_value": "No especificado en la evidencia citada",
+    "catalog_name": "Nombre",
+    "catalog_version": "Versión",
+    "catalog_target": "Objetivo",
+    "catalog_kind": "Tipo",
+    "catalog_status": "Estado"
   }
 }

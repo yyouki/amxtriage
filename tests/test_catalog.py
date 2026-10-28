@@ -123,6 +123,22 @@ def test_markdown_report_links_official_release_and_evidence() -> None:
     assert "Versi server" in report
 
 
+
+def test_markdown_catalog_column_headers_are_localized_for_all_supported_languages() -> None:
+    snapshot = load_catalog()
+    entries = filter_catalog_entries(snapshot.entries, server="open.mp")
+    expected = {
+        "en": ("Server versions", "OS / platform", "CPU architectures"),
+        "id": ("Versi server", "OS / platform", "Arsitektur CPU"),
+        "es": ("Versiones del servidor", "SO / plataforma", "Arquitecturas de CPU"),
+    }
+    for language, labels in expected.items():
+        report = render_catalog_report(
+            snapshot, entries, output_format="markdown", server="open.mp", language=language
+        )
+        assert all(label in report for label in labels)
+
+
 def test_empty_filter_does_not_claim_no_compatible_plugins_exist() -> None:
     snapshot = load_catalog()
     report = render_catalog_report(

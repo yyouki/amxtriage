@@ -252,10 +252,23 @@ def render_catalog_report(
         if not entries:
             lines.append(tr(language, "catalog_no_entries"))
             return "\n".join(lines) + "\n"
+        header_labels = (
+            "catalog_name",
+            "catalog_version",
+            "catalog_target",
+            "catalog_server_versions",
+            "catalog_platforms",
+            "catalog_architectures",
+            "catalog_kind",
+            "catalog_status",
+            "catalog_install",
+            "catalog_dependencies",
+            "catalog_release",
+            "catalog_checked",
+        )
         lines.extend(
             [
-                "| Name | Version | Target | Server versions | OS/platform | CPU architectures | "
-                "Type | Status | Install location | Dependencies | Official release | Evidence checked |",
+                "| " + " | ".join(_md(tr(language, key)) for key in header_labels) + " |",
                 "|---|---|---|---|---|---|---|---|---|---|---|---|",
             ]
         )
@@ -271,9 +284,17 @@ def render_catalog_report(
                         _md(entry.name),
                         _md(entry.version),
                         _md(entry.target_server),
-                        _md(", ".join(entry.server_versions) or tr(language, "catalog_unknown_value")),
-                        _md(", ".join(entry.platforms) or tr(language, "catalog_unknown_value")),
-                        _md(", ".join(entry.architectures) or tr(language, "catalog_unknown_value")),
+                        _md(
+                            ", ".join(entry.server_versions)
+                            or tr(language, "catalog_unknown_value")
+                        ),
+                        _md(
+                            ", ".join(entry.platforms) or tr(language, "catalog_unknown_value")
+                        ),
+                        _md(
+                            ", ".join(entry.architectures)
+                            or tr(language, "catalog_unknown_value")
+                        ),
                         _md(entry.kind),
                         _md(entry.status),
                         _md(entry.install_location),
