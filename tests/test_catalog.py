@@ -124,13 +124,15 @@ def test_version_platform_and_architecture_filters_require_explicit_metadata() -
 )
 def test_metadata_filters_reject_empty_values(filter_name: str, filter_value: str) -> None:
     entries = load_catalog().entries
+    actions = {
+        "server_version": lambda: filter_catalog_entries(
+            entries, server_version=filter_value
+        ),
+        "platform": lambda: filter_catalog_entries(entries, platform=filter_value),
+        "architecture": lambda: filter_catalog_entries(entries, architecture=filter_value),
+    }
     with pytest.raises(InputError, match="filter must not be empty"):
-        if filter_name == "server_version":
-            filter_catalog_entries(entries, server_version=filter_value)
-        elif filter_name == "platform":
-            filter_catalog_entries(entries, platform=filter_value)
-        else:
-            filter_catalog_entries(entries, architecture=filter_value)
+        actions[filter_name]()
 
 
 def test_json_report_has_stable_schema_and_honest_limit_notes() -> None:
