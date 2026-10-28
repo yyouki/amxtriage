@@ -446,6 +446,24 @@ def build_parser() -> argparse.ArgumentParser:
     patch_apply.add_argument(
         "--compiler", required=True, metavar="PAWNCC", help="trusted local Pawn compiler executable"
     )
+    test_validation = patch_apply.add_mutually_exclusive_group(required=True)
+    test_validation.add_argument(
+        "--test-executable",
+        metavar="COMMAND",
+        help="trusted local test/lint executable; invoked as argv without a shell",
+    )
+    test_validation.add_argument(
+        "--compile-only",
+        action="store_true",
+        help="explicitly skip project tests (compiler success alone does not prove correctness)",
+    )
+    patch_apply.add_argument(
+        "--test-arg",
+        action="append",
+        default=[],
+        metavar="ARG",
+        help="one literal argument passed to --test-executable; repeat as needed",
+    )
     patch_apply.add_argument(
         "--include-dir",
         action="append",
@@ -775,6 +793,8 @@ def _run_patch_preview(args: argparse.Namespace) -> int:
 
 
 def _run_patch_apply(args: argparse.Namespace) -> int:
+    if args.test_arg and not args.test_executable:
+        raise InputError("--test-arg requires --test-executable")
     log_paths = expand_paths(args.logs)
     source_index = SourceIndex(args.source_dir)
     report = analyze_compiler_outputs(
@@ -794,6 +814,10 @@ def _run_patch_apply(args: argparse.Namespace) -> int:
         compiler=args.compiler,
         include_dirs=args.include_dir,
         timeout_seconds=args.timeout,
+        test_command=(
+            [args.test_executable, *args.test_arg] if args.test_executable else None
+        ),
+        compile_only=args.compile_only,
     )
     print(f"Apply status: {result.status}")
     print(sanitize(result.message, MESSAGE_LIMIT))
@@ -804,6 +828,11 @@ def _run_patch_apply(args: argparse.Namespace) -> int:
     if result.compiler_output:
         print("Compiler output:")
         print(sanitize(result.compiler_output, MESSAGE_LIMIT * 4))
+    if result.test_exit_code is not None:
+        print(f"Test command exit code: {result.test_exit_code}")
+    if result.test_output:
+        print("Test command output:")
+        print(sanitize(result.test_output, MESSAGE_LIMIT * 4))
     return EXIT_OK if result.status == "applied" else EXIT_ERROR
 
 

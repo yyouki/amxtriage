@@ -190,6 +190,23 @@ def test_patch_preview_refuses_invalid_source_dir(tmp_path: Path) -> None:
         SourceIndex(str(tmp_path / "missing"))
 
 
+def make_fake_test_runner(path: Path, *, mode: str = "success") -> Path:
+    runner = path / f"test-runner-{mode}"
+    if mode == "success":
+        body = "print('synthetic tests passed')\\n"
+    elif mode == "fail":
+        body = "print('synthetic tests failed')\\nraise SystemExit(7)\\n"
+    elif mode == "timeout":
+        body = "import time\\ntime.sleep(5)\\n"
+    elif mode == "output":
+        body = "print('x' * 300000)\\n"
+    else:
+        raise ValueError("unsupported fake test runner mode")
+    runner.write_text("#!/usr/bin/env python3\\n" + body, encoding="utf-8")
+    runner.chmod(0o755)
+    return runner
+
+
 def make_fake_compiler(path: Path) -> Path:
     script = path / "pawncc-stub"
     script.write_text(
@@ -227,6 +244,7 @@ def test_patch_apply_requires_matching_review_hashes_and_does_not_edit_on_mismat
         expected_patch_sha256="0" * 64,
         expected_source_sha256=preview.source_sha256 or "",
         compiler=str(compiler),
+        compile_only=True,
     )
 
     assert result.status == "confirmation_mismatch"
@@ -250,6 +268,7 @@ def test_patch_apply_creates_checkpoint_and_keeps_patch_only_after_compiler_succ
         expected_patch_sha256=preview.patch_sha256 or "",
         expected_source_sha256=preview.source_sha256 or "",
         compiler=str(compiler),
+        compile_only=True,
     )
 
     assert result.status == "applied"
@@ -278,6 +297,7 @@ def test_patch_apply_rolls_back_exact_original_bytes_after_compiler_failure(
         expected_patch_sha256=preview.patch_sha256 or "",
         expected_source_sha256=preview.source_sha256 or "",
         compiler=str(compiler),
+        compile_only=True,
     )
 
     assert result.status == "compile_failed_rolled_back"
@@ -286,6 +306,122 @@ def test_patch_apply_rolls_back_exact_original_bytes_after_compiler_failure(
     assert result.backup_file is not None
     assert (tmp_path / result.backup_file).read_bytes() == original
 
+
+
+@pytest.mark.skipif(os.name == "nt", reason="test runner uses a POSIX shebang")
+def test_patch_apply_runs_explicit_test_command_and_keeps_patch_when_it_passes(
+    tmp_path: Path,
+) -> None:
+    source = make_source(tmp_path, "new value = 42\\nreturn 1;\\n")
+    original = source.read_bytes()
+    source_index = SourceIndex(str(tmp_path))
+    preview = build_patch_preview([parse_pawn_diagnostic()], source_index)
+    compiler = make_fake_compiler(tmp_path)
+    runner = make_fake_test_runner(tmp_path)
+
+    result = apply_patch_preview(
+        preview,
+        source_index,
+        expected_patch_sha256=preview.patch_sha256 or "",
+        expected_source_sha256=preview.source_sha256 or "",
+        compiler=str(compiler),
+        test_command=[str(runner)],
+    )
+
+    assert result.status == "applied"
+    assert result.compiler_exit_code == 0
+    assert result.test_exit_code == 0
+    assert "synthetic tests passed" in result.test_output
+    assert source.read_bytes() == b"new value = 42;\\nreturn 1;\\n"
+    assert result.backup_file is not None
+    assert (tmp_path / result.backup_file).read_bytes() == original
+
+
+@pytest.mark.skipif(os.name == "nt", reason="test runner uses a POSIX shebang")
+@pytest.mark.parametrize(
+    ("mode", "timeout", "expected_message"),
+    [
+        ("fail", 5, "exit code 7"),
+        ("timeout", 1, "timed out after 1 seconds"),
+        ("output", 5, "output exceeded"),
+    ],
+)
+def test_patch_apply_rolls_back_when_test_command_fails(
+    tmp_path: Path,
+    mode: str,
+    timeout: int,
+    expected_message: str,
+) -> None:
+    source = make_source(tmp_path, "new value = 42\\nreturn 1;\\n")
+    original = source.read_bytes()
+    source_index = SourceIndex(str(tmp_path))
+    preview = build_patch_preview([parse_pawn_diagnostic()], source_index)
+    compiler = make_fake_compiler(tmp_path)
+    runner = make_fake_test_runner(tmp_path, mode=mode)
+
+    result = apply_patch_preview(
+        preview,
+        source_index,
+        expected_patch_sha256=preview.patch_sha256 or "",
+        expected_source_sha256=preview.source_sha256 or "",
+        compiler=str(compiler),
+        test_command=[str(runner)],
+        timeout_seconds=timeout,
+    )
+
+    assert result.status == "test_failed_rolled_back"
+    assert expected_message in result.message
+    assert source.read_bytes() == original
+    assert result.backup_file is not None
+    assert (tmp_path / result.backup_file).read_bytes() == original
+
+
+def test_patch_apply_requires_explicit_test_command_or_compile_only(tmp_path: Path) -> None:
+    source = make_source(tmp_path, "new value = 42\\nreturn 1;\\n")
+    source_index = SourceIndex(str(tmp_path))
+    preview = build_patch_preview([parse_pawn_diagnostic()], source_index)
+    compiler = make_fake_compiler(tmp_path)
+
+    with pytest.raises(ValueError, match="test_command or explicitly select"):
+        apply_patch_preview(
+            preview,
+            source_index,
+            expected_patch_sha256=preview.patch_sha256 or "",
+            expected_source_sha256=preview.source_sha256 or "",
+            compiler=str(compiler),
+        )
+    assert source.read_text(encoding="utf-8") == "new value = 42\\nreturn 1;\\n"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="test runner uses a POSIX shebang")
+def test_patch_apply_refuses_test_runner_that_changes_source(tmp_path: Path) -> None:
+    source = make_source(tmp_path, "new value = 42\\nreturn 1;\\n")
+    source_index = SourceIndex(str(tmp_path))
+    preview = build_patch_preview([parse_pawn_diagnostic()], source_index)
+    compiler = make_fake_compiler(tmp_path)
+    runner = tmp_path / "test-runner-mutates-source"
+    runner.write_text(
+        "#!/usr/bin/env python3\\n"
+        "import pathlib\\n"
+        "pathlib.Path('gamemodes/rp.pwn').write_text('external edit\\n', encoding='utf-8')\\n",
+        encoding="utf-8",
+    )
+    runner.chmod(0o755)
+
+    result = apply_patch_preview(
+        preview,
+        source_index,
+        expected_patch_sha256=preview.patch_sha256 or "",
+        expected_source_sha256=preview.source_sha256 or "",
+        compiler=str(compiler),
+        test_command=[str(runner)],
+    )
+
+    assert result.status == "rollback_blocked"
+    assert "changed or obscured the patched source" in result.message
+    assert source.read_text(encoding="utf-8") == "external edit\\n"
+    assert result.backup_file is not None
+    assert (tmp_path / result.backup_file).read_bytes() == b"new value = 42\\nreturn 1;\\n"
 
 def test_patch_apply_refuses_source_that_changed_after_review(tmp_path: Path) -> None:
     source = make_source(tmp_path, "new value = 42\nreturn 1;\n")
@@ -301,6 +437,7 @@ def test_patch_apply_refuses_source_that_changed_after_review(tmp_path: Path) ->
             expected_patch_sha256=preview.patch_sha256 or "",
             expected_source_sha256=preview.source_sha256 or "",
             compiler=str(compiler),
+            compile_only=True,
         )
     assert source.read_bytes() == b"new value = 99\nreturn 1;\n"
 

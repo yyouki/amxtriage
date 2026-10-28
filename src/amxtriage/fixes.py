@@ -14,9 +14,12 @@ import json
 import os
 import re
 import shutil
+import signal
 import stat
 import subprocess
 import tempfile
+import threading
+import time
 import unicodedata
 import uuid
 from collections.abc import Sequence
@@ -30,10 +33,16 @@ from amxtriage.textutil import sanitize
 
 PatchStatus = Literal["ready", "no_candidate", "ambiguous", "blocked"]
 PatchApplyStatus = Literal[
-    "applied", "confirmation_mismatch", "compile_failed_rolled_back", "rollback_blocked"
+    "applied",
+    "confirmation_mismatch",
+    "compile_failed_rolled_back",
+    "test_failed_rolled_back",
+    "rollback_blocked",
 ]
 MAX_COMPILER_OUTPUT_CHARS = 4000
 MAX_COMPILER_TIMEOUT_SECONDS = 120
+MAX_VALIDATION_OUTPUT_BYTES = 256 * 1024
+MAX_VALIDATION_ARGUMENTS = 128
 
 _MISSING_SEMICOLON_BEFORE_RETURN = re.compile(
     r'^expected token:\s*";"\s*,\s*but found\s*"return"\s*$',
@@ -356,6 +365,8 @@ class PatchApplyResult:
     backup_file: str | None = None
     compiler_exit_code: int | None = None
     compiler_output: str = ""
+    test_exit_code: int | None = None
+    test_output: str = ""
 
 
 def _safe_read_target(
@@ -455,6 +466,117 @@ def _resolve_compiler_path(compiler: str) -> Path:
     return candidate
 
 
+def _terminate_validation_process(process: subprocess.Popen[bytes]) -> None:
+    """Stop a timed-out validator and, on POSIX, its child process group."""
+    if process.poll() is not None:
+        return
+    try:
+        if os.name == "posix":
+            os.killpg(process.pid, signal.SIGKILL)
+        else:
+            process.kill()
+    except OSError:
+        with contextlib.suppress(OSError):
+            process.kill()
+    with contextlib.suppress(subprocess.TimeoutExpired):
+        process.wait(timeout=2)
+
+
+def _run_bounded_command(
+    command: Sequence[str],
+    *,
+    cwd: Path,
+    timeout_seconds: int,
+) -> tuple[int | None, str, str | None]:
+    """Run an explicit argv without a shell, with a time and captured-output ceiling."""
+    if not command or any("\\x00" in argument for argument in command):
+        return None, "", "Validation command has an empty argv or an argument containing NUL."
+
+    try:
+        process = subprocess.Popen(
+            list(command),
+            cwd=str(cwd),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=False,
+            start_new_session=os.name == "posix",
+        )
+    except OSError as error:
+        return (
+            None,
+            "",
+            f"Could not start validation command: {error.strerror or type(error).__name__}.",
+        )
+
+    captured = bytearray()
+    total_bytes = 0
+    output_exceeded = threading.Event()
+
+    def consume_output() -> None:
+        nonlocal total_bytes
+        stream = process.stdout
+        if stream is None:
+            return
+        while True:
+            try:
+                chunk = stream.read(8192)
+            except OSError:
+                return
+            if not chunk:
+                return
+            total_bytes += len(chunk)
+            remaining = MAX_VALIDATION_OUTPUT_BYTES - len(captured)
+            if remaining > 0:
+                captured.extend(chunk[:remaining])
+            if total_bytes > MAX_VALIDATION_OUTPUT_BYTES:
+                output_exceeded.set()
+
+    reader = threading.Thread(target=consume_output, name="amxtriage-validator-output", daemon=True)
+    reader.start()
+    deadline = time.monotonic() + timeout_seconds
+    failure: str | None = None
+    while True:
+        if output_exceeded.is_set():
+            failure = (
+                f"Validation output exceeded {MAX_VALIDATION_OUTPUT_BYTES} bytes; "
+                "the command was terminated."
+            )
+            break
+        if process.poll() is not None:
+            break
+        if time.monotonic() >= deadline:
+            failure = f"Validation timed out after {timeout_seconds} seconds."
+            break
+        output_exceeded.wait(0.02)
+
+    if failure is not None and process.poll() is None:
+        _terminate_validation_process(process)
+    if process.poll() is None:
+        _terminate_validation_process(process)
+    with contextlib.suppress(subprocess.TimeoutExpired):
+        process.wait(timeout=2)
+    if process.poll() is None:
+        with contextlib.suppress(OSError):
+            process.kill()
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            process.wait(timeout=2)
+
+    reader.join(timeout=2)
+    if reader.is_alive() and process.stdout is not None:
+        with contextlib.suppress(OSError):
+            process.stdout.close()
+        reader.join(timeout=1)
+
+    if output_exceeded.is_set() and failure is None:
+        failure = (
+            f"Validation output exceeded {MAX_VALIDATION_OUTPUT_BYTES} bytes; "
+            "the command was terminated."
+        )
+    output = sanitize(captured.decode("utf-8", errors="replace"), MAX_COMPILER_OUTPUT_CHARS)
+    return process.returncode, output, failure
+
+
 def _fsync_directory(path: Path) -> None:
     """Best-effort durability for directory entry updates on platforms that support it."""
     if not hasattr(os, "O_DIRECTORY"):
@@ -507,12 +629,15 @@ def apply_patch_preview(
     compiler: str,
     include_dirs: Sequence[str] = (),
     timeout_seconds: int = 30,
+    test_command: Sequence[str] | None = None,
+    compile_only: bool = False,
 ) -> PatchApplyResult:
     """Apply one reviewed preview, compile it, and restore it if validation fails.
 
     This is intentionally explicit and narrow: callers must supply both hashes copied from a
-    prior preview, a trusted Pawn compiler, and any required include paths. Source changes,
-    ambiguous locations, hard links, symlinks, and failed compile validation are refused.
+    prior preview and a trusted Pawn compiler. They must also provide a test/lint command or
+    explicitly opt into compile-only validation. Validators are passed as argv without a shell.
+    Source changes, ambiguous locations, hard links, symlinks, and failed validation are refused.
     """
     if preview.status != "ready" or not preview.patch or preview.replacement_bytes is None:
         raise ValueError("only a ready patch preview can be applied")
@@ -531,11 +656,21 @@ def apply_patch_preview(
             "No source was modified.",
             preview.file,
         )
+    if bool(test_command) == compile_only:
+        raise ValueError("provide a test_command or explicitly select compile_only=True")
+    if test_command is not None and len(test_command) > MAX_VALIDATION_ARGUMENTS:
+        raise ValueError(f"test command cannot exceed {MAX_VALIDATION_ARGUMENTS} arguments")
+    if test_command is not None and any("\\x00" in argument for argument in test_command):
+        raise ValueError("test command arguments must not contain NUL characters")
     if not 1 <= timeout_seconds <= MAX_COMPILER_TIMEOUT_SECONDS:
         raise ValueError(
             f"compiler timeout must be between 1 and {MAX_COMPILER_TIMEOUT_SECONDS} seconds"
         )
     compiler_path = _resolve_compiler_path(compiler)
+    resolved_test_command: tuple[str, ...] | None = None
+    if test_command:
+        test_executable = _resolve_compiler_path(test_command[0])
+        resolved_test_command = (str(test_executable), *test_command[1:])
     resolved_include_dirs: list[Path] = []
     for item in include_dirs:
         directory = Path(item).expanduser().resolve(strict=True)
@@ -603,6 +738,9 @@ def apply_patch_preview(
 
         compiler_output = ""
         compiler_exit_code: int | None = None
+        test_output = ""
+        test_exit_code: int | None = None
+        failure_phase = "compile"
         try:
             with tempfile.TemporaryDirectory(prefix="amxtriage-compile-") as compile_directory:
                 artifact = Path(compile_directory) / "validation.amx"
@@ -612,58 +750,82 @@ def apply_patch_preview(
                     f"-o{artifact}",
                     str(target),
                 ]
-                completed = subprocess.run(  # noqa: S603 - explicit trusted compiler path, no shell
+                compiler_exit_code, compiler_output, compiler_problem = _run_bounded_command(
                     command,
-                    cwd=str(root),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    encoding="utf-8",
-                    errors="replace",
-                    timeout=timeout_seconds,
-                    check=False,
-                    shell=False,
+                    cwd=root,
+                    timeout_seconds=timeout_seconds,
                 )
-                compiler_exit_code = completed.returncode
-                compiler_output = sanitize(completed.stdout, MAX_COMPILER_OUTPUT_CHARS)
                 compile_ok = (
-                    completed.returncode == 0 and artifact.is_file() and artifact.stat().st_size > 0
+                    compiler_problem is None
+                    and compiler_exit_code == 0
+                    and artifact.is_file()
+                    and artifact.stat().st_size > 0
                 )
-                if compile_ok:
+                if not compile_ok:
+                    failure_message = compiler_problem or (
+                        "Compiler validation failed (non-zero exit or missing/empty AMX artifact)."
+                    )
+                elif compile_only:
                     return PatchApplyResult(
                         "applied",
                         "Patch applied and the configured Pawn compiler produced a non-empty AMX "
-                        "Gameplay behavior still requires regression/staging tests.",
+                        "artifact. Project tests were explicitly skipped with compile-only mode; "
+                        "gameplay behavior remains unverified.",
                         preview.file,
                         backup_file=backup.relative_to(root).as_posix(),
                         compiler_exit_code=compiler_exit_code,
                         compiler_output=compiler_output,
                     )
-                failure_message = (
-                    "Compiler validation failed (non-zero exit or missing/empty AMX artifact)."
-                )
-        except subprocess.TimeoutExpired as error:
-            compiler_exit_code = None
-            captured = error.stdout or b""
-            compiler_output = sanitize(
-                (
-                    captured.decode("utf-8", errors="replace")
-                    if isinstance(captured, bytes)
-                    else captured
-                ),
-                MAX_COMPILER_OUTPUT_CHARS,
-            )
-            failure_message = f"Compiler validation timed out after {timeout_seconds} seconds."
+                else:
+                    failure_phase = "test"
+                    assert resolved_test_command is not None
+                    test_exit_code, test_output, test_problem = _run_bounded_command(
+                        resolved_test_command,
+                        cwd=root,
+                        timeout_seconds=timeout_seconds,
+                    )
+                    if test_problem is None and test_exit_code == 0:
+                        try:
+                            tested_bytes, tested_info = _safe_read_target(target)
+                            target_unchanged = (
+                                (tested_info.st_dev, tested_info.st_ino)
+                                == (replacement_info.st_dev, replacement_info.st_ino)
+                                and hashlib.sha256(tested_bytes).hexdigest() == replacement_hash
+                            )
+                        except OSError:
+                            target_unchanged = False
+                        if target_unchanged:
+                            return PatchApplyResult(
+                                "applied",
+                                "Patch applied; the configured Pawn compiler and test command "
+                                "both passed. Gameplay correctness still requires appropriate "
+                                "regression/staging coverage.",
+                                preview.file,
+                                backup_file=backup.relative_to(root).as_posix(),
+                                compiler_exit_code=compiler_exit_code,
+                                compiler_output=compiler_output,
+                                test_exit_code=test_exit_code,
+                                test_output=test_output,
+                            )
+                        test_problem = (
+                            "The test command changed or obscured the patched source; automatic "
+                            "rollback will proceed only if the target still matches the applied patch."
+                        )
+                    failure_message = test_problem or (
+                        f"Test command failed with exit code {test_exit_code}."
+                    )
+        except KeyboardInterrupt:
+            failure_message = f"{failure_phase.capitalize()} validation was interrupted by the user."
         except OSError as error:
             failure_message = (
-                f"Compiler validation could not run: {error.strerror or type(error).__name__}"
+                f"{failure_phase.capitalize()} validation could not run: "
+                f"{error.strerror or type(error).__name__}"
             )
-        except KeyboardInterrupt:
-            compiler_exit_code = None
-            failure_message = "Compiler validation was interrupted by the user."
         except Exception as error:
-            compiler_exit_code = None
-            failure_message = f"Compiler validation failed unexpectedly: {type(error).__name__}."
+            failure_message = (
+                f"{failure_phase.capitalize()} validation failed unexpectedly: "
+                f"{type(error).__name__}."
+            )
 
         if replacement_info is None:
             raise OSError("could not verify patched file before rollback")
@@ -677,12 +839,14 @@ def apply_patch_preview(
         )
         if restored:
             return PatchApplyResult(
-                "compile_failed_rolled_back",
+                "compile_failed_rolled_back" if failure_phase == "compile" else "test_failed_rolled_back",
                 f"{failure_message} Original source restored; backup retained for audit.",
                 preview.file,
                 backup_file=backup.relative_to(root).as_posix(),
                 compiler_exit_code=compiler_exit_code,
                 compiler_output=compiler_output,
+                test_exit_code=test_exit_code,
+                test_output=test_output,
             )
         return PatchApplyResult(
             "rollback_blocked",
@@ -692,6 +856,8 @@ def apply_patch_preview(
             backup_file=backup.relative_to(root).as_posix(),
             compiler_exit_code=compiler_exit_code,
             compiler_output=compiler_output,
+            test_exit_code=test_exit_code,
+            test_output=test_output,
         )
     finally:
         if temporary is not None:
