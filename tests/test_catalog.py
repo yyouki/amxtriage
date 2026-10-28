@@ -52,7 +52,10 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
         evidence.url == "https://github.com/AmyrAhmady/sampvoice/releases"
         for evidence in newer_sampvoice.evidence
     )
-    assert all(not entry.server_versions and not entry.platforms for entry in snapshot.entries)
+    assert all(
+        not entry.server_versions and not entry.platforms and not entry.architectures
+        for entry in snapshot.entries
+    )
     rustext = next(
         entry for entry in snapshot.entries if entry.id == "rustext-openmp-v2.0.11-nomemhack"
     )
@@ -93,6 +96,7 @@ def test_json_report_has_stable_schema_and_honest_limit_notes() -> None:
     assert "runtime compatibility" in " ".join(payload["notes"])
     assert any("dependencies" in note for note in payload["notes"])
     assert "dependencies" in payload["entries"][0]
+    assert payload["entries"][0]["architectures"] == []
     assert payload["entries"][0]["evidence"][0]["url"] == (
         "https://open.mp/docs/server/Installation"
     )
@@ -114,6 +118,9 @@ def test_markdown_report_links_official_release_and_evidence() -> None:
     assert "https://github.com/edgyaf/keylistener/releases/tag/1.1.2-pr" in report
     assert "Dependencies" in report
     assert "documented" in report
+    assert "Arsitektur CPU" in report
+    assert "OS / platform" in report
+    assert "Versi server" in report
 
 
 def test_empty_filter_does_not_claim_no_compatible_plugins_exist() -> None:

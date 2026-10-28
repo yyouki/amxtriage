@@ -104,7 +104,7 @@
     "compiler_hint_generic": "Read the original diagnostic and upstream documentation; rerun the official compiler or linter after making a targeted change.",
     "catalog_title": "Plugin and dependency compatibility catalog",
     "catalog_snapshot": "Evidence snapshot: {date}",
-    "catalog_limit": "Offline evidence snapshot. `documented` is not a runtime-tested compatibility guarantee; empty platform/version lists mean the source did not specify them.",
+    "catalog_limit": "Offline evidence snapshot. `documented` is not a runtime-tested compatibility guarantee; empty server-version/platform/architecture lists mean the source did not specify them.",
     "catalog_no_entries": "No catalog entries matched these filters. This does not mean no compatible plugins or components exist.",
     "catalog_project": "Project",
     "catalog_release": "Official release",
@@ -113,7 +113,11 @@
     "catalog_evidence": "Evidence",
     "catalog_notes": "Notes",
     "catalog_dependencies": "Dependencies",
-    "catalog_dependencies_unknown": "Not specified by cited evidence"
+    "catalog_dependencies_unknown": "Not specified by cited evidence",
+    "catalog_server_versions": "Server versions",
+    "catalog_platforms": "OS / platform",
+    "catalog_architectures": "CPU architectures",
+    "catalog_unknown_value": "Not specified by cited evidence"
   },
   "id": {
     "input_label": "masukan:",
@@ -220,7 +224,7 @@
     "compiler_hint_generic": "Baca diagnostik asli dan dokumentasi upstream; jalankan ulang compiler/linter resmi setelah perubahan terarah.",
     "catalog_title": "Katalog kompatibilitas plugin dan dependensi",
     "catalog_snapshot": "Snapshot bukti: {date}",
-    "catalog_limit": "Snapshot bukti offline. Status `documented` bukan jaminan kompatibilitas yang sudah diuji saat runtime; daftar versi/platform kosong berarti sumber tidak menyebutkannya.",
+    "catalog_limit": "Snapshot bukti offline. Status `documented` bukan jaminan kompatibilitas yang sudah diuji saat runtime; daftar versi server/platform/arsitektur kosong berarti sumber tidak menyebutkannya.",
     "catalog_no_entries": "Tidak ada entri katalog yang cocok dengan filter ini. Ini tidak berarti tidak ada plugin atau component yang kompatibel.",
     "catalog_project": "Proyek",
     "catalog_release": "Rilis resmi",
@@ -229,7 +233,11 @@
     "catalog_evidence": "Bukti",
     "catalog_notes": "Catatan",
     "catalog_dependencies": "Dependensi",
-    "catalog_dependencies_unknown": "Tidak disebutkan dalam bukti yang dikutip"
+    "catalog_dependencies_unknown": "Tidak disebutkan dalam bukti yang dikutip",
+    "catalog_server_versions": "Versi server",
+    "catalog_platforms": "OS / platform",
+    "catalog_architectures": "Arsitektur CPU",
+    "catalog_unknown_value": "Tidak disebutkan dalam bukti yang dikutip"
   },
   "es": {
     "input_label": "entrada:",
@@ -336,7 +344,7 @@
     "compiler_hint_generic": "Consulta el diagnóstico original y la documentación del proyecto; vuelve a ejecutar el compilador/linter oficial tras un cambio específico.",
     "catalog_title": "Catálogo de compatibilidad de plugins y dependencias",
     "catalog_snapshot": "Fecha de comprobación de evidencia: {date}",
-    "catalog_limit": "Instantánea de evidencia sin conexión. `documented` no garantiza compatibilidad probada en tiempo de ejecución; las listas vacías de plataformas/versiones indican que la fuente no las especifica.",
+    "catalog_limit": "Instantánea de evidencia sin conexión. `documented` no garantiza compatibilidad probada en tiempo de ejecución; las listas vacías de versiones de servidor/plataformas/arquitecturas indican que la fuente no las especifica.",
     "catalog_no_entries": "Ninguna entrada coincide con estos filtros. Esto no significa que no existan plugins o componentes compatibles.",
     "catalog_project": "Proyecto",
     "catalog_release": "Versión oficial",
@@ -345,6 +353,10 @@
     "catalog_evidence": "Evidencia",
     "catalog_notes": "Notas",
     "catalog_dependencies": "Dependencias",
-    "catalog_dependencies_unknown": "No especificadas en la evidencia citada"
+    "catalog_dependencies_unknown": "No especificadas en la evidencia citada",
+    "catalog_server_versions": "Versiones del servidor",
+    "catalog_platforms": "SO / plataforma",
+    "catalog_architectures": "Arquitecturas de CPU",
+    "catalog_unknown_value": "No especificado en la evidencia citada"
   }
 }

@@ -44,6 +44,7 @@ class CatalogEntry:
     target_server: CatalogServer
     server_versions: tuple[str, ...]
     platforms: tuple[str, ...]
+    architectures: tuple[str, ...]
     dependencies: tuple[str, ...]
     install_location: str
     status: CatalogStatus
@@ -155,6 +156,9 @@ def parse_catalog(raw: object) -> CatalogSnapshot:
                 target_server=server_text,
                 server_versions=_string_list(row, "server_versions", label),
                 platforms=_string_list(row, "platforms", label),
+                architectures=(
+                    _string_list(row, "architectures", label) if "architectures" in row else ()
+                ),
                 dependencies=(
                     _string_list(row, "dependencies", label) if "dependencies" in row else ()
                 ),
@@ -225,7 +229,7 @@ def render_catalog_report(
             "notes": [
                 "Catalog records contain upstream documentation evidence, not a guarantee "
                 "of runtime compatibility.",
-                "Empty server_versions/platforms fields mean the cited evidence did "
+                "Empty server_versions/platforms/architectures fields mean the cited evidence did "
                 "not specify them.",
                 "An empty dependencies list means this snapshot did not establish a dependency; "
                 "it is not proof that no dependency exists.",
@@ -250,9 +254,9 @@ def render_catalog_report(
             return "\n".join(lines) + "\n"
         lines.extend(
             [
-                "| Name | Version | Target | Type | Status | Install location | Dependencies | "
-                "Official release | Evidence checked |",
-                "|---|---|---|---|---|---|---|---|---|",
+                "| Name | Version | Target | Server versions | OS/platform | CPU architectures | "
+                "Type | Status | Install location | Dependencies | Official release | Evidence checked |",
+                "|---|---|---|---|---|---|---|---|---|---|---|---|",
             ]
         )
         for entry in entries:
@@ -267,6 +271,9 @@ def render_catalog_report(
                         _md(entry.name),
                         _md(entry.version),
                         _md(entry.target_server),
+                        _md(", ".join(entry.server_versions) or tr(language, "catalog_unknown_value")),
+                        _md(", ".join(entry.platforms) or tr(language, "catalog_unknown_value")),
+                        _md(", ".join(entry.architectures) or tr(language, "catalog_unknown_value")),
                         _md(entry.kind),
                         _md(entry.status),
                         _md(entry.install_location),
@@ -295,6 +302,12 @@ def render_catalog_report(
                 f"({entry.kind}) — {entry.target_server}",
                 f"  {tr(language, 'catalog_project')}: {entry.project_url}",
                 f"  {tr(language, 'catalog_release')}: {entry.release_url}",
+                f"  {tr(language, 'catalog_server_versions')}: "
+                + (", ".join(entry.server_versions) or tr(language, "catalog_unknown_value")),
+                f"  {tr(language, 'catalog_platforms')}: "
+                + (", ".join(entry.platforms) or tr(language, "catalog_unknown_value")),
+                f"  {tr(language, 'catalog_architectures')}: "
+                + (", ".join(entry.architectures) or tr(language, "catalog_unknown_value")),
                 f"  {tr(language, 'catalog_install')}: {entry.install_location}",
                 f"  {tr(language, 'catalog_dependencies')}: "
                 + (", ".join(entry.dependencies) or tr(language, "catalog_dependencies_unknown")),
