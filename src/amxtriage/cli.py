@@ -426,11 +426,14 @@ def build_parser() -> argparse.ArgumentParser:
     patch_apply = commands.add_parser(
         "patch-apply",
         aliases=["fix-apply"],
-        help="apply one reviewed Pawn patch, validate with a compiler, and roll back on failure",
+        help="apply a reviewed Pawn patch with bounded compiler/test validation and rollback",
         description=(
-            "Apply only the narrow patch produced by patch-preview. Both source and patch SHA-256 "
-            "values from a reviewed preview are required. A configured Pawn compiler must validate "
-            "the modified source; on failure the original bytes are restored when safe."
+            "Apply only the narrow patch produced by patch-preview using both reviewed SHA-256 "
+            "hashes. A trusted local Pawn compiler and either --test-executable with optional "
+            "--test-arg values or explicit --compile-only are required. Commands run without a "
+            "shell and have time/output limits. Failed validation rolls back only while the target "
+            "still matches the applied patch; external edits are preserved. Passing compilation "
+            "and tests does not prove gameplay correctness."
         ),
     )
     _add_language_argument(patch_apply)

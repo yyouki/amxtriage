@@ -10,7 +10,7 @@
 - Análisis, seguimiento de registros en crecimiento, líneas base, contexto de código fuente y recomendaciones locales basadas en reglas.
 - El comando `diagnose` reconoce formatos habituales de compiladores/lint para Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go y Rust. No ejecuta compiladores ni cubre todas sus versiones.
 - Las etiquetas del informe admiten inglés (`en`), indonesio (`id`) y español (`es`). La documentación principal está disponible en esos tres idiomas.
-- La versión actual lee archivos locales, no inicia conexiones de red y no modifica el código fuente.
+- Los modos predeterminados de análisis/monitorización/preview solo leen archivos locales, no abren conexiones de red y no modifican el código. Solo el comando explícito `patch-apply` puede editar un archivo Pawn revisado.
 
 ## Estado de los objetivos
 
@@ -20,10 +20,10 @@
 | CI, empaquetado y seguridad | Las pruebas en varias versiones de Python, los controles estáticos, el empaquetado y la compilación del bridge Pawn pasan en GitHub Actions; el comportamiento del servidor aún necesita pruebas de staging |
 | Diagnósticos multilenguaje de compilador | Parsers iniciales y pruebas de formatos comunes; cobertura de versiones incompleta |
 | Localización de CLI y Markdown | Etiquetas y documentación en en/id/es; parte de la ayuda y recomendaciones detalladas siguen en inglés |
-| Catálogo de compatibilidad de plugins/dependencias | Instantánea offline con 5 versiones de componentes documentadas, 2 plugins legacy documentados y 1 versión `unknown`; la matriz de SO/versiones y la validación de ejecución siguen incompletas |
+| Catálogo de compatibilidad de plugins/dependencias | Ocho registros con evidencia; filtros por servidor, estado de evidencia, versión documentada exacta, SO/plataforma, arquitectura CPU y tipo de instalación. Los metadatos vacíos no implican compatibilidad |
 | Avisos dentro del juego a administradores/propietarios | Exportación JSONL/`--alert-pawn-file`, source del filterscript Pawn y compilación en CI implementados; la entrega en un servidor staging aún no está verificada |
 | Mitigación DDoS de red e integración anti-cheat en el servidor | No implementado |
-| Parches, validación y reversión | Una regla Pawn limitada de `patch-preview` genera únicamente un diff; el flujo de apply/checkpoint/reversión no está implementado |
+| Parches, validación y reversión | Preview Pawn limitado más apply explícito con hashes confirmados, checkpoint privado, compilador local de confianza, runner de pruebas o `--compile-only`, límites de tiempo/salida y reversión condicionada; las pruebas de gameplay siguen siendo externas |
 
 La documentación no cuenta como implementación. El progreso debe basarse en funciones y criterios de aceptación que tengan pruebas aprobadas.
 
@@ -68,7 +68,7 @@ El esquema local JSONL y el protocolo `--alert-pawn-file FILE` están implementa
 
 Modos previstos: `off` (solo diagnóstico), `suggest` (recomendación), `patch` (generar diff sin modificar archivos) y `apply` (aplicar solo tras aprobación explícita).
 
-Cada parche debe quedar dentro de la raíz del proyecto, rechazar escapes de rutas/symlinks, comprobar que el archivo no cambió desde el análisis, crear un checkpoint, mostrar el diff, ejecutar el compilador/linter correcto y probar. Si falla la validación, hay que revertir y explicar el motivo. No instales plugins ni ejecutes scripts automáticamente a partir de logs o recomendaciones.
+Cada parche debe quedar dentro de la raíz del proyecto, rechazar escapes de rutas/symlinks, comprobar que el archivo no cambió desde el análisis, crear un checkpoint y mostrar el diff. `patch-apply` requiere hashes revisados del source/parche y un compilador Pawn local de confianza. El operador debe elegir `--test-executable` con argumentos literales repetidos `--test-arg`, o seleccionar explícitamente `--compile-only`; los validadores se ejecutan sin shell y con límites de tiempo/salida. Si falla la validación, solo se restaura el original si el destino sigue coincidiendo con el parche aplicado. Si el runner modifica el archivo, se bloquea la reversión para no sobrescribir cambios externos y se conserva el checkpoint. El runner puede tener otros efectos secundarios en el workspace, por lo que solo debe usarse un comando de confianza. No instales plugins ni ejecutes comandos extraídos de logs/recomendaciones automáticamente.
 
 Que un compilador pase no garantiza que la lógica del juego sea correcta. Se necesitan pruebas de regresión y un servidor de staging. Ningún proceso puede garantizar honestamente una corrección del 100 % en todos los casos; el objetivo es evidencia, reproducibilidad y reversión segura.
 

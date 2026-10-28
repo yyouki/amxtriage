@@ -10,7 +10,7 @@
 - Perintah analisis, pemantauan log yang bertambah, baseline, konteks source, dan rekomendasi berbasis aturan secara offline.
 - Perintah `diagnose` mengenali format umum keluaran compiler/linter Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go, dan Rust. Format/versi tool belum semuanya tercakup; compiler tidak dijalankan.
 - Label laporan mendukung English (`en`), Bahasa Indonesia (`id`), dan Español (`es`). Dokumentasi utama tersedia dalam tiga bahasa.
-- Program saat ini membaca file lokal, tidak memulai koneksi jaringan, dan tidak mengubah source code.
+- Mode analisis/watch/preview secara default hanya membaca file lokal, tidak memulai koneksi jaringan, dan tidak mengubah source. Hanya perintah `patch-apply` eksplisit yang dapat mengedit satu file Pawn yang telah ditinjau.
 
 ## Status target fitur
 
@@ -20,10 +20,10 @@
 | CI, paket, dan pemeriksaan keselamatan | Tes lintas Python, pemeriksaan statis, packaging, serta kompilasi bridge Pawn lulus di GitHub Actions; perilaku runtime game tetap menunggu staging test |
 | Diagnostik compiler multi-bahasa | Parser awal dan tes format umum tersedia; cakupan versi belum lengkap |
 | Lokalisasi CLI dan Markdown | Label laporan dan dokumentasi tersedia dalam en/id/es; sebagian bantuan dan rekomendasi detail masih English |
-| Katalog kompatibilitas plugin/dependensi | Snapshot offline dengan 5 rilis component terdokumentasi, 2 plugin legacy terdokumentasi, dan 1 rilis `unknown`; validasi runtime serta matriks OS/versi belum lengkap |
+| Katalog kompatibilitas plugin/dependensi | Delapan entri berbukti; mendukung filter server, status bukti, versi server yang terdokumentasi secara persis, OS/platform, arsitektur CPU, dan jenis instalasi. Metadata kosong tidak dianggap kompatibel |
 | Notifikasi in-game untuk admin/owner | Ekspor JSONL/`--alert-pawn-file`, source filterscript Pawn, dan kompilasi CI tersedia; pengiriman chat pada staging server belum diverifikasi |
 | Mitigasi DDoS jaringan dan integrasi anti-cheat server-side | Belum dibuat |
-| Patch, validasi compiler/test, dan rollback | Aturan sempit `patch-preview` untuk Pawn sudah menghasilkan diff saja; apply/checkpoint/rollback belum dibuat |
+| Patch, validasi compiler/test, dan rollback | Preview Pawn yang sempit ditambah apply eksplisit dengan hash yang dikonfirmasi, checkpoint privat, compiler lokal tepercaya, test runner terpilih atau `--compile-only`, batas waktu/output, dan rollback bersyarat; tes gameplay masih eksternal |
 
 Dokumen bukan implementasi. Progres harus dihitung dari fitur dan kriteria penerimaan yang sudah diuji.
 
@@ -90,7 +90,7 @@ Contoh konseptual: `[AMXTRIAGE] [HIGH] gamemodes/rp.pwn:42 — Array index out o
 
 Mode target: `off` (diagnostik saja), `suggest` (saran), `patch` (buat unified diff tanpa mengedit source), dan `apply` (hanya setelah persetujuan pemilik).
 
-Setiap patch harus tetap di root proyek, menolak symlink/path escape, memastikan file tidak berubah sejak dianalisis, membuat checkpoint, dan menampilkan diff. Jalankan compiler/linter yang tepat serta tes dengan batas waktu/output. Jika validasi gagal, rollback dan laporkan penyebabnya. Jangan instal plugin atau jalankan skrip otomatis berdasarkan log/saran.
+Setiap patch harus tetap di root proyek, menolak symlink/path escape, memastikan file tidak berubah sejak dianalisis, membuat checkpoint, dan menampilkan diff. `patch-apply` memerlukan hash source/patch yang sudah ditinjau dan compiler Pawn lokal tepercaya. Operator wajib memilih `--test-executable` dengan argumen literal berulang `--test-arg`, atau secara eksplisit memakai `--compile-only`; proses dijalankan tanpa shell dan dibatasi waktu/output. Jika validasi gagal, file asli dipulihkan hanya selama target masih identik dengan patch yang diterapkan. Jika runner mengubah source, rollback diblokir agar perubahan eksternal tidak ditimpa; checkpoint dipertahankan. Karena test runner bisa memiliki efek samping di workspace, gunakan hanya perintah yang dipercaya. Jangan instal plugin atau jalankan perintah dari log/saran secara otomatis.
 
 Compiler sukses tidak menjamin gameplay benar. Perlu regression fixture, startup check, dan staging test. Jika error baru muncul, simpan log dan snapshot sebelumnya alih-alih terus menerapkan perbaikan spekulatif. Tidak ada proses jujur yang dapat menjamin “100% benar setiap saat”; targetnya bukti, reproduksibilitas, dan rollback aman.
 

@@ -9,10 +9,10 @@
 - Python 3.10+ command-line tool for SA-MP/open.mp logs.
 - Groups recognized AMX runtime errors, crashes and slow callbacks; supports analysis, live log following, baselines, source context and offline rule-based recommendations.
 - The initial `diagnose` command parses common saved compiler/linter formats for Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go and Rust. It does not execute compilers and does not cover every tool/version.
-- Reads local files and does not initiate network connections or modify source files in its current mode.
+- Default analysis/watch/preview operation reads local files and does not initiate network connections or modify source. Only the explicit `patch-apply` command may edit one reviewed Pawn file.
 - Existing CLI recommendations are advisory. They are not proof of a correct fix.
-- The offline `catalog`/`plugins` command contains five documented open.mp component releases, two documented legacy plugin releases (`rustext` with the `nomemhack` build and `keylistener` 1.1.2-pr), and one newer `sampvoice` release marked `unknown`; dependencies are surfaced in reports without guessing missing requirements.
-- `patch-preview`/`fix-preview` can generate a diff for one narrow Pawn compiler case. It never edits source or runs the compiler; the transactional apply/checkpoint/rollback workflow is not implemented.
+- The offline `catalog`/`plugins` command contains eight evidence-backed records, with the newer `sampvoice` release marked `unknown`. Filters support server, evidence status, exact documented server version, OS/platform, CPU architecture, and installation kind. Empty metadata never implies compatibility; dependencies are not guessed.
+- `patch-preview`/`fix-preview` generates a diff for one narrow Pawn compiler case. Explicit `patch-apply` requires the reviewed patch/source SHA-256 values, a private checkpoint and a trusted local Pawn compiler, plus either an operator-selected `--test-executable` (with literal repeated `--test-arg` values) or explicit `--compile-only`. Validators run without a shell and with time/output bounds. Failed compile/test validation rolls back when the target still matches the applied patch; external edits are preserved. This narrow rule is not a gameplay-correctness guarantee.
 
 ## Product target and progress accounting
 
@@ -27,7 +27,7 @@ The intended end state is broader than the current log triager. Track progress b
 | Evidence-backed plugin/dependency compatibility catalog | Offline snapshot with 5 documented component releases, 2 documented legacy plugins, and 1 `unknown` release; runtime verification and broader OS/version coverage remain incomplete | First slice implemented |
 | In-game admin warning bridge | JSONL and `--alert-pawn-file` export, Pawn filterscript source, and CI compilation are implemented; live staging delivery is not yet verified | Implementation slice complete; staging verification pending |
 | Actual network-layer DDoS mitigation / server-side anti-cheat integration | Not implemented | 0% |
-| Patch generation, compile/test validation and rollback | Narrow Pawn `patch-preview` diff-only rule implemented; transactional apply/checkpoint/rollback not implemented | Early design stage |
+| Patch generation, compile/test validation and rollback | Narrow Pawn preview plus explicit hash-confirmed apply, private checkpoint, bounded compiler/test runner or `--compile-only`, and guarded rollback; gameplay coverage remains external | First slice implemented |
 
 The overall completion percentage must be recalculated from tested milestones. Do not count a document as implementation or a successful syntax check as proof of correct game behaviour.
 
@@ -100,14 +100,14 @@ Example target formatting token concept: `{RED}<file>{WHITE}:{BLUE}<line>{WHITE}
 
 ## Safe correction modes
 
-Planned modes:
+CLI modes and safety contract:
 
 - `off`: diagnostics only.
 - `suggest`: show an explanation and a likely remediation.
 - `patch`: create a unified diff; do not change source files.
 - `apply`: apply a patch only after explicit owner approval.
 
-Every patch must be scoped to the project root, reject symlink/path escapes, verify the file has not changed since analysis, save a checkpoint, and show the diff. Run the actual detected compiler/linter and relevant tests with time/output limits. If validation fails, roll back the patch and report the failure. Never automatically install plugins or execute scripts from a log or recommendation.
+Every patch must be scoped to the project root, reject symlink/path escapes, verify the file has not changed since analysis, save a checkpoint, and show the diff. `patch-apply` requires reviewed source/patch hashes and a trusted local compiler. The operator must supply a trusted test/lint executable using `--test-executable`/repeated `--test-arg`, or explicitly choose `--compile-only`; validation runs as argv with no shell and has timeout/output caps. On failure, restore the original only if the target still matches the exact applied patch; otherwise preserve the external change, retain the checkpoint, and report rollback blocked. The selected test command can have workspace side effects, so only use a trusted command. Never automatically install plugins or execute commands from logs or recommendations.
 
 A successful compiler run does not guarantee gameplay correctness. Regression fixtures, startup checks and staging-server tests are required. If a new error appears, preserve logs and the pre-change snapshot rather than repeatedly applying speculative edits. No honest workflow can guarantee “100% correct every time”; the goal is evidence, reproducibility and safe rollback.
 

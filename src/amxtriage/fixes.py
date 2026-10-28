@@ -1,8 +1,11 @@
-"""Conservative, diff-only source repair proposals.
+"""Conservative Pawn patch preview and explicit validation/apply workflow.
 
 The first rule is deliberately narrow: suggest a missing semicolon before a Pawn return
 only when compiler output is exact and the preceding line is a simple assignment/declaration.
-This module never writes or executes source code.
+Preview mode is diff-only. Apply mode requires reviewed hashes, a private checkpoint, a trusted
+local Pawn compiler, and either an operator-selected test command or explicit compile-only opt-in.
+External validators run with shell disabled and bounded time/output; failed validation rolls back
+only while the target still matches the applied patch.
 """
 
 from __future__ import annotations
