@@ -2,14 +2,14 @@
 
 **Snapshot:** 28 Oktober 2026  
 **Branch target:** `main`  
-**Kode yang diaudit:** `689b143885964428ab443de4ff391b6bb4b753ab`  
-**CI terverifikasi:** [Run 40655638295 lulus](https://github.com/yyouki/amxtriage/actions/runs/40655638295) pada commit `689b143`. Keenam job lulus: 1.883 tes pada masing-masing Python 3.10, 3.11, 3.12, dan 3.13; Ruff lint/format, mypy strict, wheel/sdist, validasi metadata, smoke test CLI/katalog, serta kompilasi filterscript Pawn. CI tidak menguji pengiriman chat pada server game live.
+**Kode yang diaudit:** `8a2fa29b167ce8e4f6bb76d953bd5c896cb55d51`  
+**CI terverifikasi:** [Run 40656126919 lulus](https://github.com/yyouki/amxtriage/actions/runs/40656126919) pada commit `8a2fa29`. Keenam job lulus: 1.883 tes pada masing-masing Python 3.10, 3.11, 3.12, dan 3.13; Ruff lint/format, mypy strict, wheel/sdist, validasi metadata, smoke test CLI/katalog, kompilasi filterscript Pawn, dan smoke test patch preview/apply dengan compiler Pawn nyata. CI tetap tidak menguji pengiriman chat pada server game live atau kebenaran gameplay.
 
 **Bahasa / Language / Idioma:** [English README](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
 
 ## Progres keseluruhan
 
-**Estimasi berbobot: 62,5% dari target produk penuh (62,5/100; dibulatkan 63%).** Ini estimasi perencanaan berdasarkan implementasi dan tes yang tersedia, bukan jaminan akurasi atau bukti bahwa semua integrasi telah diuji pada server nyata.
+**Estimasi berbobot: 63,0% dari target produk penuh (63,0/100).** Ini estimasi perencanaan berdasarkan implementasi dan tes yang tersedia, bukan jaminan akurasi atau bukti bahwa semua integrasi telah diuji pada server nyata.
 
 | Area | Bobot | Porsi selesai yang diperkirakan | Poin |
 |---|---:|---:|---:|
@@ -20,8 +20,8 @@
 | Katalog kompatibilitas plugin/dependensi | 10 | 50% | 5 |
 | Monitor dan bridge alert admin | 10 | 60% | 6 |
 | Mitigasi DDoS dan integrasi anti-cheat sisi server | 15 | 0% | 0 |
-| Patch preview, hash konfirmasi, validasi compiler/test, checkpoint, rollback | 10 | 65% | 6.5 |
-| **Total** | **100** |  | **62,5/100 = 62,5%** |
+| Patch preview, hash konfirmasi, validasi compiler/test, checkpoint, rollback | 10 | 70% | 7.0 |
+| **Total** | **100** |  | **63,0/100 = 63,0%** |
 
 Nilai area tetap konservatif: dokumentasi bukan implementasi, kompilasi bukan bukti pengiriman live, dan validasi compiler bukan bukti kebenaran gameplay.
 
