@@ -273,6 +273,7 @@ def render_catalog_report(
             ]
         )
         for entry in entries:
+            unknown_value = tr(language, "catalog_unknown_value")
             release = f"[official release]({entry.release_url})"
             evidence = ", ".join(
                 f"[source]({item.url}) ({item.checked_on})" for item in entry.evidence
@@ -284,12 +285,9 @@ def render_catalog_report(
                         _md(entry.name),
                         _md(entry.version),
                         _md(entry.target_server),
-                        _md(
-                            ", ".join(entry.server_versions)
-                            or tr(language, "catalog_unknown_value")
-                        ),
-                        _md(", ".join(entry.platforms) or tr(language, "catalog_unknown_value")),
-                        _md(", ".join(entry.architectures) or tr(language, "catalog_unknown_value")),
+                        _md(", ".join(entry.server_versions) or unknown_value),
+                        _md(", ".join(entry.platforms) or unknown_value),
+                        _md(", ".join(entry.architectures) or unknown_value),
                         _md(entry.kind),
                         _md(entry.status),
                         _md(entry.install_location),
