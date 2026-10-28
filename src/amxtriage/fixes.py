@@ -489,11 +489,11 @@ def _run_bounded_command(
     timeout_seconds: int,
 ) -> tuple[int | None, str, str | None]:
     """Run an explicit argv without a shell, with a time and captured-output ceiling."""
-    if not command or any("\\x00" in argument for argument in command):
+    if not command or any("\x00" in argument for argument in command):
         return None, "", "Validation command has an empty argv or an argument containing NUL."
 
     try:
-        process = subprocess.Popen(
+        process = subprocess.Popen(  # noqa: S603 - resolved executable, explicit argv, shell=False
             list(command),
             cwd=str(cwd),
             stdin=subprocess.DEVNULL,
@@ -660,7 +660,7 @@ def apply_patch_preview(
         raise ValueError("provide a test_command or explicitly select compile_only=True")
     if test_command is not None and len(test_command) > MAX_VALIDATION_ARGUMENTS:
         raise ValueError(f"test command cannot exceed {MAX_VALIDATION_ARGUMENTS} arguments")
-    if test_command is not None and any("\\x00" in argument for argument in test_command):
+    if test_command is not None and any("\x00" in argument for argument in test_command):
         raise ValueError("test command arguments must not contain NUL characters")
     if not 1 <= timeout_seconds <= MAX_COMPILER_TIMEOUT_SECONDS:
         raise ValueError(
@@ -809,13 +809,15 @@ def apply_patch_preview(
                             )
                         test_problem = (
                             "The test command changed or obscured the patched source; automatic "
-                            "rollback will proceed only if the target still matches the applied patch."
+                            "rollback is allowed only while the target matches the applied patch."
                         )
                     failure_message = test_problem or (
                         f"Test command failed with exit code {test_exit_code}."
                     )
         except KeyboardInterrupt:
-            failure_message = f"{failure_phase.capitalize()} validation was interrupted by the user."
+            failure_message = (
+                f"{failure_phase.capitalize()} validation was interrupted by the user."
+            )
         except OSError as error:
             failure_message = (
                 f"{failure_phase.capitalize()} validation could not run: "
@@ -839,7 +841,7 @@ def apply_patch_preview(
         )
         if restored:
             return PatchApplyResult(
-                "compile_failed_rolled_back" if failure_phase == "compile" else "test_failed_rolled_back",
+                rollback_status,
                 f"{failure_message} Original source restored; backup retained for audit.",
                 preview.file,
                 backup_file=backup.relative_to(root).as_posix(),
@@ -847,6 +849,11 @@ def apply_patch_preview(
                 compiler_output=compiler_output,
                 test_exit_code=test_exit_code,
                 test_output=test_output,
+            )
+            rollback_status = (
+                "compile_failed_rolled_back"
+                if failure_phase == "compile"
+                else "test_failed_rolled_back"
             )
         return PatchApplyResult(
             "rollback_blocked",
