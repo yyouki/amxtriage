@@ -29,7 +29,9 @@ def _open_append(path: Path) -> int:
     try:
         descriptor = os.open(path, flags, 0o600)
     except OSError as error:
-        raise ProbeError(f"cannot open alert file {str(path)!r}: {error.strerror or error}") from error
+        raise ProbeError(
+            f"cannot open alert file {str(path)!r}: {error.strerror or error}"
+        ) from error
 
     try:
         info = os.fstat(descriptor)
@@ -118,7 +120,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     print(f"Appended one synthetic staging record to {str(args.alert_file)!r}.")
     print("Expected: a LOW [STAGING-PROBE] message for RCON admins only.")
-    print("Verify red source path, blue line 4242, non-admin invisibility, and server logs manually.")
+    print(
+        "Verify red source path, blue line 4242, non-admin invisibility, and server logs manually."
+    )
     return 0
 
 

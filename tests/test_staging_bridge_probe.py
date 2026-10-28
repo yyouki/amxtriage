@@ -3,7 +3,6 @@ import stat
 from pathlib import Path
 
 import pytest
-
 from scripts.staging_bridge_probe import PROBE_RECORD, ProbeError, append_probe, main
 
 
@@ -59,7 +58,7 @@ def test_probe_refuses_symbolic_link(tmp_path: Path) -> None:
     except (NotImplementedError, OSError):
         pytest.skip("symbolic links are unavailable on this platform")
 
-    with pytest.raises(ProbeError, match="symbolic link|open alert file"):
+    with pytest.raises(ProbeError, match=r"symbolic link|open alert file"):
         append_probe(link)
 
     assert target.read_text(encoding="ascii") == "original\n"
