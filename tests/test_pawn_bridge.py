@@ -159,6 +159,8 @@ def test_pawn_filterscript_enforces_admin_only_bounded_colored_delivery() -> Non
     # These contract assertions complement the pinned Pawn compiler job in GitHub Actions.
     assert "AMXTRIAGE_MAX_RECORDS_PER_TICK (5)" in source
     assert "IsPlayerAdmin(playerid) != 0" in source
-    assert "SendClientMessage(playerid, 0xFFFFFFFF, safeOutput);" in source
+    assert "new output[AMXTRIAGE_CHAT_SIZE];" in source
+    assert "SendClientMessage(playerid, 0xFFFFFFFF, output);" in source
+    assert "EscapeFormatPercents" not in source
     assert "{FF0000}%s{FFFFFF}:{0000FF}%s" in source
     assert "g_AmxTriageReadOffset = flength(handle);" in source
