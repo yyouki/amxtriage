@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from amxtriage.compiler import parse_compiler_lines
 from amxtriage.fixes import build_patch_preview, render_patch_preview
 from amxtriage.source import SourceIndex
@@ -181,3 +183,7 @@ def test_control_characters_in_diff_context_are_refused(tmp_path: Path) -> None:
     assert preview.status == "blocked"
     assert preview.patch is None
     assert source.read_bytes() == before
+
+def test_patch_preview_refuses_invalid_source_dir(tmp_path: Path) -> None:
+    with pytest.raises(Exception, match="source directory"):
+        SourceIndex(str(tmp_path / "missing"))
