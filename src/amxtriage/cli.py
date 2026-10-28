@@ -44,6 +44,7 @@ from amxtriage.localization import translate as tr
 from amxtriage.model import REPORTED_KINDS, Event, EventKind
 from amxtriage.output import write_text_file
 from amxtriage.plugin_catalog import (
+    KINDS,
     STATUSES,
     filter_catalog_entries,
     load_catalog,
@@ -505,6 +506,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="filter the exact target server (default: all)",
     )
     catalog.add_argument("--status", choices=STATUSES, help="filter by evidence status")
+    catalog.add_argument(
+        "--server-version",
+        metavar="VERSION",
+        help="filter an exact documented server version (no range matching)",
+    )
+    catalog.add_argument(
+        "--os",
+        "--platform",
+        dest="platform",
+        metavar="OS",
+        help="filter an exact documented operating system/platform",
+    )
+    catalog.add_argument(
+        "--arch",
+        "--architecture",
+        dest="architecture",
+        metavar="ARCH",
+        help="filter an exact documented CPU architecture",
+    )
+    catalog.add_argument(
+        "--kind",
+        choices=KINDS,
+        help="filter by catalog kind: plugin, component, include or dependency",
+    )
     catalog.add_argument("--format", choices=("text", "markdown", "json"), default="text")
     catalog.add_argument("-o", "--output", metavar="FILE", help="write the catalog report to FILE")
     return parser
@@ -784,13 +809,25 @@ def _run_patch_apply(args: argparse.Namespace) -> int:
 
 def _run_catalog(args: argparse.Namespace) -> int:
     snapshot = load_catalog()
-    entries = filter_catalog_entries(snapshot.entries, server=args.server, status=args.status)
+    entries = filter_catalog_entries(
+        snapshot.entries,
+        server=args.server,
+        status=args.status,
+        server_version=args.server_version,
+        platform=args.platform,
+        architecture=args.architecture,
+        kind=args.kind,
+    )
     report = render_catalog_report(
         snapshot,
         entries,
         output_format=args.format,
         server=args.server,
         status=args.status,
+        server_version=args.server_version,
+        platform=args.platform,
+        architecture=args.architecture,
+        kind=args.kind,
         language=args.language,
     )
     _write_output(report, args.output)

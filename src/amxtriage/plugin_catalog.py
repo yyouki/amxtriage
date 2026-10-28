@@ -191,16 +191,53 @@ def filter_catalog_entries(
     *,
     server: str = "all",
     status: CatalogStatus | None = None,
+    server_version: str | None = None,
+    platform: str | None = None,
+    architecture: str | None = None,
+    kind: CatalogKind | None = None,
 ) -> list[CatalogEntry]:
-    """Return entries matching the exact target and evidence status filters."""
+    """Return entries matching exact, case-insensitive documented metadata.
+
+    Empty or unspecified metadata never implies compatibility. A version/platform/architecture
+    filter only matches if that exact value appears in the evidence-backed catalog entry.
+    """
     if server not in {"all", "open.mp", "sa-mp"}:
         raise InputError("server filter must be one of: all, open.mp, sa-mp")
+    if kind is not None and kind not in KINDS:
+        raise InputError("kind filter must be one of: " + ", ".join(KINDS))
+
+    def normalize_filter(value: str | None, label: str) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().casefold()
+        if not normalized:
+            raise InputError(f"{label} filter must not be empty")
+        return normalized
+
+    version_filter = normalize_filter(server_version, "server version")
+    platform_filter = normalize_filter(platform, "platform")
+    architecture_filter = normalize_filter(architecture, "architecture")
+
+    def contains_exact(values: tuple[str, ...], expected: str | None) -> bool:
+        if expected is None:
+            return True
+        return any(value.strip().casefold() == expected for value in values if value.strip())
+
     matched: list[CatalogEntry] = []
     for entry in entries:
-        server_matches = server == "all" or entry.target_server.lower() == server.lower()
-        status_matches = status is None or entry.status == status
-        if server_matches and status_matches:
-            matched.append(entry)
+        if server != "all" and entry.target_server.casefold() != server.casefold():
+            continue
+        if status is not None and entry.status != status:
+            continue
+        if kind is not None and entry.kind != kind:
+            continue
+        if not contains_exact(entry.server_versions, version_filter):
+            continue
+        if not contains_exact(entry.platforms, platform_filter):
+            continue
+        if not contains_exact(entry.architectures, architecture_filter):
+            continue
+        matched.append(entry)
     return matched
 
 
@@ -215,6 +252,10 @@ def render_catalog_report(
     output_format: CatalogFormat = "text",
     server: str = "all",
     status: CatalogStatus | None = None,
+    server_version: str | None = None,
+    platform: str | None = None,
+    architecture: str | None = None,
+    kind: CatalogKind | None = None,
     language: str = "en",
 ) -> str:
     """Render stable JSON or a human-readable text/Markdown snapshot."""
@@ -223,7 +264,14 @@ def render_catalog_report(
             "schema_version": 1,
             "tool": {"name": "amxtriage"},
             "catalog_snapshot": snapshot.snapshot_date,
-            "filters": {"server": server, "status": status},
+            "filters": {
+                "server": server,
+                "status": status,
+                "server_version": server_version,
+                "platform": platform,
+                "architecture": architecture,
+                "kind": kind,
+            },
             "entry_count": len(entries),
             "entries": [asdict(entry) for entry in entries],
             "notes": [

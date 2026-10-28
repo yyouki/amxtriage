@@ -76,13 +76,52 @@ def test_packaged_catalog_distinguishes_documented_and_unknown_releases() -> Non
     )
 
 
-def test_server_and_status_filters_are_exact() -> None:
+def test_server_status_and_kind_filters_are_exact() -> None:
     snapshot = load_catalog()
     assert len(filter_catalog_entries(snapshot.entries, server="open.mp")) == 8
     assert filter_catalog_entries(snapshot.entries, server="sa-mp") == []
     assert len(filter_catalog_entries(snapshot.entries, server="all", status="documented")) == 7
     assert len(filter_catalog_entries(snapshot.entries, status="unknown")) == 1
     assert filter_catalog_entries(snapshot.entries, status="verified") == []
+    assert len(filter_catalog_entries(snapshot.entries, kind="component")) == 6
+    assert len(filter_catalog_entries(snapshot.entries, kind="plugin")) == 2
+    assert filter_catalog_entries(snapshot.entries, kind="include") == []
+
+
+def test_version_platform_and_architecture_filters_require_explicit_metadata() -> None:
+    snapshot = load_catalog()
+    # The current official evidence does not state a runtime matrix for these releases.
+    # A query therefore yields no match; it must not guess compatibility.
+    assert filter_catalog_entries(snapshot.entries, server_version="open.mp 1.2") == []
+    assert filter_catalog_entries(snapshot.entries, platform="Linux") == []
+    assert filter_catalog_entries(snapshot.entries, architecture="x86_64") == []
+
+    raw = raw_catalog(snapshot)
+    rows = raw["entries"]
+    assert isinstance(rows, list)
+    first = rows[0]
+    assert isinstance(first, dict)
+    first["server_versions"] = ["open.mp 1.2.0"]
+    first["platforms"] = ["Linux"]
+    first["architectures"] = ["x86_64"]
+    enriched = parse_catalog(raw)
+
+    assert len(filter_catalog_entries(enriched.entries, server_version="OPEN.MP 1.2.0")) == 1
+    assert len(filter_catalog_entries(enriched.entries, platform="linux")) == 1
+    assert len(filter_catalog_entries(enriched.entries, architecture="X86_64")) == 1
+    assert filter_catalog_entries(enriched.entries, server_version="open.mp 1.2") == []
+    assert filter_catalog_entries(enriched.entries, platform="Windows") == []
+    assert filter_catalog_entries(enriched.entries, architecture="arm64") == []
+
+
+@pytest.mark.parametrize("kwargs", [
+    {"server_version": " "},
+    {"platform": ""},
+    {"architecture": "  "},
+])
+def test_metadata_filters_reject_empty_values(kwargs: dict[str, str]) -> None:
+    with pytest.raises(InputError, match="filter must not be empty"):
+        filter_catalog_entries(load_catalog().entries, **kwargs)
 
 
 def test_json_report_has_stable_schema_and_honest_limit_notes() -> None:
@@ -92,7 +131,14 @@ def test_json_report_has_stable_schema_and_honest_limit_notes() -> None:
     payload = json.loads(raw)
     assert payload["schema_version"] == 1
     assert payload["entry_count"] == 8
-    assert payload["filters"] == {"server": "open.mp", "status": None}
+    assert payload["filters"] == {
+        "server": "open.mp",
+        "status": None,
+        "server_version": None,
+        "platform": None,
+        "architecture": None,
+        "kind": None,
+    }
     assert "runtime compatibility" in " ".join(payload["notes"])
     assert any("dependencies" in note for note in payload["notes"])
     assert "dependencies" in payload["entries"][0]
@@ -100,6 +146,37 @@ def test_json_report_has_stable_schema_and_honest_limit_notes() -> None:
     assert payload["entries"][0]["evidence"][0]["url"] == (
         "https://open.mp/docs/server/Installation"
     )
+
+
+def test_json_filters_capture_exact_catalog_queries() -> None:
+    snapshot = load_catalog()
+    report = render_catalog_report(
+        snapshot,
+        filter_catalog_entries(
+            snapshot.entries,
+            server="open.mp",
+            server_version="omp 1.2",
+            platform="Linux",
+            architecture="x86_64",
+            kind="plugin",
+        ),
+        output_format="json",
+        server="open.mp",
+        server_version="omp 1.2",
+        platform="Linux",
+        architecture="x86_64",
+        kind="plugin",
+    )
+    payload = json.loads(report)
+    assert payload["entry_count"] == 0
+    assert payload["filters"] == {
+        "server": "open.mp",
+        "status": None,
+        "server_version": "omp 1.2",
+        "platform": "Linux",
+        "architecture": "x86_64",
+        "kind": "plugin",
+    }
 
 
 def test_markdown_report_links_official_release_and_evidence() -> None:
