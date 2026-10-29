@@ -163,6 +163,7 @@ def test_watch_exports_pawn_bridge_record_for_filterscript(
     assert fields[7] == "END"
 
 
+@pytest.mark.skipif(not metrics_supported(), reason="host metrics backend is Linux-only")
 def test_watch_writes_opt_in_metrics_jsonl_and_processing_latency(
     run_watch: RunWatch, tmp_path: Path
 ) -> None:
