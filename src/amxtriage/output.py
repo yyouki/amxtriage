@@ -43,7 +43,7 @@ def write_text_file(path: str, text: str) -> None:
     except OSError as error:
         raise OutputError(f"cannot write '{path}': {_open_failure(path, error)}") from error
     try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as handle:
             _prepare(descriptor, path)
             handle.write(text)
     except OSError as error:
