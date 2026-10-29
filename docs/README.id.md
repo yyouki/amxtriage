@@ -1,9 +1,21 @@
 # amxtriage — Analisis log server SA-MP/open.mp
 
 **Bahasa:** [English](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)  
-**Peta jalan:** [Diagnostik multi-bahasa dan perbaikan aman](PHASE7_MULTILANGUAGE.id.md)
+**Peta jalan:** [Diagnostik multi-bahasa dan perbaikan aman](PHASE7_MULTILANGUAGE.id.md)  
+**Platform/rilis:** [Matriks dukungan dan batasan host](RELEASE_AND_PLATFORM_SUPPORT.md)  
+**Kontribusi:** [Panduan pemula](../CONTRIBUTING.md) · **Keamanan:** [Pelaporan kerentanan](../SECURITY.md)
 
 amxtriage adalah alat CLI Python untuk merangkum masalah yang tercatat di log SA-MP/open.mp: AMX runtime error, crash, dan callback lambat yang dikenali dari format log yang didukung. Alat ini membantu menemukan pola error berulang serta lokasi file/baris kode jika informasi tersebut tersedia.
+
+## Antarmuka desktop untuk pemula
+
+Setelah instalasi, jalankan:
+
+```bash
+amxtriage gui
+```
+
+Pilih file log, opsional folder source Pawn untuk menampilkan konteks kode, pilih English/Bahasa Indonesia/Spanyol, lalu simpan laporan teks. GUI memakai inti analisis yang sama dengan CLI dan tidak mengubah log. Tkinter mungkin perlu dipasang terpisah pada instalasi Linux minimal. Ini UI desktop Windows/macOS/Linux, bukan aplikasi native Android/iOS.
 
 ## Fitur yang tersedia sekarang
 
