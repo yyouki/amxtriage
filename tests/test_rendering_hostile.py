@@ -10,6 +10,7 @@ from amxtriage.analysis import analyze_logs, build_report
 from amxtriage.render import render_json, render_markdown, render_text
 from amxtriage.source import SourceIndex
 
+
 def filesystem_component(value: str) -> str:
     """Keep fixture names representable; hostile characters remain in log payloads."""
     result: list[str] = []
