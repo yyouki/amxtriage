@@ -44,6 +44,12 @@ El bridge Pawn es una alerta diagnóstica local, no una mitigación DDoS ni un a
 
 Un adaptador real necesita endpoints documentados, el identificador del recurso protegido, permisos mínimos, opt-in explícito, modo dry-run, auditoría y pruebas en staging. No debe bloquear direcciones ni modificar firewalls automáticamente basándose solo en señales heurísticas de los registros.
 
+## Flujo automatizado de borrador de lanzamiento
+
+Una persona mantenedora puede crear una etiqueta de versión, por ejemplo `v0.1.0`, después de revisar los cambios. El flujo exige que la etiqueta coincida exactamente con `__version__` en `src/amxtriage/__init__.py`. Construye un wheel y una distribución fuente, valida los metadatos, prueba el wheel instalado, genera `SHA256SUMS` y crea un **borrador de versión preliminar** con notas generadas. La persona mantenedora debe revisar y publicar el borrador manualmente. El flujo no publica en PyPI ni se ejecuta con los pushes normales a ramas.
+
+No crees una etiqueta de lanzamiento hasta que pase la matriz CI y se hayan revisado las pruebas del bridge en staging, el changelog, la versión del paquete y las notas de seguridad.
+
 ## Configuración recomendada del repositorio GitHub
 
 La descripción y los temas son metadatos de GitHub, no archivos fuente. Recomendaciones para un lanzamiento público:
