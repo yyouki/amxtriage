@@ -1,5 +1,5 @@
 **Language / Bahasa / Idioma:** [English](README.md) · [Bahasa Indonesia](docs/README.id.md) · [Español](docs/README.es.md)  
-**Roadmap:** [Multi-language diagnostics and safe remediation](docs/PHASE7_MULTILANGUAGE.md)
+**Roadmap:** [Multi-language diagnostics and safe remediation](docs/PHASE7_MULTILANGUAGE.md)  
 **Project progress:** [Verified feature status and completion estimate](docs/PROGRESS.md)  
 **Changelog:** [English](CHANGELOG.md) · [Bahasa Indonesia](CHANGELOG.id.md) · [Español](CHANGELOG.es.md)  
 **Release/platform support:** [Support matrix and hosting-provider limits](docs/RELEASE_AND_PLATFORM_SUPPORT.md)  
