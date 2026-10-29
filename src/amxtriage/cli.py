@@ -41,7 +41,8 @@ from amxtriage.follow import (
     interruptible_sleep,
 )
 from amxtriage.gui import launch_gui
-from amxtriage.localization import SUPPORTED_LANGUAGES, translate as tr
+from amxtriage.localization import SUPPORTED_LANGUAGES
+from amxtriage.localization import translate as tr
 from amxtriage.model import REPORTED_KINDS, Event, EventKind
 from amxtriage.monitoring import (
     DEFAULT_METRICS_INTERVAL_SECONDS,
