@@ -11,12 +11,24 @@ permissions:
 
 jobs:
   tests:
-    name: Tests (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    name: Tests (Python ${{ matrix.python-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.10"
+          - os: ubuntu-latest
+            python-version: "3.11"
+          - os: ubuntu-latest
+            python-version: "3.12"
+          - os: ubuntu-latest
+            python-version: "3.13"
+          - os: windows-latest
+            python-version: "3.12"
+          - os: macos-latest
+            python-version: "3.12"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,6 +66,7 @@ jobs:
           python -m venv "$RUNNER_TEMP/amxtriage-smoke"
           "$RUNNER_TEMP/amxtriage-smoke/bin/python" -m pip install --no-deps dist/*.whl
           "$RUNNER_TEMP/amxtriage-smoke/bin/amxtriage" --help
+          "$RUNNER_TEMP/amxtriage-smoke/bin/amxtriage" gui --help
           "$RUNNER_TEMP/amxtriage-smoke/bin/amxtriage" catalog --format json > "$RUNNER_TEMP/plugin-catalog.json"
           "$RUNNER_TEMP/amxtriage-smoke/bin/python" -c 'import json,sys; p=json.load(open(sys.argv[1], encoding="utf-8")); assert p["schema_version"] == 1 and p["entry_count"] == len(p["entries"])' "$RUNNER_TEMP/plugin-catalog.json"
       - name: Smoke-test local watch resource benchmark
