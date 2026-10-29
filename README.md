@@ -1,6 +1,8 @@
 **Language / Bahasa / Idioma:** [English](README.md) · [Bahasa Indonesia](docs/README.id.md) · [Español](docs/README.es.md)  
 **Roadmap:** [Multi-language diagnostics and safe remediation](docs/PHASE7_MULTILANGUAGE.md)
-**Project progress:** [Verified feature status and completion estimate](docs/PROGRESS.md)
+**Project progress:** [Verified feature status and completion estimate](docs/PROGRESS.md)  
+**Release/platform support:** [Support matrix and hosting-provider limits](docs/RELEASE_AND_PLATFORM_SUPPORT.md)  
+**Contributing:** [Beginner setup and project map](CONTRIBUTING.md) · **Security:** [Vulnerability reporting](SECURITY.md)
 
 # amxtriage
 
@@ -9,10 +11,20 @@ the [crashdetect](https://github.com/AmyrAhmady/samp-plugin-crashdetect) plugin 
 (AMX runtime errors, server crashes and long callbacks), groups identical ones, counts them
 and shows where they happen, optionally with the surrounding lines of your `.pwn` source.
 
-- Standard library only. No runtime dependencies. Python 3.10 or newer.
+- No mandatory runtime dependencies. Python 3.10–3.13 are tested in CI. Run `amxtriage gui` for the optional beginner-friendly desktop UI; Tkinter must be available.
 - Reads plain text, `.gz` files and standard input. Never modifies the log.
 - Normal analysis/watch/catalog/preview operation is offline and does not start child programs. Explicit `patch-apply` may launch only the locally trusted compiler and test command selected by the operator, without a shell. Opt-in Linux metrics read local `/proc` and `/sys` and write a separate JSONL file.
 - Status: 0.1.0, beta.
+
+## Beginner-friendly desktop interface
+
+After installing amxtriage, run:
+
+```bash
+amxtriage gui
+```
+
+Choose a server log, optionally select a Pawn source folder for code context, select English, Bahasa Indonesia, or Spanish, and save a text report. The GUI uses the same analysis core as the CLI and never modifies the input log. Minimal Linux installations may require Tkinter separately. This is a desktop UI for Windows, macOS, and Linux—not a native Android/iOS application.
 
 ## The problem it solves
 
