@@ -1,5 +1,7 @@
 # HANDOFF
 
+**Language / Bahasa / Idioma:** [English](README.md) · [Bahasa Indonesia](docs/README.id.md) · [Español](docs/README.es.md)
+
 For the next developer or the next Claude session. Written at the end of the Phase 6 session
 (security hardening). Read sections 1, 2 and 11 first. Statements marked **verified** were run
 or measured in that session. Statements marked **recorded** come from the checkpoint of an
