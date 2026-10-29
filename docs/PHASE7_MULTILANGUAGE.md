@@ -6,13 +6,15 @@
 
 ## Implemented today
 
-- Python 3.10+ command-line tool for SA-MP/open.mp logs.
+- Python 3.10+ command-line tool for SA-MP/open.mp logs, plus an optional Tkinter desktop GUI (`amxtriage gui`) with English/Indonesian/Spanish report-language selection.
 - Groups recognized AMX runtime errors, crashes and slow callbacks; supports analysis, live log following, baselines, source context and offline rule-based recommendations.
 - The initial `diagnose` command parses common saved compiler/linter formats for Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go and Rust. It does not execute compilers and does not cover every tool/version.
 - Default analysis/watch/preview operation reads local files and does not initiate network connections or modify source. Only the explicit `patch-apply` command may edit one reviewed Pawn file.
 - Existing CLI recommendations are advisory. They are not proof of a correct fix.
 - The offline `catalog`/`plugins` command contains nine evidence-backed records: five documented open.mp component releases, two documented legacy open.mp plugins, the upstream-documented SA-MP Streamer Plugin `v2.9.6`, and a newer `sampvoice` release marked `unknown`. Filters support server, evidence status, exact documented server version, OS/platform, CPU architecture, and installation kind. Empty metadata never implies compatibility; dependencies are not guessed.
 - `patch-preview`/`fix-preview` generates a diff for one narrow Pawn compiler case. Explicit `patch-apply` requires the reviewed patch/source SHA-256 values, a private checkpoint and a trusted local Pawn compiler, plus either an operator-selected `--test-executable` (with literal repeated `--test-arg` values) or explicit `--compile-only`. Validators run without a shell and with time/output bounds. Failed compile/test validation rolls back when the target still matches the applied patch; external edits are preserved. This narrow rule is not a gameplay-correctness guarantee. CI now also runs an isolated smoke test with the pinned Pawn compiler v3.10.10: it captures a real compiler diagnostic, checks that preview is non-mutating, applies only the reviewed hashes in a temporary directory, and verifies the same compiler accepts the result. This validates one rule, not gameplay correctness.
+
+An optional desktop GUI is now available, but it is not a native Android/iOS app. The current Python CI matrix runs on Linux; Windows/macOS must pass their own CI jobs before those platforms are advertised as tested.
 
 ## Product target and progress accounting
 
@@ -25,7 +27,7 @@ The intended end state is broader than the current log triager. Track progress b
 | Compiler output adapters for common formats | Initial parsers/tests for common formats are implemented; real compiler-version coverage is incomplete | First slice implemented |
 | User-facing CLI/report localization | Report labels and explain headings support en/id/es; remediation advice and argparse help are still English | First slice implemented |
 | Evidence-backed plugin/dependency compatibility catalog | Offline snapshot with 5 documented components, 2 documented legacy open.mp plugins, 1 documented SA-MP plugin and 1 `unknown` release (9 total); runtime verification and broader OS/version coverage remain incomplete | First slice implemented |
-| In-game admin warning bridge | JSONL and `--alert-pawn-file` export, Pawn filterscript source, and CI compilation are implemented; live staging delivery is not yet verified | Implementation slice complete; staging verification pending |
+| In-game admin warning bridge | SA-MP and open.mp entry points share the local protocol; CI compiles the legacy and open.mp compiler/header combinations. Live delivery still needs staging verification | Two compile targets; staging pending |
 | Actual network-layer DDoS mitigation / server-side anti-cheat integration | Not implemented | 0% |
 | Patch generation, compile/test validation and rollback | Narrow Pawn preview plus explicit hash-confirmed apply, private checkpoint, bounded compiler/test runner or `--compile-only`, and guarded rollback; gameplay coverage remains external | First slice implemented |
 
