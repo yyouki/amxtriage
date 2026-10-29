@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "amxtriage"
 dynamic = ["version"]
-description = "Triage tool for SA-MP and open.mp server logs: groups AMX runtime errors, crashes and slow callbacks."
+description = "Cross-platform SA-MP/open.mp log triage with a CLI and optional desktop GUI for AMX runtime errors, crashes, compiler diagnostics, and admin alerts."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
