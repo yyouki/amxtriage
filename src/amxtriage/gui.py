@@ -88,9 +88,7 @@ _LABELS: dict[str, dict[str, str]] = {
 }
 
 
-def analyze_for_gui(
-    log_path: str, *, language: str = "en", source_dir: str | None = None
-) -> str:
+def analyze_for_gui(log_path: str, *, language: str = "en", source_dir: str | None = None) -> str:
     """Analyze one local log with conservative defaults and return a plain-text report."""
     if language not in SUPPORTED_LANGUAGES:
         raise InputError(f"unsupported language: {language}")
