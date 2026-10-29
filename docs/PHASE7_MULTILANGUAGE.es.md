@@ -6,11 +6,13 @@
 
 ## Funciones actuales
 
-- CLI en Python 3.10+ para analizar registros de SA-MP/open.mp: errores de ejecución AMX, caídas y callbacks lentos reconocidos.
+- CLI Python 3.10+ para registros SA-MP/open.mp, más una GUI opcional con Tkinter (`amxtriage gui`) y selección de idioma inglés/indonesio/español.
 - Análisis, seguimiento de registros en crecimiento, líneas base, contexto de código fuente y recomendaciones locales basadas en reglas.
 - El comando `diagnose` reconoce formatos habituales de compiladores/lint para Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go y Rust. No ejecuta compiladores ni cubre todas sus versiones.
 - Las etiquetas del informe admiten inglés (`en`), indonesio (`id`) y español (`es`). La documentación principal está disponible en esos tres idiomas.
 - Los modos predeterminados de análisis/monitorización/preview solo leen archivos locales, no abren conexiones de red y no modifican el código. Solo el comando explícito `patch-apply` puede editar un archivo Pawn revisado.
+
+La GUI de escritorio es opcional y requiere Tkinter; no existe una app nativa Android/iOS. La matriz CI de Python se ejecuta actualmente en Linux, por lo que Windows/macOS aún no deben anunciarse como plataformas probadas.
 
 ## Estado de los objetivos
 
@@ -21,7 +23,7 @@
 | Diagnósticos multilenguaje de compilador | Parsers iniciales y pruebas de formatos comunes; cobertura de versiones incompleta |
 | Localización de CLI y Markdown | Etiquetas y documentación en en/id/es; parte de la ayuda y recomendaciones detalladas siguen en inglés |
 | Catálogo de compatibilidad de plugins/dependencias | Nueve registros con evidencia: cinco componentes open.mp, dos plugins legacy de open.mp, un Streamer Plugin `v2.9.6` para SA-MP y una versión de `sampvoice` `unknown`; filtros por servidor/estado/versión/SO/arquitectura/tipo. Los metadatos vacíos no implican compatibilidad |
-| Avisos dentro del juego a administradores/propietarios | Exportación JSONL/`--alert-pawn-file`, source del filterscript Pawn y compilación en CI implementados; la entrega en un servidor staging aún no está verificada |
+| Avisos dentro del juego a administradores/propietarios | Los entry points de SA-MP y open.mp comparten protocolo local; CI compila sus toolchains/headers específicos. La entrega en staging sigue sin verificarse |
 | Mitigación DDoS de red e integración anti-cheat en el servidor | No implementado |
 | Parches, validación y reversión | Preview Pawn limitado más apply explícito con hashes confirmados, checkpoint privado, compilador local de confianza, runner de pruebas o `--compile-only`, límites de tiempo/salida y reversión condicionada; las pruebas de gameplay siguen siendo externas |
 
