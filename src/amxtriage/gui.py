@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 from pathlib import Path
+from queue import Empty, SimpleQueue
 
 from amxtriage.analysis import analyze_logs, build_report
 from amxtriage.errors import InputError
@@ -172,6 +173,7 @@ def launch_gui(language: str = "en", start_dir: str | None = None) -> int:
     )
     last_report: list[str] = [""]
     busy = [False]
+    pending_results: SimpleQueue[tuple[str | None, str | None]] = SimpleQueue()
 
     def choose_log() -> None:
         labels = _LABELS[language_var.get()]
@@ -251,7 +253,7 @@ def launch_gui(language: str = "en", start_dir: str | None = None) -> int:
             except Exception as error:
                 report = None
                 error_message = f"{type(error).__name__}: {error}"
-            root.after(0, lambda: finish(report, error_message))
+            pending_results.put((report, error_message))
 
         threading.Thread(target=work, name="amxtriage-gui-analysis", daemon=True).start()
 
@@ -273,7 +275,16 @@ def launch_gui(language: str = "en", start_dir: str | None = None) -> int:
             return
         status_var.set(labels["saved"])
 
+    def poll_results() -> None:
+        try:
+            while True:
+                finish(*pending_results.get_nowait())
+        except Empty:
+            pass
+        root.after(100, poll_results)
+
     language_select.bind("<<ComboboxSelected>>", update_language)
+    root.after(100, poll_results)
     report_text.configure(state="normal")
     report_text.insert("1.0", _LABELS[language]["report_hint"])
     report_text.configure(state="disabled")
