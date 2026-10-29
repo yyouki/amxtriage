@@ -121,7 +121,10 @@ def test_output_is_identical_to_storing_every_argument(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, length: int, show_args: bool
 ) -> None:
     path = tmp_path / "server_log.txt"
-    path.write_text(log_with_arguments("Ab\tc\u202e" * (length // 5) + "Z" * (length % 5)))
+    path.write_text(
+        log_with_arguments("Ab\tc\u202e" * (length // 5) + "Z" * (length % 5)),
+        encoding="utf-8",
+    )
     current = rendered(path, show_args=show_args)
     monkeypatch.setattr(parser_module, "MAX_STORED_ARGS", UNBOUNDED)
     reference = rendered(path, show_args=show_args)
@@ -130,7 +133,7 @@ def test_output_is_identical_to_storing_every_argument(
 
 def test_long_arguments_are_shown_cut_with_an_ellipsis_only_when_requested(tmp_path: Path) -> None:
     path = tmp_path / "server_log.txt"
-    path.write_text(log_with_arguments("A" * 5000))
+    path.write_text(log_with_arguments("A" * 5000), encoding="utf-8")
     hidden_text, hidden_markdown, hidden_json, _ = rendered(path, show_args=False)
     assert "AAAA" not in hidden_text + hidden_markdown + hidden_json
     shown_text, shown_markdown, shown_json, _ = rendered(path, show_args=True)
