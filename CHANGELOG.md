@@ -12,6 +12,7 @@ This changelog records user-visible project changes. It does not imply a stable 
 - Added Indonesian and Spanish versions of the platform/release guide and security policy, plus release, platform-support, and repository-settings guidance.
 - Updated package metadata to describe the CLI and optional desktop GUI.
 
+- Added a tag-triggered draft GitHub Release workflow with exact package-version validation, wheel/sdist smoke tests, and SHA-256 checksums. Maintainers must review the draft before publication; nothing is published to PyPI automatically.
 ### Known limitations
 
 - The Pawn bridge builds in CI, but actual in-game alert delivery still needs testing on a staging SA-MP/open.mp server.
