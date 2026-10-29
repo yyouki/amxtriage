@@ -1,5 +1,7 @@
 # Log format evidence
 
+**Language / Bahasa / Idioma:** [English](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
+
 This document records what is known about the log lines that `amxtriage` parses,
 where each fact comes from, and what is still unknown. It was written during the
 October 2026 audit. Nothing here is a promise about servers that were not
