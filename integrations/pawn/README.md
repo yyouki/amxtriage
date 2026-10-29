@@ -1,5 +1,7 @@
 # amxtriage Pawn alert bridge
 
+**Language / Bahasa / Idioma:** [English](../../README.md) · [Bahasa Indonesia](../../docs/README.id.md) · [Español](../../docs/README.es.md)
+
 **Status:** bridge source and protocol are implemented; Pawn source compiles in GitHub Actions with the pinned toolchain. End-to-end chat delivery still needs staging-server verification.
 
 This optional filterscript reads a local append-only file produced by `amxtriage watch --alert-pawn-file`. It does not open a network port or use RCON for delivery.
