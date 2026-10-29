@@ -123,7 +123,7 @@ class LogFollower:
         self._position = handle.tell()
 
     def _open_raw(self) -> BinaryIO:
-        if os.name != "nt":
+        if os.name != "nt" or not isinstance(self._path, Path):
             return self._path.open("rb")
 
         # Share-delete is required for Windows log rotation to rename an open file.
