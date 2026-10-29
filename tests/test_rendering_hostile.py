@@ -10,9 +10,21 @@ from amxtriage.analysis import analyze_logs, build_report
 from amxtriage.render import render_json, render_markdown, render_text
 from amxtriage.source import SourceIndex
 
-pytestmark = pytest.mark.skipif(
-    sys.platform == "win32", reason="file names with these characters need a POSIX file system"
-)
+def filesystem_component(value: str) -> str:
+    """Keep fixture names representable; hostile characters remain in log payloads."""
+    result: list[str] = []
+    windows_invalid = '<>:"|?*'
+    for char in value:
+        category = unicodedata.category(char)
+        invalid = (
+            char in "/\\\0"
+            or category in {"Cc", "Cs", "Co", "Cn", "Zl", "Zp"}
+            or (sys.platform == "win32" and char in windows_invalid)
+        )
+        result.append("_" if invalid else char)
+    cleaned = "".join(result).rstrip(" .")
+    return cleaned or "hostile-name"
+
 
 MARK = "ZQXMARK"
 BLOCKED = frozenset({"Cc", "Cf", "Cs", "Co", "Cn", "Zl", "Zp"})
@@ -130,21 +142,21 @@ def strings_in(value: object) -> list[str]:
 @pytest.mark.parametrize("seed", range(40))
 def test_hostile_names_and_text_never_reach_any_output_unsafely(seed: int, tmp_path: Path) -> None:
     rng = random.Random(seed)
-    directory = hostile(rng, line_breaks=False).replace("/", "_").replace("\\", "_")
-    source_name = hostile(rng, line_breaks=False).replace("/", "_").replace("\\", "_") + ".pwn"
+    directory = filesystem_component(hostile(rng, line_breaks=False))
+    source_name = filesystem_component(hostile(rng, line_breaks=False)) + ".pwn"
     root = tmp_path / "tree"
     (root / directory).mkdir(parents=True)
-    (root / directory / source_name).write_text("".join(f"line {n}\n" for n in range(1, 40)))
-    odd_directory = hostile(rng, line_breaks=True).replace("/", "_")
-    (root / odd_directory).mkdir()
-    (root / odd_directory / (hostile(rng, line_breaks=True).replace("/", "_") + ".pwn")).write_text(
-        "x\n"
+    (root / directory / source_name).write_text(
+        "".join(f"line {n}\n" for n in range(1, 40)), encoding="utf-8"
     )
+    odd_directory = filesystem_component(hostile(rng, line_breaks=True))
+    (root / odd_directory).mkdir()
+    odd_source = filesystem_component(hostile(rng, line_breaks=True)) + ".pwn"
+    (root / odd_directory / odd_source).write_text("x\n", encoding="utf-8")
 
-    log_name = hostile(rng, line_breaks=True).replace("/", "_") + ".log"
+    log_name = filesystem_component(hostile(rng, line_breaks=True)) + ".log"
     log = tmp_path / log_name
     log.write_text(hostile_log(rng, directory, source_name), encoding="utf-8")
-
     result = analyze_logs([str(log)])
     index = SourceIndex(str(root))
     report = build_report(result, top=10, source_index=index, context_radius=2)
