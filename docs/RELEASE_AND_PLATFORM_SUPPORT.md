@@ -1,6 +1,6 @@
 # Release, platform and hosting-provider support
 
-**Language / Bahasa / Idioma:** [English README](../README.md) · [Bahasa Indonesia](README.id.md) · [Español](README.es.md)
+**Language / Bahasa / Idioma:** [English](RELEASE_AND_PLATFORM_SUPPORT.md) · [Bahasa Indonesia](RELEASE_AND_PLATFORM_SUPPORT.id.md) · [Español](RELEASE_AND_PLATFORM_SUPPORT.es.md)
 
 This guide distinguishes tested support from possible portability. It does not certify every hosting company or operating-system build.
 
