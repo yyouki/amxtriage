@@ -284,7 +284,7 @@ def test_expand_paths_keeps_existing_files_with_wildcard_characters(tmp_path):
 def test_expand_paths_sorts_matches_alphabetically(tmp_path):
     for name in ("c.log", "a.log", "b.log"):
         (tmp_path / name).write_text("x")
-    names = [path.rsplit("/", 1)[-1] for path in expand_paths([str(tmp_path / "*.log")])]
+    names = [Path(path).name for path in expand_paths([str(tmp_path / "*.log")])]
     assert names == ["a.log", "b.log", "c.log"]
 
 
@@ -384,7 +384,7 @@ def test_patch_preview_cli_emits_unified_diff_without_editing_source(tmp_path, c
     root = tmp_path / "source"
     source = root / "gamemodes" / "rp.pwn"
     source.parent.mkdir(parents=True)
-    source.write_text("new value = 42\nreturn 1;\n", encoding="utf-8")
+    source.write_bytes(b"new value = 42\nreturn 1;\n")
     before = source.read_bytes()
     compiler_log = write_log(
         tmp_path / "compiler.log",
@@ -414,7 +414,7 @@ def test_patch_preview_cli_returns_three_when_no_safe_patch_exists(tmp_path, cap
     root = tmp_path / "source"
     root.mkdir()
     source = root / "rp.pwn"
-    source.write_text("new value = 42\nreturn 1;\n", encoding="utf-8")
+    source.write_bytes(b"new value = 42\nreturn 1;\n")
     compiler_log = write_log(
         tmp_path / "compiler.log",
         ['rp.pwn(2) : error 017: undefined symbol "PlayerData"'],
