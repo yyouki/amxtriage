@@ -1,0 +1,75 @@
+name: Bug report
+description: Report a reproducible problem in amxtriage.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include RCON passwords, player credentials, tokens, private IP data, or private production logs. Redact sensitive information before attaching a minimal example.
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux desktop
+        - Linux headless server
+        - Other / not listed
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "e.g. 3.12.4"
+    validations:
+      required: true
+  - type: dropdown
+    id: server
+    attributes:
+      label: Game server
+      options:
+        - SA-MP
+        - open.mp
+        - Not applicable
+        - Other / not sure
+    validations:
+      required: true
+  - type: input
+    id: server-version
+    attributes:
+      label: Server version/build (if applicable)
+  - type: input
+    id: compiler-version
+    attributes:
+      label: Pawn compiler/version (if applicable)
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: Describe what should have happened.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: Describe what happened and include the exact sanitized error.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: Provide the smallest repeatable sequence.
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Minimal sanitized log/example
+      description: Optional. Remove secrets and private player/customer data.
+      render: text
