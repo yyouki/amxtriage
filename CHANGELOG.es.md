@@ -12,6 +12,7 @@ Este registro resume cambios visibles para los usuarios. No significa que se hay
 - Se añadieron versiones en indonesio y español de la guía de plataformas/publicación y la política de seguridad, junto con una guía de publicación, soporte de plataformas y configuración del repositorio.
 - Se actualizaron los metadatos del paquete para describir la CLI y la GUI opcional.
 
+- Se añadió un flujo de borrador de GitHub Release por etiqueta que valida la versión del paquete, prueba wheel/sdist y genera checksums SHA-256. La publicación requiere revisión manual y no se publica automáticamente en PyPI.
 ### Limitaciones conocidas
 
 - El bridge Pawn compila en CI, pero la entrega real de alertas dentro del juego aún debe probarse en un servidor staging SA-MP/open.mp.
