@@ -122,9 +122,44 @@ class LogFollower:
         handle.seek(0, os.SEEK_END if not self._from_start else os.SEEK_SET)
         self._position = handle.tell()
 
+    def _open_raw(self) -> BinaryIO:
+        if os.name != "nt":
+            return self._path.open("rb")
+
+        # Share-delete is required for Windows log rotation to rename an open file.
+        import ctypes
+        import importlib
+        from ctypes import wintypes
+
+        msvcrt = importlib.import_module("msvcrt")
+        kernel32 = getattr(ctypes, "WinDLL")("kernel32", use_last_error=True)
+        create_file = kernel32.CreateFileW
+        create_file.argtypes = [
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.HANDLE,
+        ]
+        create_file.restype = wintypes.HANDLE
+        sharing = 0x00000001 | 0x00000002 | 0x00000004
+        handle = create_file(str(self._path), 0x80000000, sharing, None, 3, 0x00000080, None)
+        if handle == ctypes.c_void_p(-1).value:
+            raise getattr(ctypes, "WinError")(ctypes.get_last_error())
+        try:
+            descriptor = msvcrt.open_osfhandle(
+                int(handle), os.O_RDONLY | getattr(os, "O_BINARY", 0)
+            )
+        except OSError:
+            kernel32.CloseHandle(handle)
+            raise
+        return os.fdopen(descriptor, "rb")
+
     def _open(self) -> BinaryIO:
         try:
-            return self._adopt(self._path.open("rb"))
+            return self._adopt(self._open_raw())
         except OSError as error:
             raise InputError(f"cannot open '{self._path}': {error.strerror or error}") from error
 
@@ -158,7 +193,7 @@ class LogFollower:
             yield from self._drain(handle)
         elif replacement == "rotated":
             try:
-                fresh = self._path.open("rb")
+                fresh = self._open_raw()
             except FileNotFoundError:
                 return
             except OSError as error:
