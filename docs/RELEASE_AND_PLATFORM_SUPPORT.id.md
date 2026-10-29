@@ -1,4 +1,4 @@
-# Guía de publicación, plataformas y proveedores de alojamiento
+# Panduan rilis, platform, dan penyedia hosting
 
 **Bahasa / Language / Idioma:** [English](RELEASE_AND_PLATFORM_SUPPORT.md) · [Bahasa Indonesia](RELEASE_AND_PLATFORM_SUPPORT.id.md) · [Español](RELEASE_AND_PLATFORM_SUPPORT.es.md)
 
@@ -43,6 +43,12 @@ Tidak ada API manajemen tunggal yang digunakan semua perusahaan hosting. API pro
 Pawn bridge adalah notifikasi diagnostik lokal, bukan mitigasi DDoS atau anti-cheat. Analisis log tidak dapat menghentikan trafik yang sudah memenuhi kapasitas koneksi upstream.
 
 Adapter provider yang nyata membutuhkan endpoint terdokumentasi, identitas resource yang dilindungi, izin minimum, opt-in eksplisit, dry-run, audit log, dan tes staging. Adapter tidak boleh otomatis memblokir alamat atau mengubah firewall hanya berdasarkan sinyal heuristik dari log.
+
+## Workflow otomatis untuk draft rilis
+
+Maintainer dapat membuat tag versi seperti `v0.1.0` setelah meninjau perubahan. Workflow rilis mensyaratkan tag sama persis dengan nilai `__version__` pada `src/amxtriage/__init__.py`. Workflow membangun wheel dan source distribution, memvalidasi metadata paket, menjalankan smoke test wheel terpasang, membuat `SHA256SUMS`, lalu menyiapkan **draft prerelease** dengan catatan rilis otomatis. Maintainer harus meninjau dan menerbitkan draft secara manual. Workflow tidak menerbitkan ke PyPI dan tidak berjalan pada push branch biasa.
+
+Jangan membuat tag rilis sebelum matriks CI lulus serta tes bridge di staging, changelog, versi paket, dan catatan keamanan selesai ditinjau.
 
 ## Pengaturan repositori GitHub yang disarankan
 
