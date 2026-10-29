@@ -56,7 +56,7 @@ Repository description/topics are GitHub metadata, not source files. Suggested s
 
 1. **About:** use the description and topics above; leave Website empty unless an official site exists.
 2. **Default branch/ruleset:** keep `main` as default. Require successful CI checks, block force-push and branch deletion, and require pull requests for outside contributors.
-3. **Actions:** keep workflow permissions least-privilege. Current CI needs `contents: read`. Before a hardened stable release, pin third-party Actions to reviewed commit SHAs.
+3. **Actions:** keep workflow permissions least-privilege. CI uses `contents: read` and pins third-party Actions to full commit SHAs. Review Dependabot action-update PRs and rerun CI before accepting version bumps. Only the draft-release job requests `contents: write` to create a draft GitHub Release.
 4. **Security:** enable Dependabot alerts/security updates, secret scanning and push protection where available. Add `SECURITY.md` and private vulnerability reporting if available.
 5. **Release quality:** maintain a changelog, version/tag policy, release notes, wheel and source distribution, bridge artifact checksums, and staging/rollback guidance.
 6. **Issues:** request OS, Python version, server type/version, compiler version and a minimal redacted log. Never attach RCON passwords, player credentials or private host data.
