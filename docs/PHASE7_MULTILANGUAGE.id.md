@@ -6,11 +6,13 @@
 
 ## Yang sudah tersedia
 
-- CLI Python 3.10+ untuk menganalisis log SA-MP/open.mp: runtime error AMX, crash, dan callback lambat yang dikenali.
+- CLI Python 3.10+ untuk log SA-MP/open.mp, ditambah GUI desktop Tkinter opsional (`amxtriage gui`) dengan pilihan bahasa laporan English/Bahasa Indonesia/Spanyol.
 - Perintah analisis, pemantauan log yang bertambah, baseline, konteks source, dan rekomendasi berbasis aturan secara offline.
 - Perintah `diagnose` mengenali format umum keluaran compiler/linter Pawn, Python, JavaScript/TypeScript, C/C++, Java, C#, Go, dan Rust. Format/versi tool belum semuanya tercakup; compiler tidak dijalankan.
 - Label laporan mendukung English (`en`), Bahasa Indonesia (`id`), dan Español (`es`). Dokumentasi utama tersedia dalam tiga bahasa.
 - Mode analisis/watch/preview secara default hanya membaca file lokal, tidak memulai koneksi jaringan, dan tidak mengubah source. Hanya perintah `patch-apply` eksplisit yang dapat mengedit satu file Pawn yang telah ditinjau.
+
+GUI desktop opsional memerlukan Tkinter; aplikasi native Android/iOS belum tersedia. CI Python saat ini berjalan di Linux, sehingga Windows/macOS belum boleh disebut sudah teruji.
 
 ## Status target fitur
 
@@ -21,7 +23,7 @@
 | Diagnostik compiler multi-bahasa | Parser awal dan tes format umum tersedia; cakupan versi belum lengkap |
 | Lokalisasi CLI dan Markdown | Label laporan dan dokumentasi tersedia dalam en/id/es; sebagian bantuan dan rekomendasi detail masih English |
 | Katalog kompatibilitas plugin/dependensi | Sembilan entri berbukti: lima component open.mp, dua plugin legacy open.mp, satu Streamer Plugin `v2.9.6` untuk SA-MP, serta satu `sampvoice` `unknown`; filter server/status/versi/OS/arsitektur/jenis tersedia. Metadata kosong tidak dianggap kompatibel |
-| Notifikasi in-game untuk admin/owner | Ekspor JSONL/`--alert-pawn-file`, source filterscript Pawn, dan kompilasi CI tersedia; pengiriman chat pada staging server belum diverifikasi |
+| Notifikasi in-game untuk admin/owner | Entry point SA-MP dan open.mp memakai protokol lokal yang sama; CI mengompilasi toolchain/header khusus keduanya. Pengiriman chat di staging belum diverifikasi |
 | Mitigasi DDoS jaringan dan integrasi anti-cheat server-side | Belum dibuat |
 | Patch, validasi compiler/test, dan rollback | Preview Pawn yang sempit ditambah apply eksplisit dengan hash yang dikonfirmasi, checkpoint privat, compiler lokal tepercaya, test runner terpilih atau `--compile-only`, batas waktu/output, dan rollback bersyarat; tes gameplay masih eksternal |
 
