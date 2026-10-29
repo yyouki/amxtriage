@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import cast
 
 import pytest
 
 from amxtriage.monitoring import JsonlMetricsSink, MetricsSampler
+
+linux_only = pytest.mark.skipif(
+    not sys.platform.startswith("linux"), reason="host metrics backend is Linux-only"
+)
 
 
 def write_snapshot(
@@ -43,6 +48,7 @@ def nested(sample: dict[str, object], key: str) -> dict[str, object]:
     return cast(dict[str, object], value)
 
 
+@linux_only
 def test_sampler_reports_cpu_memory_process_rss_and_disk_rates(tmp_path: Path) -> None:
     proc, sysroot = tmp_path / "proc", tmp_path / "sys"
     write_snapshot(proc, sysroot, cpu="100 0 50 800 50 0 0 0 0 0", ticks=(100, 50), rss_pages=20)
@@ -70,6 +76,7 @@ def test_sampler_reports_cpu_memory_process_rss_and_disk_rates(tmp_path: Path) -
     assert nested(second, "disk_io")["write_bytes_per_second"] == 4096.0
 
 
+@linux_only
 def test_alert_processing_timing_is_aggregated_per_sample(tmp_path: Path) -> None:
     proc, sysroot = tmp_path / "proc", tmp_path / "sys"
     write_snapshot(proc, sysroot, cpu="100 0 50 800 50 0 0 0 0 0", ticks=(100, 50), rss_pages=20)
