@@ -389,29 +389,11 @@ def test_a_file_that_vanishes_while_it_is_being_reopened_is_waited_for(tmp_path)
     assert only_lines(list(follower.lines())) == ["one", "two"]
 
 
-def test_an_unreadable_replacement_file_still_stops_the_watch_with_an_error(tmp_path):
+def test_an_unreadable_replacement_file_still_stops_the_watch_with_an_error(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
     log = tmp_path / "server_log.txt"
     log.write_bytes(b"one\n")
-
-    class DeniedPath:
-        def __init__(self, real):
-            self._real = real
-            self.opens = 0
-
-        def is_dir(self):
-            return self._real.is_dir()
-
-        def stat(self):
-            return self._real.stat()
-
-        def open(self, mode):
-            self.opens += 1
-            if self.opens > 1:
-                raise PermissionError(13, "Permission denied")
-            return self._real.open(mode)
-
-        def __str__(self):
-            return str(self._real)
 
     def rotate():
         log.rename(tmp_path / "server_log.txt.1")
@@ -419,7 +401,17 @@ def test_an_unreadable_replacement_file_still_stops_the_watch_with_an_error(tmp_
 
     script = Choreography([rotate])
     follower = LogFollower(str(log), sleep=script.sleep, should_stop=script.should_stop)
-    vars(follower)["_path"] = DeniedPath(Path(log))
+    original_open = follower._open_raw
+    open_count = 0
+
+    def deny_replacement():
+        nonlocal open_count
+        open_count += 1
+        if open_count > 1:
+            raise PermissionError(13, "Permission denied")
+        return original_open()
+
+    monkeypatch.setattr(follower, "_open_raw", deny_replacement)
     with pytest.raises(InputError, match="Permission denied"):
         list(follower.lines())
 
