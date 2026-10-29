@@ -3,7 +3,7 @@ import threading
 import time
 from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import BinaryIO, Literal
+from typing import Any, BinaryIO, Literal
 
 from amxtriage.errors import InputError
 from amxtriage.model import Event
@@ -132,7 +132,8 @@ class LogFollower:
         from ctypes import wintypes
 
         msvcrt = importlib.import_module("msvcrt")
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        windows_ctypes: Any = ctypes
+        kernel32 = windows_ctypes.WinDLL("kernel32", use_last_error=True)
         create_file = kernel32.CreateFileW
         create_file.argtypes = [
             wintypes.LPCWSTR,
@@ -147,7 +148,7 @@ class LogFollower:
         sharing = 0x00000001 | 0x00000002 | 0x00000004
         handle = create_file(str(self._path), 0x80000000, sharing, None, 3, 0x00000080, None)
         if handle == ctypes.c_void_p(-1).value:
-            raise ctypes.WinError(ctypes.get_last_error())
+            raise windows_ctypes.WinError(windows_ctypes.get_last_error())
         try:
             descriptor = msvcrt.open_osfhandle(
                 int(handle), os.O_RDONLY | getattr(os, "O_BINARY", 0)
