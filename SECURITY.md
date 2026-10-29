@@ -1,5 +1,7 @@
 # Security policy
 
+**Language / Bahasa / Idioma:** [English](SECURITY.md) · [Bahasa Indonesia](docs/SECURITY.id.md) · [Español](docs/SECURITY.es.md)
+
 ## Reporting a vulnerability
 
 Please do not publish secrets, exploit steps or private server logs in a public issue.
