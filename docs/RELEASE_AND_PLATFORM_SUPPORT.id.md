@@ -56,7 +56,7 @@ Deskripsi/topik repositori adalah metadata GitHub, bukan file source. Pengaturan
 
 1. **About:** gunakan deskripsi dan topik di atas; kosongkan Website kecuali situs resmi tersedia.
 2. **Default branch/ruleset:** pertahankan `main` sebagai default. Wajibkan status CI berhasil, blokir force-push dan penghapusan branch, serta wajibkan pull request untuk kontributor eksternal.
-3. **Actions:** gunakan izin workflow minimum. CI saat ini memerlukan `contents: read`. Sebelum rilis stabil yang diperketat, pin GitHub Actions pihak ketiga ke commit SHA yang sudah ditinjau.
+3. **Actions:** gunakan izin workflow minimum. CI memakai `contents: read` dan mematok GitHub Actions pihak ketiga ke SHA commit penuh. Tinjau PR pembaruan action dari Dependabot dan jalankan ulang CI sebelum menerima versi baru. Hanya job draft-release yang meminta `contents: write` untuk membuat draft GitHub Release.
 4. **Security:** aktifkan Dependabot alerts/security updates, secret scanning, dan push protection bila tersedia. Siapkan `SECURITY.md` serta pelaporan kerentanan privat bila tersedia.
 5. **Kualitas rilis:** pelihara changelog, kebijakan versi/tag, release notes, wheel dan source distribution, checksum artifact bridge, serta petunjuk staging/rollback.
 6. **Issues:** minta OS, versi Python, jenis/versi server, versi compiler, dan log minimal yang sudah disensor. Jangan unggah kredensial RCON, kata sandi pemain, atau data privat hosting.
