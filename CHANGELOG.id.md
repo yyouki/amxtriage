@@ -12,6 +12,7 @@ Catatan ini merangkum perubahan yang terlihat pengguna. Isinya tidak berarti ril
 - Menambahkan versi Bahasa Indonesia dan Spanyol untuk panduan platform/rilis serta kebijakan keamanan, bersama panduan rilis, dukungan platform, dan pengaturan repositori.
 - Memperbarui metadata paket untuk menjelaskan CLI dan GUI desktop opsional.
 
+- Menambahkan workflow draft GitHub Release berbasis tag yang memvalidasi versi paket, menguji wheel/sdist, dan menghasilkan checksum SHA-256. Maintainer harus meninjau draft; tidak ada publikasi otomatis ke PyPI.
 ### Batasan yang diketahui
 
 - Bridge Pawn berhasil dibangun di CI, tetapi pengiriman alert di dalam game masih perlu diuji pada server staging SA-MP/open.mp.
