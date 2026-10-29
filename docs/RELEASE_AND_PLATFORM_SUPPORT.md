@@ -44,6 +44,12 @@ The Pawn bridge is a local diagnostic chat alert, not DDoS mitigation or anti-ch
 
 A real provider adapter needs documented endpoints, a protected resource identifier, least-privilege permissions, explicit opt-in, a dry-run, audit records, and staging tests. It must not automatically block addresses or change firewall rules based only on heuristic log signals.
 
+## Automated draft-release workflow
+
+A maintainer can create a version tag such as `v0.1.0` after reviewing the changes. The release workflow requires the tag to exactly match `__version__` in `src/amxtriage/__init__.py`. It builds a wheel and source distribution, validates package metadata, smoke-tests the installed wheel, generates `SHA256SUMS`, and creates a **draft prerelease** with generated release notes. The maintainer must review and publish the draft manually. The workflow does not publish to PyPI and does not run on ordinary branch pushes.
+
+Do not create a release tag until the CI matrix passes and the staging bridge test, changelog, package version, and security notes have been reviewed.
+
 ## Recommended GitHub repository settings
 
 Repository description/topics are GitHub metadata, not source files. Suggested settings for a public release:
