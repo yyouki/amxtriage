@@ -1,5 +1,7 @@
 import gzip
 import threading
+from pathlib import Path
+from typing import BinaryIO
 
 import pytest
 
@@ -103,7 +105,7 @@ def test_an_unterminated_line_in_the_old_file_is_flushed_on_rotation(tmp_path):
         with log.open("ab") as handle:
             handle.write(b"unterminated tail")
 
-    def rotate():
+    def rotate() -> None:
         log.rename(tmp_path / "server_log.txt.1")
         log.write_bytes(b"fresh\n")
 
@@ -389,8 +391,8 @@ def test_a_file_that_vanishes_while_it_is_being_reopened_is_waited_for(tmp_path)
 
 
 def test_an_unreadable_replacement_file_still_stops_the_watch_with_an_error(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
-):
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     log = tmp_path / "server_log.txt"
     log.write_bytes(b"one\n")
 
@@ -403,7 +405,7 @@ def test_an_unreadable_replacement_file_still_stops_the_watch_with_an_error(
     original_open = follower._open_raw
     open_count = 0
 
-    def deny_replacement():
+    def deny_replacement() -> BinaryIO:
         nonlocal open_count
         open_count += 1
         if open_count > 1:
