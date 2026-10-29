@@ -4,7 +4,7 @@
 **Hoja de ruta:** [Diagnóstico multilingüe y correcciones seguras](PHASE7_MULTILANGUAGE.es.md)  
 **Plataformas/lanzamiento:** [Matriz de soporte y límites de hosting](RELEASE_AND_PLATFORM_SUPPORT.es.md)  
 **Registro de cambios:** [English](../CHANGELOG.md) · [Bahasa Indonesia](../CHANGELOG.id.md) · [Español](../CHANGELOG.es.md)  
-**Contribuir:** [Guía para principiantes](../CONTRIBUTING.md) · **Seguridad:** [Reporte de vulnerabilidades](../SECURITY.md)
+**Contribuir:** [Guía para principiantes](../CONTRIBUTING.md) · **Seguridad:** [Reporte de vulnerabilidades](SECURITY.es.md)
 
 amxtriage es una herramienta CLI en Python para resumir problemas registrados en logs de SA-MP/open.mp: errores de ejecución AMX, caídas y callbacks lentos reconocidos en los formatos de log compatibles. Ayuda a encontrar patrones repetidos y, cuando los datos están disponibles, la ubicación del archivo y la línea de código.
 
