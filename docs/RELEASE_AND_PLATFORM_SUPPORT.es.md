@@ -56,7 +56,7 @@ La descripción y los temas son metadatos de GitHub, no archivos fuente. Recomen
 
 1. **About:** usa la descripción y los temas anteriores; deja Website vacío salvo que exista un sitio oficial.
 2. **Rama/reglas:** conserva `main` como rama predeterminada. Exige CI aprobado, bloquea force-push y eliminación de ramas, y exige pull requests a colaboradores externos.
-3. **Actions:** aplica permisos mínimos. El CI actual necesita `contents: read`. Antes de una versión estable reforzada, fija las GitHub Actions de terceros a SHA de commit revisadas.
+3. **Actions:** mantén los permisos del workflow al mínimo. CI usa `contents: read` y fija las GitHub Actions de terceros a SHA de commit completos. Revisa las PR de actualización de Dependabot y vuelve a ejecutar CI antes de aceptar versiones nuevas. Solo el job de borrador de lanzamiento solicita `contents: write` para crear un borrador de GitHub Release.
 4. **Seguridad:** activa alertas/actualizaciones de Dependabot, escaneo de secretos y protección de push cuando estén disponibles. Prepara `SECURITY.md` e informes privados de vulnerabilidades si existen.
 5. **Calidad de lanzamiento:** mantén changelog, política de versiones/tags, notas de versión, wheel y distribución fuente, checksums de artefactos bridge y guía de staging/rollback.
 6. **Issues:** solicita SO, versión de Python, tipo/versión del servidor, versión de compilador y un registro mínimo anonimizado. No adjuntes credenciales RCON, contraseñas de jugadores ni datos privados del host.
